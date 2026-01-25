@@ -1,0 +1,19 @@
+# Python cache
+**/__pycache__/
+*.py[cod]
+*$py.class
+
+# Environment folders
+.venv/
+.env/
+.uv/
+
+# Distribution / build
+build/
+dist/
+*.egg-info/
+
+# IDE / Editor
+.vscode/
+.idea/
+*.swp
