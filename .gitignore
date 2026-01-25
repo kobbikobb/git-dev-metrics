@@ -17,3 +17,7 @@ dist/
 .vscode/
 .idea/
 *.swp
+
+# AI
+.serena
+PLAN.md
