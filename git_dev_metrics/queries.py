@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Dict, Any, TypedDict
 import requests
 
@@ -70,6 +70,9 @@ def fetch_pull_requests(
 
     response.raise_for_status()
     prs = response.json()
+    # Ensure since is timezone-aware for comparison
+    if since.tzinfo is None:
+        since = since.replace(tzinfo=timezone.utc)  # ← Add this line
 
     # TODO: Can we filter the PRs in the query?
     filtered_prs = []
