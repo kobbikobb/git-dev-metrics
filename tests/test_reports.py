@@ -6,6 +6,7 @@ from git_dev_metrics.reports import (
     calculate_throughput,
 )
 
+
 class TestCalculateCycleTime:
     """Test cases for calculate_cycle_time function."""
 

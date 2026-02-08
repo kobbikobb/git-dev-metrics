@@ -6,6 +6,9 @@
 ## Queries
 - uv run python -m git_dev_metrics.cli kobbikobb git-dev-metrics
 
+## Formatting
+- uv run ruff format
+
 ## Testing
 - Run all tests: `uv run pytest tests/ -v`
 - Run tests with coverage: `uv run pytest tests/ --cov=git_dev_metrics --cov-report=term-missing`
