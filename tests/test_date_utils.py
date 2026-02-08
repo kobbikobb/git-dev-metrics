@@ -3,8 +3,10 @@
 from datetime import datetime, timedelta
 from git_dev_metrics.date_utils import parse_time_period
 
+
 def is_same_date(date1: datetime, date2: datetime):
     return abs((date1 - date2).total_seconds()) < 1
+
 
 class TestParseTimePeriod:
     """Test cases for parse_time_period function."""
@@ -12,7 +14,7 @@ class TestParseTimePeriod:
     def test_return_one_day_ago_for_1d_period(self):
         event_period = "1d"
         expected = datetime.now() - timedelta(days=1)
-        
+
         result = parse_time_period(event_period)
 
         is_same_date(result, expected)
@@ -48,4 +50,3 @@ class TestParseTimePeriod:
         result = parse_time_period(event_period)
 
         is_same_date(result, expected)
-
