@@ -1,28 +1,43 @@
 import typer
+import traceback
 
-from .auth import get_github_token
+from .auth.github_auth import get_github_token
 from .client import GitHubClient
 
 app = typer.Typer()
 
 
+def validate_period(period: str) -> str:
+    if not period.endswith("d") or not period[:-1].isdigit():
+        raise typer.BadParameter("Period must be like '7d', '30d', '90d'")
+    return period
+
+
 @app.command()
-def analyze(org: str, repo: str, period: str = "30d"):
+def analyze(
+    org: str = typer.Option(..., help="GitHub organization name"),
+    repo: str = typer.Option(..., help="Repository name"),
+    period: str = typer.Option("30d", callback=validate_period, help="Time period"),
+):
     """
     Analyze GitHub repository development metrics.
-
-    Args:
-        org (str): The GitHub organization name.
-        repo (str): The GitHub repository name.
-        period (str): The time period for analysis (default is "month").
     """
+    typer.secho(
+        "Configuring GitHub Auth Token...", fg=typer.colors.BRIGHT_YELLOW, bold=True
+    )
     token = get_github_token()
-    client = GitHubClient(token, org, repo)
 
-    metrics = client.get_development_metrics(period)
+    client = GitHubClient(token, org, repo)
+    typer.secho("Fetching development metrics...", fg=typer.colors.GREEN, bold=True)
+
+    try:
+        metrics = client.get_development_metrics(period)
+    except Exception as e:
+        typer.secho(f"Error fetching metrics: {e}", fg=typer.colors.RED, bold=True)
+        traceback.print_exc()  # ← Add this to see full stack trace
+        raise typer.Exit(code=1)
 
     typer.echo(f"Development Metrics for {org}/{repo} over the past {period}:")
-
     for key, value in metrics.items():
         typer.echo(f"{key}: {value}")
 

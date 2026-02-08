@@ -3,7 +3,8 @@ import time
 import webbrowser
 from typing import TypedDict
 
-from .exceptions import GitHubAuthError
+from .github_auth_cache import with_cached_token
+from ..exceptions import GitHubAuthError
 
 CLIENT_ID = "Iv23libjj9FWqHhZzWik"
 DEVICE_CODE_URL = "https://github.com/login/device/code"
@@ -64,6 +65,7 @@ def poll_for_token(device_code: str, poll_interval: int) -> str:
             raise GitHubAuthError(f"OAuth failed: {error}")
 
 
+@with_cached_token
 def get_github_token() -> str:
     """Get GitHub token using device flow."""
     device_response = request_device_code()
