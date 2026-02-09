@@ -1,8 +1,7 @@
 from datetime import datetime, timezone
-from typing import List, Dict, Any, TypedDict
+from typing import List
 import requests
-
-from .exceptions import GitHubAPIError, GitHubNotFoundError
+from .types import Repository, PullRequest, GitHubAPIError, GitHubNotFoundError
 
 GITHUB_API_URL = "https://api.github.com/user/repos"
 GITHUB_API_VERSION = "2022-11-28"
@@ -11,18 +10,6 @@ MAX_REPOS_PER_PAGE = 100
 
 GITHUB_PULLS_URL = "https://api.github.com/repos/{org}/{repo}/pulls"
 GITHUB_COMMITS_URL = "https://api.github.com/repos/{org}/{repo}/commits"
-
-
-class RepositoryPermissions(TypedDict):
-    admin: bool
-    push: bool
-    pull: bool
-
-
-class Repository(TypedDict):
-    full_name: str
-    private: bool
-    permissions: RepositoryPermissions
 
 
 def get_api_headers(token: str) -> dict:
@@ -52,7 +39,7 @@ def fetch_repositories(token: str) -> List[Repository]:
 
 def fetch_pull_requests(
     token: str, org: str, repo: str, since: datetime
-) -> List[Dict[Any, Any]]:
+) -> List[PullRequest]:
     """Fetch pull requests for a repository within a time period."""
     url = GITHUB_PULLS_URL.format(org=org, repo=repo)
     params = {
