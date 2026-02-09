@@ -17,15 +17,17 @@ class GitHubUser(TypedDict):
     login: str
 
 
-class PullRequest(TypedDict):
+class PullRequestInfo(TypedDict):
+    created_at: str
+    merged_at: str
+
+
+class PullRequest(PullRequestInfo):
     id: int
     number: int
     state: str
     title: str
     user: GitHubUser
-    created_at: str
-    merged_at: str
-    created_at: str
     closed_at: str
     additions: int
     deletions: int
