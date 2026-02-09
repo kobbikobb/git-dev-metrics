@@ -98,4 +98,4 @@ class TestCalculateThroughput:
     def test_return_count_of_prs(self):
         prs = [any_pr(id=2, number=2), any_pr(id=3, number=3)]
         result = calculate_throughput(prs)
-        assert result == 3
+        assert result == 2
