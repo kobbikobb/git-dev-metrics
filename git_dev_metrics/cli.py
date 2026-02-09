@@ -3,6 +3,7 @@ import traceback
 
 from .auth.github_auth import get_github_token
 from .client import GitHubClient
+from .printer import print_metrics
 
 app = typer.Typer()
 
@@ -34,12 +35,10 @@ def analyze(
         metrics = client.get_development_metrics(period)
     except Exception as e:
         typer.secho(f"Error fetching metrics: {e}", fg=typer.colors.RED, bold=True)
-        traceback.print_exc()  # ← Add this to see full stack trace
+        traceback.print_exc()
         raise typer.Exit(code=1)
 
-    typer.echo(f"Development Metrics for {org}/{repo} over the past {period}:")
-    for key, value in metrics.items():
-        typer.echo(f"{key}: {value}")
+    print_metrics(metrics, org, repo, period)
 
 
 if __name__ == "__main__":

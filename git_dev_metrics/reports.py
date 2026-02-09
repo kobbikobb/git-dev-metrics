@@ -1,18 +1,9 @@
 from datetime import datetime
-from typing import List, Dict, Any, TypedDict
+from typing import List, Dict, Any
+from collections import defaultdict
 from .date_utils import parse_time_period
 from .queries import fetch_pull_requests, fetch_repositories
-
-
-class PullRequest(TypedDict):
-    number: int
-    state: str
-    created_at: str
-    closed_at: str
-    merged_at: str
-    additions: int
-    deletions: int
-    changed_files: int
+from .types import PullRequest
 
 
 def calculate_cycle_time(prs: List[Dict[Any, Any]]) -> float:
@@ -43,6 +34,15 @@ def calculate_throughput(prs: List[Dict[Any, Any]]) -> int:
     return len(prs)
 
 
+def group_prs_by_devs(prs: list[PullRequest]) -> Dict[str, List[Dict[Any, Any]]]:
+    """Group PRs by developer."""
+    devs = defaultdict(list)
+    for pr in prs:
+        dev = pr["user"]["login"]
+        devs[dev].append(pr)
+    return devs
+
+
 def get_pull_request_metrics(
     token: str, org: str, repo: str, event_period: str = "30d"
 ) -> dict:
@@ -52,10 +52,21 @@ def get_pull_request_metrics(
     since = parse_time_period(event_period)
     prs = fetch_pull_requests(token, org, repo, since)
 
+    devs = group_prs_by_devs(prs)
+
+    dev_metrics = {}
+    for dev, dev_prs in devs.items():
+        dev_metrics[dev] = {
+            "cycle_time": calculate_cycle_time(dev_prs),
+            "pr_size": calculate_pr_size(dev_prs),
+            "throughput": calculate_throughput(dev_prs),
+        }
+
     return {
         "cycle_time": calculate_cycle_time(prs),
         "pr_size": calculate_pr_size(prs),
         "throughput": calculate_throughput(prs),
+        "dev_metrics": dev_metrics,
     }
 
 
