@@ -1,12 +1,12 @@
 from datetime import datetime
-from typing import List, Dict, Any
+from typing import List, Dict
 from collections import defaultdict
 from .date_utils import parse_time_period
 from .queries import fetch_pull_requests, fetch_repositories
 from .types import PullRequest
 
 
-def calculate_cycle_time(prs: List[Dict[Any, Any]]) -> float:
+def calculate_cycle_time(prs: List[PullRequest]) -> float:
     """Calculate average time from PR creation to merge (in days)."""
     if not prs:
         return 0.0
@@ -20,7 +20,7 @@ def calculate_cycle_time(prs: List[Dict[Any, Any]]) -> float:
     return round(total_hours / len(prs) / 24, 2)
 
 
-def calculate_pr_size(prs: List[Dict[Any, Any]]) -> int:
+def calculate_pr_size(prs: List[PullRequest]) -> int:
     """Calculate average PR size (lines changed)."""
     if not prs:
         return 0
@@ -29,12 +29,12 @@ def calculate_pr_size(prs: List[Dict[Any, Any]]) -> int:
     return round(total_changes / len(prs))
 
 
-def calculate_throughput(prs: List[Dict[Any, Any]]) -> int:
+def calculate_throughput(prs: List[PullRequest]) -> int:
     """Calculate number of merged PRs."""
     return len(prs)
 
 
-def group_prs_by_devs(prs: list[PullRequest]) -> Dict[str, List[Dict[Any, Any]]]:
+def group_prs_by_devs(prs: list[PullRequest]) -> Dict[str, List[PullRequest]]:
     """Group PRs by developer."""
     devs = defaultdict(list)
     for pr in prs:
