@@ -17,7 +17,7 @@ class TestParseTimePeriod:
 
         result = parse_time_period(event_period)
 
-        is_same_date(result, expected)
+        assert is_same_date(result, expected)
 
     def test_return_seven_days_ago_for_7d_period(self):
         event_period = "7d"
@@ -25,7 +25,7 @@ class TestParseTimePeriod:
 
         result = parse_time_period(event_period)
 
-        is_same_date(result, expected)
+        assert is_same_date(result, expected)
 
     def test_return_thirty_days_ago_for_30d_period(self):
         event_period = "30d"
@@ -33,7 +33,7 @@ class TestParseTimePeriod:
 
         result = parse_time_period(event_period)
 
-        is_same_date(result, expected)
+        assert is_same_date(result, expected)
 
     def test_return_ninety_days_ago_for_90d_period(self):
         event_period = "90d"
@@ -41,7 +41,7 @@ class TestParseTimePeriod:
 
         result = parse_time_period(event_period)
 
-        is_same_date(result, expected)
+        assert is_same_date(result, expected)
 
     def test_return_thirty_days_ago_for_invalid_period(self):
         event_period = "invalid"
@@ -49,4 +49,4 @@ class TestParseTimePeriod:
 
         result = parse_time_period(event_period)
 
-        is_same_date(result, expected)
+        assert is_same_date(result, expected)
