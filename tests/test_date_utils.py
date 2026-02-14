@@ -3,6 +3,7 @@
 from datetime import datetime, timedelta
 from git_dev_metrics.date_utils import parse_time_period
 
+# freezgun was considered, brings in more complexity then it's worth
 
 def is_same_date(date1: datetime, date2: datetime):
     return abs((date1 - date2).total_seconds()) < 1
