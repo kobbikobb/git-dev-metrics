@@ -6,30 +6,6 @@ Expert review of architecture, testing, CI/CD, packaging, and best practices.
 
 ## 1. Fix Silent Test Failures
 
-**File:** `tests/test_date_utils.py`
-
-All 5 date tests call `is_same_date(result, expected)` but never `assert` the return value. These tests always pass, even if the code is broken.
-
-**Fix:** Add `assert` before every `is_same_date` call:
-
-```python
-# Before (broken — always passes):
-is_same_date(result, expected)
-
-# After (actually tests something):
-assert is_same_date(result, expected)
-```
-
-Do this on lines 20, 28, 36, 44, 52.
-
-Also rename all tests to use `should` prefix per project conventions:
-```python
-# Before:
-def test_return_one_day_ago_for_1d_period(self):
-# After:
-def test_should_return_one_day_ago_for_1d_period(self):
-```
-
 And use `freezegun` (already installed!) to avoid flaky time comparisons:
 ```python
 from freezegun import freeze_time
