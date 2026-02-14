@@ -1,22 +1,5 @@
 # Repo Improvements
 
-## 4. Add HTTP Timeouts
-
-**File:** `git_dev_metrics/queries.py` lines 28-30, 53
-
-Every `requests.get()` call has no timeout. If GitHub is slow or unreachable, your CLI hangs forever.
-
-**Fix:** Add `timeout=30` to every request:
-```python
-response = requests.get(
-    GITHUB_API_URL, headers=get_api_headers(token), params=params, timeout=30
-)
-```
-
-Do this for both `fetch_repositories` (line 28) and `fetch_pull_requests` (line 53).
-
----
-
 ## 5. Add Pagination
 
 **File:** `git_dev_metrics/queries.py` line 51
