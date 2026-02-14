@@ -1,107 +1,67 @@
 from datetime import datetime, timezone
 from typing import List
-import requests
+from github import Github, GithubException
 from .types import Repository, PullRequest, GitHubAPIError, GitHubNotFoundError
-from .graphql_client import GitHubGraphQL
-
-GITHUB_API_URL = "https://api.github.com/user/repos"
-GITHUB_API_VERSION = "2022-11-28"
-
-MAX_REPOS_PER_PAGE = 100
-
-PULL_REQUESTS_QUERY = """
-query($owner: String!, $name: String!, $since: DateTime!) {
-  repository(owner: $owner, name: $name) {
-    pullRequests(states: MERGED, first: 100, orderBy: {field: MERGED_AT, direction: DESC}) {
-      nodes {
-        id
-        number
-        title
-        state
-        createdAt
-        mergedAt
-        closedAt
-        additions
-        deletions
-        changedFiles
-        author {
-          login
-        }
-      }
-    }
-  }
-}
-"""
-
-
-def get_api_headers(token: str) -> dict:
-    return {
-        "Authorization": f"Bearer {token}",
-        "Accept": "application/vnd.github+json",
-        "X-GitHub-Api-Version": GITHUB_API_VERSION,
-    }
 
 
 def fetch_repositories(token: str) -> List[Repository]:
-    params = {"visibility": "all", "sort": "updated", "per_page": MAX_REPOS_PER_PAGE}
-
-    response = requests.get(
-        GITHUB_API_URL, headers=get_api_headers(token), params=params
-    )
-
-    if response.status_code == 401:
-        raise GitHubAPIError("Unauthorized. Your token might be expired.")
-
-    response.raise_for_status()
-
-    return response.json()
+    """Fetch all repositories accessible with the given token."""
+    try:
+        g = Github(token)
+        user = g.get_user()
+        repos = user.get_repos(sort="updated", direction="desc")
+        
+        return [
+            {
+                "full_name": repo.full_name,
+                "private": repo.private,
+                "updated_at": repo.updated_at.isoformat() if repo.updated_at else None,
+            }
+            for repo in repos
+        ]
+    except GithubException as e:
+        if e.status == 401:
+            raise GitHubAPIError("Unauthorized. Your token might be expired.")
+        raise GitHubAPIError(f"GitHub API error: {e.data.get('message', str(e))}")
 
 
 def fetch_pull_requests(
     token: str, org: str, repo: str, since: datetime
 ) -> List[PullRequest]:
-    if since.tzinfo is None:
-        since = since.replace(tzinfo=timezone.utc)
-
-    client = GitHubGraphQL(token)
-
+    """Fetch merged pull requests since a given date."""
+    since = since.replace(tzinfo=timezone.utc) if since.tzinfo is None else since
+    
     try:
-        data = client.execute(
-            PULL_REQUESTS_QUERY,
-            {"owner": org, "name": repo, "since": since.isoformat()},
-        )
-    except Exception as e:
-        if "Not Found" in str(e):
+        g = Github(token)
+        repository = g.get_repo(f"{org}/{repo}")
+        
+        # Get closed PRs (which includes merged ones)
+        pulls = repository.get_pulls(state='closed', sort='updated', direction='desc')
+        
+        result = []
+        for pr in pulls:
+            # Only include merged PRs
+            if not pr.merged_at:
+                continue
+            
+            # Stop fetching if we've gone past our date range
+            if pr.merged_at < since:
+                break
+            
+            result.append({
+                "number": pr.number,
+                "title": pr.title,
+                "created_at": pr.created_at.isoformat() if pr.created_at else None,
+                "merged_at": pr.merged_at.isoformat() if pr.merged_at else None,
+                "additions": pr.additions,
+                "deletions": pr.deletions,
+                "changed_files": pr.changed_files,
+                "user": {"login": pr.user.login if pr.user else "unknown"},
+            })
+        
+        return result
+        
+    except GithubException as e:
+        if e.status == 404:
             raise GitHubNotFoundError(f"Repository {org}/{repo} not found")
-        raise
-
-    repository = data.get("data", {}).get("repository")
-    if not repository:
-        raise GitHubNotFoundError(f"Repository {org}/{repo} not found")
-
-    prs = repository.get("pullRequests", {}).get("nodes", [])
-
-    filtered_prs = []
-    since_dt = since
-    for pr in prs:
-        merged_at = pr.get("mergedAt")
-        if merged_at:
-            merged_date = datetime.fromisoformat(merged_at.replace("Z", "+00:00"))
-            if merged_date >= since_dt:
-                filtered_prs.append(
-                    {
-                        "id": pr.get("id"),
-                        "number": pr.get("number"),
-                        "title": pr.get("title"),
-                        "state": pr.get("state"),
-                        "created_at": pr.get("createdAt"),
-                        "merged_at": pr.get("mergedAt"),
-                        "closed_at": pr.get("closedAt"),
-                        "additions": pr.get("additions", 0),
-                        "deletions": pr.get("deletions", 0),
-                        "changed_files": pr.get("changedFiles", 0),
-                        "user": {"login": pr.get("author", {}).get("login", "unknown")},
-                    }
-                )
-
-    return filtered_prs
+        raise GitHubAPIError(f"GitHub API error: {e.data.get('message', str(e))}")

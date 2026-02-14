@@ -1,5 +1,4 @@
-from datetime import datetime, timedelta
-
+from datetime import datetime, timedelta, timezone
 
 def parse_time_period(event_period: str) -> datetime:
     """Parse time period string and return the start date."""
@@ -8,7 +7,7 @@ def parse_time_period(event_period: str) -> datetime:
         "7d": timedelta(days=7),
         "30d": timedelta(days=30),
         "90d": timedelta(days=90),
+        "all": timedelta(days=365*20),  # Last 20 years for testing
     }
-
     delta = period_map.get(event_period, timedelta(days=30))
-    return datetime.now() - delta
+    return datetime.now(timezone.utc) - delta
