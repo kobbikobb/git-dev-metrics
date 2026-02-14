@@ -1,21 +1,5 @@
 # Repo Improvements
 
-## 3. Fix Python Version Mismatch in CI
-
-**File:** `.github/workflows/ci.yml` lines 18, 42
-
-CI installs Python 3.12 but your `pyproject.toml` requires `>=3.14`. This means CI might pass while users on 3.14 hit issues (or vice versa).
-
-**Fix:** Change both occurrences:
-```yaml
-# Before:
-run: uv python install 3.12
-# After:
-run: uv python install 3.14
-```
-
----
-
 ## 4. Add HTTP Timeouts
 
 **File:** `git_dev_metrics/queries.py` lines 28-30, 53
