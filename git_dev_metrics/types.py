@@ -23,7 +23,7 @@ class PullRequestInfo(TypedDict):
 
 
 class PullRequest(PullRequestInfo):
-    id: int
+    id: str
     number: int
     state: str
     title: str

@@ -2,18 +2,39 @@ from datetime import datetime, timezone
 from typing import List
 import requests
 from .types import Repository, PullRequest, GitHubAPIError, GitHubNotFoundError
+from .graphql_client import GitHubGraphQL
 
 GITHUB_API_URL = "https://api.github.com/user/repos"
 GITHUB_API_VERSION = "2022-11-28"
 
 MAX_REPOS_PER_PAGE = 100
 
-GITHUB_PULLS_URL = "https://api.github.com/repos/{org}/{repo}/pulls"
-GITHUB_COMMITS_URL = "https://api.github.com/repos/{org}/{repo}/commits"
+PULL_REQUESTS_QUERY = """
+query($owner: String!, $name: String!, $since: DateTime!) {
+  repository(owner: $owner, name: $name) {
+    pullRequests(states: MERGED, first: 100, orderBy: {field: MERGED_AT, direction: DESC}) {
+      nodes {
+        id
+        number
+        title
+        state
+        createdAt
+        mergedAt
+        closedAt
+        additions
+        deletions
+        changedFiles
+        author {
+          login
+        }
+      }
+    }
+  }
+}
+"""
 
 
 def get_api_headers(token: str) -> dict:
-    """Build GitHub API request headers."""
     return {
         "Authorization": f"Bearer {token}",
         "Accept": "application/vnd.github+json",
@@ -22,7 +43,6 @@ def get_api_headers(token: str) -> dict:
 
 
 def fetch_repositories(token: str) -> List[Repository]:
-    """Fetch all repositories for the authenticated user."""
     params = {"visibility": "all", "sort": "updated", "per_page": MAX_REPOS_PER_PAGE}
 
     response = requests.get(
@@ -40,33 +60,48 @@ def fetch_repositories(token: str) -> List[Repository]:
 def fetch_pull_requests(
     token: str, org: str, repo: str, since: datetime
 ) -> List[PullRequest]:
-    """Fetch pull requests for a repository within a time period."""
-    url = GITHUB_PULLS_URL.format(org=org, repo=repo)
-    params = {
-        "state": "closed",
-        "sort": "updated",
-        "direction": "desc",
-        "per_page": 100,
-    }
-    # TODO: Handle pagination if more than 100 PRs are needed
+    if since.tzinfo is None:
+        since = since.replace(tzinfo=timezone.utc)
 
-    response = requests.get(url, headers=get_api_headers(token), params=params)
+    client = GitHubGraphQL(token)
 
-    if response.status_code == 404:
+    try:
+        data = client.execute(
+            PULL_REQUESTS_QUERY,
+            {"owner": org, "name": repo, "since": since.isoformat()},
+        )
+    except Exception as e:
+        if "Not Found" in str(e):
+            raise GitHubNotFoundError(f"Repository {org}/{repo} not found")
+        raise
+
+    repository = data.get("data", {}).get("repository")
+    if not repository:
         raise GitHubNotFoundError(f"Repository {org}/{repo} not found")
 
-    response.raise_for_status()
-    prs = response.json()
-    # Ensure since is timezone-aware for comparison
-    if since.tzinfo is None:
-        since = since.replace(tzinfo=timezone.utc)  # ← Add this line
+    prs = repository.get("pullRequests", {}).get("nodes", [])
 
-    # TODO: Can we filter the PRs in the query?
     filtered_prs = []
+    since_dt = since
     for pr in prs:
-        if pr.get("merged_at"):
-            merged_date = datetime.fromisoformat(pr["merged_at"].replace("Z", "+00:00"))
-            if merged_date >= since:
-                filtered_prs.append(pr)
+        merged_at = pr.get("mergedAt")
+        if merged_at:
+            merged_date = datetime.fromisoformat(merged_at.replace("Z", "+00:00"))
+            if merged_date >= since_dt:
+                filtered_prs.append(
+                    {
+                        "id": pr.get("id"),
+                        "number": pr.get("number"),
+                        "title": pr.get("title"),
+                        "state": pr.get("state"),
+                        "created_at": pr.get("createdAt"),
+                        "merged_at": pr.get("mergedAt"),
+                        "closed_at": pr.get("closedAt"),
+                        "additions": pr.get("additions", 0),
+                        "deletions": pr.get("deletions", 0),
+                        "changed_files": pr.get("changedFiles", 0),
+                        "user": {"login": pr.get("author", {}).get("login", "unknown")},
+                    }
+                )
 
     return filtered_prs

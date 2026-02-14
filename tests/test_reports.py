@@ -13,7 +13,7 @@ from typing import Any
 def any_pr(**overrides: Any) -> PullRequest:
     """Create a PullRequest with sensible defaults for testing."""
     defaults: PullRequest = {
-        "id": 1,
+        "id": "1",
         "number": 1,
         "state": "merged",
         "title": "Test PR",
@@ -96,6 +96,6 @@ class TestCalculateThroughput:
         assert result == 0
 
     def test_return_count_of_prs(self):
-        prs = [any_pr(id=2, number=2), any_pr(id=3, number=3)]
+        prs = [any_pr(id="2", number=2), any_pr(id="3", number=3)]
         result = calculate_throughput(prs)
         assert result == 2
