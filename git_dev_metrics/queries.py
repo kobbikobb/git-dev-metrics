@@ -26,7 +26,7 @@ def fetch_repositories(token: str) -> List[Repository]:
     params = {"visibility": "all", "sort": "updated", "per_page": MAX_REPOS_PER_PAGE}
 
     response = requests.get(
-        GITHUB_API_URL, headers=get_api_headers(token), params=params
+        GITHUB_API_URL, headers=get_api_headers(token), params=params, timeout=30
     )
 
     if response.status_code == 401:
@@ -50,7 +50,7 @@ def fetch_pull_requests(
     }
     # TODO: Handle pagination if more than 100 PRs are needed
 
-    response = requests.get(url, headers=get_api_headers(token), params=params)
+    response = requests.get(url, headers=get_api_headers(token), params=params, timeout=30)
 
     if response.status_code == 404:
         raise GitHubNotFoundError(f"Repository {org}/{repo} not found")
