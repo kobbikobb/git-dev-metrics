@@ -1,7 +1,8 @@
 import traceback
 
-from git_dev_metrics.type_definitions import GitHubError
 import typer
+
+from git_dev_metrics.type_definitions import GitHubError
 
 from .auth.github_auth import get_github_token
 from .client import GitHubClient
