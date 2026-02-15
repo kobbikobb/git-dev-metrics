@@ -1,43 +1,5 @@
 # Repo Improvements
 
-### b) Test CLI with Typer's test runner
-
-```python
-from typer.testing import CliRunner
-from git_dev_metrics.cli import app
-
-runner = CliRunner()
-
-class TestCLI:
-    def test_should_show_help(self):
-        result = runner.invoke(app, ["--help"])
-        assert result.exit_code == 0
-
-    def test_should_reject_invalid_period(self):
-        result = runner.invoke(app, ["analyze", "--org", "x", "--repo", "y", "--period", "abc"])
-        assert result.exit_code != 0
-```
-
-### c) Move `any_pr` factory to `conftest.py`
-
-Create `tests/conftest.py` and move the `any_pr()` helper there so all test files can reuse it:
-
-```python
-# tests/conftest.py
-import pytest
-from git_dev_metrics.types import PullRequest
-
-def any_pr(**overrides) -> PullRequest:
-    defaults = { ... }  # copy from test_reports.py
-    return {**defaults, **overrides}
-
-@pytest.fixture
-def pr_factory():
-    return any_pr
-```
-
----
-
 ## 8. Add CLI Entry Point
 
 **File:** `pyproject.toml`

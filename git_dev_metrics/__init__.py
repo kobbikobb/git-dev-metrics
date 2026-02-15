@@ -3,7 +3,7 @@
 __version__ = "0.1.0"
 
 from .client import GitHubClient
-from .types import (
+from .type_definitions import (
     GitHubAPIError,
     GitHubAuthError,
     GitHubError,
