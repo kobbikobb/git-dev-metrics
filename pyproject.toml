@@ -54,6 +54,10 @@ select = [
     "SIM",  # flake8-simplify
 ]
 
+[tool.pyright]
+typeCheckingMode = "standard"
+pythonVersion = "3.14"
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-v --strict-markers"
