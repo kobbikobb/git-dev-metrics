@@ -4,7 +4,7 @@
 - uv sync
 
 ## Queries
-- uv run python -m git_dev_metrics.cli kobbikobb git-dev-metrics
+- uv run app --help
 
 ## Formatting
 - uv run ruff format

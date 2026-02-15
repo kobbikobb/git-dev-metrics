@@ -1,8 +1,10 @@
 [project]
 name = "git-dev-metrics"
 version = "0.1.0"
-description = "Add your description here"
+description = "CLI tool for analyzing GitHub development metrics"
 readme = "README.md"
+license = {text = "MIT"}
+authors = [{name = "Jakob Jonasson"}]
 requires-python = ">=3.14"
 dependencies = [
     "keyring>=25.7.0",
@@ -12,6 +14,12 @@ dependencies = [
     "rich>=14.3.1",
     "typer>=0.21.1",
 ]
+
+[project.scripts]
+app = "git_dev_metrics.cli:main"
+
+[project.urls]
+Repository = "https://github.com/kobbikobb/git-dev-metrics"
 
 [tool.basedpyright]
 venvPath = "."
@@ -30,5 +38,3 @@ dev = [
 [tool.uv]
 package = true
 
-[project.scripts]
-app = "git_dev_metrics.cli:main"
