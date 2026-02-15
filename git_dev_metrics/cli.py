@@ -1,5 +1,6 @@
 import traceback
 
+from git_dev_metrics.type_definitions import GitHubError
 import typer
 
 from .auth.github_auth import get_github_token
@@ -32,7 +33,7 @@ def analyze(
 
     try:
         metrics = client.get_development_metrics(period)
-    except Exception as e:
+    except GitHubError as e:
         typer.secho(f"Error fetching metrics: {e}", fg=typer.colors.RED, bold=True)
         traceback.print_exc()
         raise typer.Exit(code=1) from e
