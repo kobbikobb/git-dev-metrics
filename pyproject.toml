@@ -53,3 +53,13 @@ select = [
     "UP",   # pyupgrade (modernize syntax)
     "SIM",  # flake8-simplify
 ]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-v --strict-markers"
+
+[tool.coverage.run]
+source = ["git_dev_metrics"]
+
+[tool.coverage.report]
+fail_under = 60
