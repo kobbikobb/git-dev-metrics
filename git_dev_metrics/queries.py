@@ -55,7 +55,7 @@ def fetch_repositories(token: str) -> list[Repository]:
 
 def fetch_pull_requests(token: str, org: str, repo: str, since: datetime) -> list[PullRequest]:
     """Fetch pull requests for a repository within a time period."""
-    # Even if filtering is not supported, we can sort by updated date 
+    # Even if filtering is not supported, we can sort by updated date
     # and stop once we reach PRs older than 'since'
     url = GITHUB_PULLS_URL.format(org=org, repo=repo)
     params = {
