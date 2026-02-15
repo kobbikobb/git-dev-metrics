@@ -1,20 +1,5 @@
 # Repo Improvements
 
-## 8. Add CLI Entry Point
-
-**File:** `pyproject.toml`
-
-Right now users must run `uv run python -m git_dev_metrics.cli`. Add a proper entry point:
-
-```toml
-[project.scripts]
-git-dev-metrics = "git_dev_metrics.cli:app"
-```
-
-After `uv sync`, users can just run: `git-dev-metrics analyze ...`
-
----
-
 ## 9. Complete Project Metadata
 
 **File:** `pyproject.toml`
