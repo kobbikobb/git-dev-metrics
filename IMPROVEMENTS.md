@@ -1,18 +1,6 @@
 # Repo Improvements
 
 
-## 12. Consolidate Pyright Config
-
-Delete `pyrightconfig.json` — it duplicates what's already in `pyproject.toml`. Update the pyproject.toml section:
-
-```toml
-[tool.pyright]
-typeCheckingMode = "standard"
-pythonVersion = "3.14"
-```
-
----
-
 ## 13. Add Security Scanning to CI
 
 **File:** `.github/workflows/ci.yml`
