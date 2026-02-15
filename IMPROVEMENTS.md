@@ -1,6 +1,6 @@
 # Repo Improvements
 
-## Fix date tests
+## 5. Slow querying all PRs
 
 ## 6. Add Rate Limit Handling
 
