@@ -3,8 +3,8 @@ from datetime import UTC, datetime
 import responses
 from pytest import raises
 
-from git_dev_metrics.queries import fetch_pull_requests, fetch_repositories
-from git_dev_metrics.type_definitions import GitHubAPIError
+from git_dev_metrics.github import fetch_pull_requests, fetch_repositories, GitHubAPIError
+
 
 from .conftest import any_pr
 

@@ -4,8 +4,8 @@ from typing import TypedDict
 
 import requests
 
-from ..type_definitions import GitHubAuthError
-from .github_auth_cache import with_cached_token
+from .auth_cache import with_cached_token
+from .exceptions import GitHubAuthError
 
 CLIENT_ID = "Iv23libjj9FWqHhZzWik"
 DEVICE_CODE_URL = "https://github.com/login/device/code"
@@ -26,7 +26,7 @@ class TokenResponse(TypedDict, total=False):
     error_description: str
 
 
-def request_device_code() -> DeviceCodeResponse:
+def _request_device_code() -> DeviceCodeResponse:
     """Request device code and verification URL from GitHub."""
     return requests.post(
         DEVICE_CODE_URL,
@@ -35,13 +35,13 @@ def request_device_code() -> DeviceCodeResponse:
     ).json()
 
 
-def prompt_user(verification_uri: str, user_code: str) -> None:
+def _prompt_user(verification_uri: str, user_code: str) -> None:
     """Display code and open browser for user authorization."""
     print(f"Go to {verification_uri} and enter: {user_code}")
     webbrowser.open(verification_uri)
 
 
-def poll_for_token(device_code: str, poll_interval: int) -> str:
+def _poll_for_token(device_code: str, poll_interval: int) -> str:
     """Poll GitHub until token is granted."""
     while True:
         time.sleep(poll_interval)
@@ -69,7 +69,7 @@ def poll_for_token(device_code: str, poll_interval: int) -> str:
 @with_cached_token
 def get_github_token() -> str:
     """Get GitHub token using device flow."""
-    device_response = request_device_code()
-    prompt_user(device_response["verification_uri"], device_response["user_code"])
+    device_response = _request_device_code()
+    _prompt_user(device_response["verification_uri"], device_response["user_code"])
 
-    return poll_for_token(device_response["device_code"], device_response.get("interval", 5))
+    return _poll_for_token(device_response["device_code"], device_response.get("interval", 5))

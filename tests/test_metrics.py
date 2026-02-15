@@ -1,6 +1,6 @@
 """Unit tests for reports.py functions."""
 
-from git_dev_metrics.reports import (
+from git_dev_metrics.metrics import (
     calculate_cycle_time,
     calculate_pr_size,
     calculate_throughput,

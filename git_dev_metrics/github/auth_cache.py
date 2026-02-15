@@ -7,12 +7,12 @@ SERVICE_NAME = "github-dev-metrics"
 TOKEN_KEY = "github_token"
 
 
-def save_token(token: str) -> None:
+def _save_token(token: str) -> None:
     """Save token to system keyring."""
     keyring.set_password(SERVICE_NAME, TOKEN_KEY, token)
 
 
-def find_token() -> str | None:
+def _find_token() -> str | None:
     """Load token from system keyring."""
     try:
         return keyring.get_password(SERVICE_NAME, TOKEN_KEY)
@@ -20,7 +20,7 @@ def find_token() -> str | None:
         return None
 
 
-def is_token_valid(token: str) -> bool:
+def _is_token_valid(token: str) -> bool:
     """Check if the token is valid by making a test API call."""
     response = requests.get(
         "https://api.github.com/user",
@@ -34,13 +34,13 @@ def with_cached_token(func):
 
     @wraps(func)
     def wrapper(*args, **kwargs):
-        cached_token = find_token()
-        if cached_token and is_token_valid(cached_token):
+        cached_token = _find_token()
+        if cached_token and _is_token_valid(cached_token):
             return cached_token
 
         token = func(*args, **kwargs)
 
-        save_token(token)
+        _save_token(token)
         return token
 
     return wrapper

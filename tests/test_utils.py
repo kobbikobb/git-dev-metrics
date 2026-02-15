@@ -2,7 +2,7 @@
 
 from datetime import UTC, datetime, timedelta
 
-from git_dev_metrics.date_utils import parse_time_period
+from git_dev_metrics.utils import parse_time_period
 
 # freezgun was considered, brings in more complexity then it's worth
 

@@ -2,12 +2,14 @@ from datetime import datetime
 
 import requests
 
-from .type_definitions import (
+from ..models import (
+    PullRequest,
+    Repository,
+)
+from .exceptions import (
     GitHubAPIError,
     GitHubNotFoundError,
     GitHubRateLimitError,
-    PullRequest,
-    Repository,
 )
 
 GITHUB_API_URL = "https://api.github.com/user/repos"
