@@ -31,13 +31,11 @@ class TestCLI:
         mock_print.assert_called_once()
 
     def test_should_accept_valid_period(self, mocker):
-        mocker.patch(
-            "git_dev_metrics.cli.get_github_token", return_value="fake-token"
-        )
+        mocker.patch("git_dev_metrics.cli.get_github_token", return_value="fake-token")
         mock_client = mocker.patch("git_dev_metrics.cli.GitHubClient")
         mock_client.return_value.get_development_metrics.return_value = {"commits": 10, "prs": 5}
         mocker.patch("git_dev_metrics.cli.print_metrics")
-        
+
         result = runner.invoke(app, ["--org", "facebook", "--repo", "react", "--period", "7d"])
 
         mock_client.return_value.get_development_metrics.assert_called_once_with("7d")
