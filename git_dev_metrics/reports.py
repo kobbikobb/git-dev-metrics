@@ -1,12 +1,12 @@
-from datetime import datetime
-from typing import List, Dict
 from collections import defaultdict
+from datetime import datetime
+
 from .date_utils import parse_time_period
 from .queries import fetch_pull_requests, fetch_repositories
 from .type_definitions import PullRequest
 
 
-def calculate_cycle_time(prs: List[PullRequest]) -> float:
+def calculate_cycle_time(prs: list[PullRequest]) -> float:
     """Calculate average time from PR creation to merge (in days)."""
     if not prs:
         return 0.0
@@ -20,7 +20,7 @@ def calculate_cycle_time(prs: List[PullRequest]) -> float:
     return round(total_hours / len(prs) / 24, 2)
 
 
-def calculate_pr_size(prs: List[PullRequest]) -> int:
+def calculate_pr_size(prs: list[PullRequest]) -> int:
     """Calculate average PR size (lines changed)."""
     if not prs:
         return 0
@@ -29,12 +29,12 @@ def calculate_pr_size(prs: List[PullRequest]) -> int:
     return round(total_changes / len(prs))
 
 
-def calculate_throughput(prs: List[PullRequest]) -> int:
+def calculate_throughput(prs: list[PullRequest]) -> int:
     """Calculate number of merged PRs."""
     return len(prs)
 
 
-def group_prs_by_devs(prs: list[PullRequest]) -> Dict[str, List[PullRequest]]:
+def group_prs_by_devs(prs: list[PullRequest]) -> dict[str, list[PullRequest]]:
     """Group PRs by developer."""
     devs = defaultdict(list)
     for pr in prs:
@@ -43,9 +43,7 @@ def group_prs_by_devs(prs: list[PullRequest]) -> Dict[str, List[PullRequest]]:
     return devs
 
 
-def get_pull_request_metrics(
-    token: str, org: str, repo: str, event_period: str = "30d"
-) -> dict:
+def get_pull_request_metrics(token: str, org: str, repo: str, event_period: str = "30d") -> dict:
     """
     Get development metrics for a repository over a specified time period.
     """
@@ -74,6 +72,4 @@ def get_all_repositories(token: str) -> dict:
     """List all repositories accessible with the given GitHub token."""
     repos = fetch_repositories(token)
 
-    return {
-        repo["full_name"]: "Private" if repo["private"] else "Public" for repo in repos
-    }
+    return {repo["full_name"]: "Private" if repo["private"] else "Public" for repo in repos}

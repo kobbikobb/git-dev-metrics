@@ -1,9 +1,12 @@
+from datetime import UTC, datetime
+
 import responses
-from git_dev_metrics.queries import fetch_repositories, fetch_pull_requests
-from git_dev_metrics.type_definitions import GitHubAPIError
-from .conftest import any_pr
 from pytest import raises
-from datetime import datetime, timezone
+
+from git_dev_metrics.queries import fetch_pull_requests, fetch_repositories
+from git_dev_metrics.type_definitions import GitHubAPIError
+
+from .conftest import any_pr
 
 
 class TestFetchRepositories:
@@ -37,7 +40,7 @@ class TestFetchRepositories:
             json=[pr],
             status=200,
         )
-        since = datetime(2024, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
+        since = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
 
         result = fetch_pull_requests("fake-token", "facebook", "react", since)
 
@@ -45,7 +48,7 @@ class TestFetchRepositories:
 
     @responses.activate
     def test_should_not_return_pr_merged_before(self):
-        pr = any_pr(merged_at="2024-02-01T00:00:00Z") 
+        pr = any_pr(merged_at="2024-02-01T00:00:00Z")
 
         responses.add(
             responses.GET,
@@ -53,7 +56,7 @@ class TestFetchRepositories:
             json=[pr],
             status=200,
         )
-        since = datetime(2024, 3, 1, 0, 0, 0, tzinfo=timezone.utc)
+        since = datetime(2024, 3, 1, 0, 0, 0, tzinfo=UTC)
 
         result = fetch_pull_requests("fake-token", "facebook", "react", since)
 

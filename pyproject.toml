@@ -21,11 +21,6 @@ app = "git_dev_metrics.cli:main"
 [project.urls]
 Repository = "https://github.com/kobbikobb/git-dev-metrics"
 
-[tool.basedpyright]
-venvPath = "."
-venv = ".venv"
-typeCheckingMode = "standard"
-
 [dependency-groups]
 dev = [
     "pyright>=1.1.408",
@@ -35,6 +30,26 @@ dev = [
     "ruff>=0.15.0",
 ]
 
+[tool.basedpyright]
+venvPath = "."
+venv = ".venv"
+typeCheckingMode = "standard"
+
+
 [tool.uv]
 package = true
 
+
+[tool.ruff]
+line-length = 100
+target-version = "py314"
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle errors
+    "F",    # pyflakes
+    "I",    # isort (import sorting)
+    "B",    # flake8-bugbear (common bugs)
+    "UP",   # pyupgrade (modernize syntax)
+    "SIM",  # flake8-simplify
+]

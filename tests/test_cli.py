@@ -1,7 +1,9 @@
 from typer.testing import CliRunner
+
 from git_dev_metrics.cli import app
 
 runner = CliRunner()
+
 
 class TestCLI:
     def test_should_show_help(self):
@@ -13,10 +15,12 @@ class TestCLI:
         assert result.exit_code != 0
 
     def test_should_run_without_period(self, mocker):
-        mock_get_token = mocker.patch('git_dev_metrics.cli.get_github_token', return_value="fake-token")
-        mock_client = mocker.patch('git_dev_metrics.cli.GitHubClient')
+        mock_get_token = mocker.patch(
+            "git_dev_metrics.cli.get_github_token", return_value="fake-token"
+        )
+        mock_client = mocker.patch("git_dev_metrics.cli.GitHubClient")
         mock_client.return_value.get_development_metrics.return_value = {"commits": 10, "prs": 5}
-        mock_print = mocker.patch('git_dev_metrics.cli.print_metrics')
+        mock_print = mocker.patch("git_dev_metrics.cli.print_metrics")
 
         result = runner.invoke(app, ["--org", "facebook", "--repo", "react"])
 
@@ -27,10 +31,11 @@ class TestCLI:
         mock_print.assert_called_once()
 
     def test_should_accept_valid_period(self, mocker):
-        mock_get_token = mocker.patch('git_dev_metrics.cli.get_github_token', return_value="fake-token")
-        mock_client = mocker.patch('git_dev_metrics.cli.GitHubClient')
+        mocker.patch(
+            "git_dev_metrics.cli.get_github_token", return_value="fake-token"
+        )
+        mock_client = mocker.patch("git_dev_metrics.cli.GitHubClient")
         mock_client.return_value.get_development_metrics.return_value = {"commits": 10, "prs": 5}
-        mock_print = mocker.patch('git_dev_metrics.cli.print_metrics')
 
         result = runner.invoke(app, ["--org", "facebook", "--repo", "react", "--period", "7d"])
 
@@ -38,10 +43,10 @@ class TestCLI:
         mock_client.return_value.get_development_metrics.assert_called_once_with("7d")
 
     def test_should_handle_client_error(self, mocker):
-        mocker.patch('git_dev_metrics.cli.get_github_token', return_value="fake-token")
-        mock_client = mocker.patch('git_dev_metrics.cli.GitHubClient')
+        mocker.patch("git_dev_metrics.cli.get_github_token", return_value="fake-token")
+        mock_client = mocker.patch("git_dev_metrics.cli.GitHubClient")
         mock_client.return_value.get_development_metrics.side_effect = Exception("API Error")
-        mocker.patch('git_dev_metrics.cli.print_metrics')
+        mocker.patch("git_dev_metrics.cli.print_metrics")
 
         result = runner.invoke(app, ["--org", "facebook", "--repo", "react"])
 

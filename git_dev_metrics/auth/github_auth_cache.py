@@ -1,7 +1,7 @@
+from functools import wraps
+
 import keyring
 import requests
-from typing import Optional
-from functools import wraps
 
 SERVICE_NAME = "github-dev-metrics"
 TOKEN_KEY = "github_token"
@@ -12,7 +12,7 @@ def save_token(token: str) -> None:
     keyring.set_password(SERVICE_NAME, TOKEN_KEY, token)
 
 
-def find_token() -> Optional[str]:
+def find_token() -> str | None:
     """Load token from system keyring."""
     try:
         return keyring.get_password(SERVICE_NAME, TOKEN_KEY)

@@ -9,7 +9,6 @@ from git_dev_metrics.reports import (
 from .conftest import any_pr
 
 
-
 class TestCalculateCycleTime:
     """Test cases for calculate_cycle_time function."""
 
@@ -19,9 +18,7 @@ class TestCalculateCycleTime:
         assert result == 0.0
 
     def test_should_return_correct_cycle_time_for_single_pr(self):
-        prs = [
-            any_pr(created_at="2024-01-01T00:00:00Z", merged_at="2024-01-02T00:00:00Z")
-        ]
+        prs = [any_pr(created_at="2024-01-01T00:00:00Z", merged_at="2024-01-02T00:00:00Z")]
 
         result = calculate_cycle_time(prs)
 

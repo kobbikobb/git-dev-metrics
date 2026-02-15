@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 
 def parse_time_period(event_period: str) -> datetime:
@@ -12,4 +12,4 @@ def parse_time_period(event_period: str) -> datetime:
 
     delta = period_map.get(event_period, timedelta(days=30))
 
-    return datetime.now(timezone.utc) - delta
+    return datetime.now(UTC) - delta

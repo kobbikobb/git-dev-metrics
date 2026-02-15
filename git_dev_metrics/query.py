@@ -1,5 +1,7 @@
-from datetime import datetime, timezone, timedelta
-from github import Github, Auth
+from datetime import UTC, datetime, timedelta
+
+from github import Auth, Github
+
 from .auth.github_auth import get_github_token
 
 if __name__ == "__main__":
@@ -8,7 +10,7 @@ if __name__ == "__main__":
     org = "facebook"
     repo = "react"
 
-    since = datetime.now(timezone.utc) - timedelta(days=30)  # Last 30 days
+    since = datetime.now(UTC) - timedelta(days=30)  # Last 30 days
 
     auth = Auth.Token(token)
     g = Github(auth=auth)
@@ -24,9 +26,7 @@ if __name__ == "__main__":
             "number": issue.number,
             "title": issue.title,
             "created_at": issue.created_at.isoformat() if issue.created_at else None,
-            "merged_at": issue.pull_request.merged_at.isoformat()
-            if issue.pull_request
-            else None,
+            "merged_at": issue.pull_request.merged_at.isoformat() if issue.pull_request else None,
             "user": {"login": issue.user.login if issue.user else "unknown"},
         }
         result.append(pr_data)

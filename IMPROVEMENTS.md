@@ -1,26 +1,5 @@
 # Repo Improvements
 
-## 9. Complete Project Metadata
-
-**File:** `pyproject.toml`
-
-Replace the placeholder description and add standard metadata:
-
-```toml
-[project]
-name = "git-dev-metrics"
-version = "0.1.0"
-description = "CLI tool for analyzing GitHub development metrics"
-readme = "README.md"
-license = {text = "MIT"}
-authors = [{name = "Jakob Jonasson"}]
-
-[project.urls]
-Repository = "https://github.com/kobbikobb/git-dev-metrics"
-```
-
----
-
 ## 10. Add Ruff Configuration
 
 **File:** `pyproject.toml`
