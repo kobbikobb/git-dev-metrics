@@ -1,48 +1,5 @@
 # Repo Improvements
 
-## 10. Add Ruff Configuration
-
-**File:** `pyproject.toml`
-
-You're using ruff with zero configuration. Add rules to catch real bugs:
-
-```toml
-[tool.ruff]
-line-length = 100
-target-version = "py314"
-
-[tool.ruff.lint]
-select = [
-    "E",    # pycodestyle errors
-    "F",    # pyflakes
-    "I",    # isort (import sorting)
-    "B",    # flake8-bugbear (common bugs)
-    "UP",   # pyupgrade (modernize syntax)
-    "SIM",  # flake8-simplify
-]
-```
-
----
-
-## 11. Add Pytest & Coverage Config
-
-**File:** `pyproject.toml`
-
-```toml
-[tool.pytest.ini_options]
-testpaths = ["tests"]
-addopts = "-v --strict-markers"
-
-[tool.coverage.run]
-source = ["git_dev_metrics"]
-
-[tool.coverage.report]
-fail_under = 60
-```
-
-The `fail_under` will make CI fail if coverage drops below 60%. Raise it as you add tests.
-
----
 
 ## 12. Consolidate Pyright Config
 
