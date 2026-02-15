@@ -2,20 +2,29 @@
 
 ## Getting started
 - uv sync
-
-## Queries
 - uv run app --help
 
-## Formatting
+## Linting and Formatting  
 - uv run ruff format
+- uv run ruff check
 
-## Testing
-- Run all tests: `uv run pytest tests/ -v`
-- Run tests with coverage: `uv run pytest tests/ --cov=git_dev_metrics --cov-report=term-missing`
-- Run specific test file: `uv run pytest tests/test_reports.py -v`
-- Run specific test: `uv run pytest tests/test_reports.py::TestCalculateCycleTime::test_should_return_zero_when_no_prs_provided -v`
+## Integration Tests (GitHub API)
 
-### Test Structure
-- `tests/test_reports.py` - Tests for metrics calculation functions
-- `tests/test_exceptions.py` - Tests for custom exception classes
-- `tests/conftest.py` - Shared test fixtures and configuration
+Integration tests use VCR to record GitHub API interactions.
+
+Recorded HTTP responses are stored in:
+tests/integration/cassettes/
+
+### Running tests
+
+uv run pytest
+
+### Re-recording cassettes
+
+To refresh recordings:
+
+GITHUB_TOKEN=your_token uv run pytest tests/integration
+
+Cassettes are committed to the repository to ensure deterministic CI runs.
+
+⚠️ Never record against private or sensitive repositories.

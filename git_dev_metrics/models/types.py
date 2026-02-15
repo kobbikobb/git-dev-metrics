@@ -1,16 +1,9 @@
 from typing import TypedDict
 
 
-class RepositoryPermissions(TypedDict):
-    admin: bool
-    push: bool
-    pull: bool
-
-
 class Repository(TypedDict):
     full_name: str
     private: bool
-    permissions: RepositoryPermissions
 
 
 class GitHubUser(TypedDict):

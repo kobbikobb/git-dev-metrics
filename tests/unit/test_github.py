@@ -1,0 +1,94 @@
+import re
+from datetime import UTC, datetime
+
+import responses
+from pytest import raises
+
+from git_dev_metrics.github import GitHubAPIError, fetch_pull_requests, fetch_repositories
+
+from .conftest import any_pr
+
+
+class TestFetchRepositories:
+    @responses.activate
+    def test_should_return_repositories(self):
+        responses.add(
+            responses.GET,
+            re.compile(r"https://api\.github\.com(:443)?/user/repos(\?.*)?$"),
+            json=[
+                {
+                    "name": "my-repo",
+                    "full_name": "user/my-repo",
+                    "private": False,
+                    "url": "https://api.github.com/repos/user/my-repo",
+                }
+            ],
+            status=200,
+        )
+
+        result = fetch_repositories("fake-token")
+
+        assert len(result) == 1
+        assert result[0]["full_name"] == "user/my-repo"
+
+    @responses.activate
+    def test_should_raise_on_unauthorized(self):
+        responses.add(
+            responses.GET,
+            re.compile(r"https://api\.github\.com(:443)?/user/repos(\?.*)?$"),
+            status=401,
+        )
+
+        with raises(GitHubAPIError, match="Unauthorized"):
+            fetch_repositories("bad-token")
+
+    @responses.activate
+    def test_should_return_pr(self):
+        pr = any_pr(merged_at="2024-01-02T00:00:00Z")
+        responses.add(
+            responses.GET,
+            re.compile(r"https://api\.github\.com(:443)?/repos/facebook/react(\?.*)?$"),
+            json={
+                "full_name": "facebook/react",
+                "private": False,
+                "url": "https://api.github.com/repos/facebook/react",
+            },
+            status=200,
+        )
+        responses.add(
+            responses.GET,
+            re.compile(r"https://api\.github\.com(:443)?/repos/facebook/react/pulls(\?.*)?$"),
+            json=[pr],
+            status=200,
+        )
+        since = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
+
+        result = fetch_pull_requests("fake-token", "facebook", "react", since)
+
+        assert len(result) == 1
+
+    @responses.activate
+    def test_should_not_return_pr_merged_before(self):
+        pr = any_pr(merged_at="2024-02-01T00:00:00Z")
+
+        responses.add(
+            responses.GET,
+            re.compile(r"https://api\.github\.com(:443)?/repos/facebook/react(\?.*)?$"),
+            json={
+                "full_name": "facebook/react",
+                "private": False,
+                "url": "https://api.github.com/repos/facebook/react",
+            },
+            status=200,
+        )
+        responses.add(
+            responses.GET,
+            re.compile(r"https://api\.github\.com(:443)?/repos/facebook/react/pulls(\?.*)?$"),
+            json=[pr],
+            status=200,
+        )
+        since = datetime(2024, 3, 1, 0, 0, 0, tzinfo=UTC)
+
+        result = fetch_pull_requests("fake-token", "facebook", "react", since)
+
+        assert len(result) == 0
