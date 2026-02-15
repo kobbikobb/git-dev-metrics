@@ -72,7 +72,7 @@ def fetch_pull_requests(
                 )
                 if merged_date >= since:
                     all_prs.append(pr)
-                else: # PRs are sorted 
+                else:  # PRs are sorted
                     return all_prs
 
         # Follow pagination Link header
