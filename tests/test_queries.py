@@ -55,7 +55,6 @@ class TestFetchRepositories:
 
         assert len(result) == 1
 
-
     @responses.activate
     def test_should_not_return_pr_merged_before(self):
         pr = {
