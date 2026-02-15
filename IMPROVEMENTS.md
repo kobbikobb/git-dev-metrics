@@ -1,47 +1,6 @@
 # Repo Improvements
 
-## 5. Add Pagination
-
-**File:** `git_dev_metrics/queries.py` line 51
-
-You only fetch the first 100 PRs. Active repos like facebook/react will have way more than 100 merged PRs in 90 days.
-
-**Fix:** Follow GitHub's `Link` header for pagination:
-
-```python
-def fetch_pull_requests(token: str, org: str, repo: str, since: datetime) -> list[PullRequest]:
-    url = GITHUB_PULLS_URL.format(org=org, repo=repo)
-    params = {"state": "closed", "sort": "updated", "direction": "desc", "per_page": 100}
-    all_prs = []
-
-    while url:
-        response = requests.get(url, headers=get_api_headers(token), params=params, timeout=30)
-        if response.status_code == 404:
-            raise GitHubNotFoundError(f"Repository {org}/{repo} not found")
-        response.raise_for_status()
-
-        prs = response.json()
-        if not prs:
-            break
-
-        for pr in prs:
-            if pr.get("merged_at"):
-                merged_date = datetime.fromisoformat(pr["merged_at"].replace("Z", "+00:00"))
-                if merged_date >= since:
-                    all_prs.append(pr)
-                else:
-                    return all_prs  # PRs are sorted by updated desc, stop early
-
-        # Follow pagination Link header
-        url = response.links.get("next", {}).get("url")
-        params = {}  # params are in the URL now
-
-    return all_prs
-```
-
-The `response.links` dict is built-in to the `requests` library — it parses the `Link` header automatically.
-
----
+## Fix date tests
 
 ## 6. Add Rate Limit Handling
 
