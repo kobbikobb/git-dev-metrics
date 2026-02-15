@@ -1,9 +1,8 @@
 """Models"""
 
-from .types import GitHubUser, PullRequest, PullRequestInfo, Repository, RepositoryPermissions
+from .types import GitHubUser, PullRequest, PullRequestInfo, Repository
 
 __all__ = [
-    "RepositoryPermissions",
     "Repository",
     "GitHubUser",
     "PullRequestInfo",

@@ -1,6 +1,5 @@
 """Github auth and data fetching."""
 
-from .api import fetch_pull_requests, fetch_repositories
 from .auth import get_github_token
 from .exceptions import (
     GitHubAPIError,
@@ -9,6 +8,7 @@ from .exceptions import (
     GitHubNotFoundError,
     GitHubRateLimitError,
 )
+from .queries import fetch_pull_requests, fetch_repositories
 
 __all__ = [
     "GitHubError",
@@ -17,6 +17,6 @@ __all__ = [
     "GitHubRateLimitError",
     "GitHubNotFoundError",
     "get_github_token",
-    "fetch_pull_requests",
     "fetch_repositories",
+    "fetch_pull_requests",
 ]
