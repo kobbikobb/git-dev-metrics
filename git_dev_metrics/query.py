@@ -1,7 +1,5 @@
 from datetime import datetime, timezone, timedelta
-from typing import List
-from github import Github, Auth, GithubException
-from .types import Repository, PullRequest, GitHubAPIError, GitHubNotFoundError
+from github import Github, Auth
 from .auth.github_auth import get_github_token
 
 if __name__ == "__main__":
