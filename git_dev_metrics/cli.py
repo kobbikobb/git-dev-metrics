@@ -2,11 +2,8 @@ import traceback
 
 import typer
 
-from git_dev_metrics.type_definitions import GitHubError
-
-from .auth.github_auth import get_github_token
-from .client import GitHubClient
-from .printer import print_metrics
+from .github import GitHubError, get_github_token
+from .metrics import get_pull_request_metrics, print_metrics
 
 app = typer.Typer()
 
@@ -26,14 +23,13 @@ def analyze(
     """
     Analyze GitHub repository development metrics.
     """
+
     typer.secho("Configuring GitHub Auth Token...", fg=typer.colors.BRIGHT_YELLOW, bold=True)
     token = get_github_token()
 
-    client = GitHubClient(token, org, repo)
     typer.secho("Fetching development metrics...", fg=typer.colors.GREEN, bold=True)
-
     try:
-        metrics = client.get_development_metrics(period)
+        metrics = get_pull_request_metrics(token, org, repo, period)
     except GitHubError as e:
         typer.secho(f"Error fetching metrics: {e}", fg=typer.colors.RED, bold=True)
         traceback.print_exc()
