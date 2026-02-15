@@ -1,7 +1,5 @@
 # Repo Improvements
 
-## 5. Slow querying all PRs
-
 ## 6. Add Rate Limit Handling
 
 **File:** `git_dev_metrics/queries.py`
