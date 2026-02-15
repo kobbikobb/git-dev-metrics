@@ -1,5 +1,7 @@
-from git_dev_metrics.type_definitions import PullRequest
 from typing import Any
+
+from git_dev_metrics.type_definitions import PullRequest
+
 
 def any_pr(**overrides: Any) -> PullRequest:
     """Create a PullRequest with sensible defaults for testing."""

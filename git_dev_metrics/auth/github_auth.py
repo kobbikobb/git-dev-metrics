@@ -1,10 +1,11 @@
-import requests
 import time
 import webbrowser
 from typing import TypedDict
 
-from .github_auth_cache import with_cached_token
+import requests
+
 from ..type_definitions import GitHubAuthError
+from .github_auth_cache import with_cached_token
 
 CLIENT_ID = "Iv23libjj9FWqHhZzWik"
 DEVICE_CODE_URL = "https://github.com/login/device/code"
@@ -71,6 +72,4 @@ def get_github_token() -> str:
     device_response = request_device_code()
     prompt_user(device_response["verification_uri"], device_response["user_code"])
 
-    return poll_for_token(
-        device_response["device_code"], device_response.get("interval", 5)
-    )
+    return poll_for_token(device_response["device_code"], device_response.get("interval", 5))

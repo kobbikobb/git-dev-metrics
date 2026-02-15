@@ -1,5 +1,6 @@
-import typer
 import traceback
+
+import typer
 
 from .auth.github_auth import get_github_token
 from .client import GitHubClient
@@ -10,7 +11,7 @@ app = typer.Typer()
 
 def validate_period(period: str) -> str:
     if not period.endswith("d") or not period[:-1].isdigit():
-        raise typer.BadParameter("Period must be like '7d', '30d', '90d'")
+        raise typer.BadParameter("Period must be like '7d', '30d', '90d'") from None
     return period
 
 
@@ -23,9 +24,7 @@ def analyze(
     """
     Analyze GitHub repository development metrics.
     """
-    typer.secho(
-        "Configuring GitHub Auth Token...", fg=typer.colors.BRIGHT_YELLOW, bold=True
-    )
+    typer.secho("Configuring GitHub Auth Token...", fg=typer.colors.BRIGHT_YELLOW, bold=True)
     token = get_github_token()
 
     client = GitHubClient(token, org, repo)
@@ -36,7 +35,7 @@ def analyze(
     except Exception as e:
         typer.secho(f"Error fetching metrics: {e}", fg=typer.colors.RED, bold=True)
         traceback.print_exc()
-        raise typer.Exit(code=1)
+        raise typer.Exit(code=1) from e
 
     print_metrics(metrics, org, repo, period)
 
