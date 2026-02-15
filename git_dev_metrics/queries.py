@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import List
 import requests
-from .types import (
+from .type_definitions import (
     Repository,
     PullRequest,
     GitHubAPIError,

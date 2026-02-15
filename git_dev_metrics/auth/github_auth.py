@@ -4,7 +4,7 @@ import webbrowser
 from typing import TypedDict
 
 from .github_auth_cache import with_cached_token
-from ..types import GitHubAuthError
+from ..type_definitions import GitHubAuthError
 
 CLIENT_ID = "Iv23libjj9FWqHhZzWik"
 DEVICE_CODE_URL = "https://github.com/login/device/code"

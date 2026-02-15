@@ -1,4 +1,4 @@
-from git_dev_metrics.types import PullRequest
+from git_dev_metrics.type_definitions import PullRequest
 from typing import Any
 
 def any_pr(**overrides: Any) -> PullRequest:

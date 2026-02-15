@@ -3,7 +3,7 @@ from typing import List, Dict
 from collections import defaultdict
 from .date_utils import parse_time_period
 from .queries import fetch_pull_requests, fetch_repositories
-from .types import PullRequest
+from .type_definitions import PullRequest
 
 
 def calculate_cycle_time(prs: List[PullRequest]) -> float:

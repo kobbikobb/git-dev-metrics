@@ -1,6 +1,6 @@
 import responses
 from git_dev_metrics.queries import fetch_repositories, fetch_pull_requests
-from git_dev_metrics.types import GitHubAPIError
+from git_dev_metrics.type_definitions import GitHubAPIError
 from .conftest import any_pr
 from pytest import raises
 from datetime import datetime, timezone

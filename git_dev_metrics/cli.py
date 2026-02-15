@@ -41,5 +41,9 @@ def analyze(
     print_metrics(metrics, org, repo, period)
 
 
+def main():
+    app()
+
+
 if __name__ == "__main__":
     app()
