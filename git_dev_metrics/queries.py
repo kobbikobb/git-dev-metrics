@@ -1,7 +1,13 @@
 from datetime import datetime
 from typing import List
 import requests
-from .types import Repository, PullRequest, GitHubAPIError, GitHubNotFoundError, GitHubRateLimitError
+from .types import (
+    Repository,
+    PullRequest,
+    GitHubAPIError,
+    GitHubNotFoundError,
+    GitHubRateLimitError,
+)
 
 GITHUB_API_URL = "https://api.github.com/user/repos"
 GITHUB_API_VERSION = "2022-11-28"
@@ -20,6 +26,7 @@ def _get_api_headers(token: str) -> dict:
         "X-GitHub-Api-Version": GITHUB_API_VERSION,
     }
 
+
 def _check_rate_limit(response: requests.Response) -> None:
     remaining = response.headers.get("X-RateLimit-Remaining")
     if remaining is not None and int(remaining) == 0:
@@ -27,6 +34,7 @@ def _check_rate_limit(response: requests.Response) -> None:
         raise GitHubRateLimitError(
             f"GitHub API rate limit exceeded. Resets at {reset_time}"
         )
+
 
 def fetch_repositories(token: str) -> List[Repository]:
     """Fetch all repositories for the authenticated user."""
@@ -69,7 +77,7 @@ def fetch_pull_requests(
             raise GitHubNotFoundError(f"Repository {org}/{repo} not found")
 
         _check_rate_limit(response)
-        
+
         response.raise_for_status()
         prs = response.json()
 
