@@ -41,6 +41,7 @@ def fetch_pull_requests(
     token: str, org: str, repo: str, since: datetime
 ) -> List[PullRequest]:
     """Fetch pull requests for a repository within a time period."""
+    # Even if filtering is not supported, we can sort by updated date and stop once we reach PRs older than 'since'
     url = GITHUB_PULLS_URL.format(org=org, repo=repo)
     params = {
         "state": "closed",
@@ -52,7 +53,6 @@ def fetch_pull_requests(
     all_prs = []
 
     while url:
-        print(f"Fetching PRs from {url}...")
         response = requests.get(
             url, headers=get_api_headers(token), params=params, timeout=30
         )
@@ -72,7 +72,7 @@ def fetch_pull_requests(
                 )
                 if merged_date >= since:
                     all_prs.append(pr)
-                else:  # PRs are sorted
+                else:  # Since PRs are sorted by updated date, we can stop if we find a PR older than 'since'
                     return all_prs
 
         # Follow pagination Link header
