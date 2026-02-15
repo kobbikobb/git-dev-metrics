@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import List
 import requests
-from .types import Repository, PullRequest, GitHubAPIError, GitHubNotFoundError
+from .types import Repository, PullRequest, GitHubAPIError, GitHubNotFoundError, GitHubRateLimitError
 
 GITHUB_API_URL = "https://api.github.com/user/repos"
 GITHUB_API_VERSION = "2022-11-28"
@@ -12,7 +12,7 @@ GITHUB_PULLS_URL = "https://api.github.com/repos/{org}/{repo}/pulls"
 GITHUB_COMMITS_URL = "https://api.github.com/repos/{org}/{repo}/commits"
 
 
-def get_api_headers(token: str) -> dict:
+def _get_api_headers(token: str) -> dict:
     """Build GitHub API request headers."""
     return {
         "Authorization": f"Bearer {token}",
@@ -20,14 +20,23 @@ def get_api_headers(token: str) -> dict:
         "X-GitHub-Api-Version": GITHUB_API_VERSION,
     }
 
+def _check_rate_limit(response: requests.Response) -> None:
+    remaining = response.headers.get("X-RateLimit-Remaining")
+    if remaining is not None and int(remaining) == 0:
+        reset_time = response.headers.get("X-RateLimit-Reset", "")
+        raise GitHubRateLimitError(
+            f"GitHub API rate limit exceeded. Resets at {reset_time}"
+        )
 
 def fetch_repositories(token: str) -> List[Repository]:
     """Fetch all repositories for the authenticated user."""
     params = {"visibility": "all", "sort": "updated", "per_page": MAX_REPOS_PER_PAGE}
 
     response = requests.get(
-        GITHUB_API_URL, headers=get_api_headers(token), params=params, timeout=30
+        GITHUB_API_URL, headers=_get_api_headers(token), params=params, timeout=30
     )
+
+    _check_rate_limit(response)
 
     if response.status_code == 401:
         raise GitHubAPIError("Unauthorized. Your token might be expired.")
@@ -54,11 +63,13 @@ def fetch_pull_requests(
 
     while url:
         response = requests.get(
-            url, headers=get_api_headers(token), params=params, timeout=30
+            url, headers=_get_api_headers(token), params=params, timeout=30
         )
         if response.status_code == 404:
             raise GitHubNotFoundError(f"Repository {org}/{repo} not found")
 
+        _check_rate_limit(response)
+        
         response.raise_for_status()
         prs = response.json()
 
