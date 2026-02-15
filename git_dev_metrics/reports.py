@@ -69,7 +69,7 @@ def get_pull_request_metrics(token: str, org: str, repo: str, event_period: str 
 
 
 def get_all_repositories(token: str) -> dict:
-    """List all repositories accessible with the given GitHub token."""
+    """Get all repositories accessible with the given GitHub token."""
     repos = fetch_repositories(token)
 
     return {repo["full_name"]: "Private" if repo["private"] else "Public" for repo in repos}

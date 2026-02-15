@@ -23,6 +23,7 @@ Repository = "https://github.com/kobbikobb/git-dev-metrics"
 
 [dependency-groups]
 dev = [
+    "pip-audit>=2.10.0",
     "pyright>=1.1.408",
     "pytest-cov>=7.0.0",
     "pytest-mock>=3.15.1",
