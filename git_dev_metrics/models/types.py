@@ -1,9 +1,11 @@
+from datetime import datetime
 from typing import TypedDict
 
 
 class Repository(TypedDict):
     full_name: str
     private: bool
+    last_pushed: datetime | None
 
 
 class GitHubUser(TypedDict):

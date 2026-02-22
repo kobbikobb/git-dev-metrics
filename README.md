@@ -26,5 +26,3 @@ To refresh recordings:
 GITHUB_TOKEN=your_token uv run pytest tests/integration
 
 Cassettes are committed to the repository to ensure deterministic CI runs.
-
-⚠️ Never record against private or sensitive repositories.
