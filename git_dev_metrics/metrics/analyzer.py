@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from ..github import fetch_pull_requests, fetch_repositories
 from ..utils import parse_time_period
 from .calculator import (
@@ -33,8 +35,15 @@ def get_pull_request_metrics(token: str, org: str, repo: str, event_period: str 
     }
 
 
-def get_all_repositories(token: str) -> dict:
+def get_recent_repositories(token: str) -> dict:
     """Get all repositories accessible with the given GitHub token."""
     repos = fetch_repositories(token)
 
-    return {repo["full_name"]: "Private" if repo["private"] else "Public" for repo in repos}
+    recent_repos = [
+        r for r in repos
+        if r["last_pushed"] is not None
+        and r["last_pushed"] >= parse_time_period("d180")
+    ]
+    recent_repos.sort(key=lambda r: r["last_pushed"] or datetime.min, reverse=True)
+
+    return {repo["full_name"]: "Private" if repo["private"] else "Public" for repo in recent_repos}
