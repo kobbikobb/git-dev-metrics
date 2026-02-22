@@ -16,6 +16,7 @@ class TestCLI:
 
     def test_should_run_without_period(self, mocker):
         mocker.patch("git_dev_metrics.cli.get_github_token", return_value="fake-token")
+        mocker.patch("git_dev_metrics.cli.get_all_repositories", return_value={})
         mock_get_prs = mocker.patch(
             "git_dev_metrics.cli.get_pull_request_metrics", return_value={"commits": 10, "prs": 5}
         )
@@ -29,6 +30,7 @@ class TestCLI:
 
     def test_should_accept_valid_period(self, mocker):
         mocker.patch("git_dev_metrics.cli.get_github_token", return_value="fake-token")
+        mocker.patch("git_dev_metrics.cli.get_all_repositories", return_value={})
         mock_get_prs = mocker.patch(
             "git_dev_metrics.cli.get_pull_request_metrics", return_value={"commits": 10, "prs": 5}
         )
@@ -42,6 +44,7 @@ class TestCLI:
 
     def test_should_handle_client_error(self, mocker):
         mocker.patch("git_dev_metrics.cli.get_github_token", return_value="fake-token")
+        mocker.patch("git_dev_metrics.cli.get_all_repositories", return_value={})
         mock_get_prs = mocker.patch("git_dev_metrics.cli")
         mock_get_prs.return_value.get_pull_request_metrics.side_effect = Exception("API Error")
 
