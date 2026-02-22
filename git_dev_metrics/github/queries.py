@@ -14,11 +14,7 @@ def fetch_repositories(token: str) -> list[Repository]:
         repos = user.get_repos(sort="updated", direction="desc")
 
         return [
-            {
-                "full_name": repo.full_name,
-                "private": repo.private,
-                "last_pushed": repo.pushed_at
-            }
+            {"full_name": repo.full_name, "private": repo.private, "last_pushed": repo.pushed_at}
             for repo in repos
         ]
     except GithubException as e:
