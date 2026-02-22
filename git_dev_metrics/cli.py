@@ -1,8 +1,8 @@
 import traceback
 
 import questionary
-from questionary import Style
 import typer
+from questionary import Style
 from rich.console import Console
 
 from .github import GitHubError, get_github_token
