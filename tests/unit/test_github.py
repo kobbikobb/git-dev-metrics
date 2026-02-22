@@ -21,6 +21,7 @@ class TestFetchRepositories:
                     "full_name": "user/my-repo",
                     "private": False,
                     "url": "https://api.github.com/repos/user/my-repo",
+                    "pushed_at": "2024-01-01T00:00:00Z",
                 }
             ],
             status=200,
@@ -52,6 +53,7 @@ class TestFetchRepositories:
                 "full_name": "facebook/react",
                 "private": False,
                 "url": "https://api.github.com/repos/facebook/react",
+                "pushed_at": "2024-01-01T00:00:00Z",
             },
             status=200,
         )
@@ -78,6 +80,7 @@ class TestFetchRepositories:
                 "full_name": "facebook/react",
                 "private": False,
                 "url": "https://api.github.com/repos/facebook/react",
+                "pushed_at": "2024-01-01T00:00:00Z",
             },
             status=200,
         )
