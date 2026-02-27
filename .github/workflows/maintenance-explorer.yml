@@ -1,0 +1,79 @@
+name: Maintenance Explorer
+
+on:
+  schedule:
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: maintenance-explorer
+  cancel-in-progress: false
+
+jobs:
+  explore:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    permissions:
+      contents: read
+      issues: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: anomalyco/opencode/github@v1
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        with:
+          model: google/gemini-2.5-flash
+          prompt: |
+            You are a Maintenance Explorer. Your job is to find bugs, architecture issues, and best practices violations.
+
+            ## Instructions
+
+            1. **Find Bugs**: Search for actual code bugs:
+               - Logic errors
+               - Unhandled edge cases
+               - Potential runtime errors
+               - Security vulnerabilities
+
+            2. **Architecture Issues**: Identify structural problems:
+               - Tight coupling
+               - Circular dependencies
+               - Missing abstractions
+               - Inappropriate responsibilities
+
+            3. **Best Practices Violations**: Find code that doesn't follow best practices:
+               - Python anti-patterns
+               - Missing type hints
+               - Missing error handling
+               - Inconsistent naming
+               - Code duplication without justification
+               - Missing docstrings on public APIs
+
+            4. **Check for Existing Issues**: Before creating any issue, search for existing GitHub issues that may already cover the same topic. Use: `gh issue list --search "your keywords"`.
+
+            5. **Create Issues**: For each valid finding, create a GitHub issue with:
+               - Clear title describing the issue
+               - Body: specific file and line number, what's wrong, suggested fix
+               - Label: `explorer:maintenance`
+
+            ## Output Format
+
+            Create 3-5 issues maximum (focus on highest priority). For each:
+            ```
+            Title: [Bug/Arch/BP]: Brief description
+            Body:
+            ## Type
+            Bug / Architecture / Best Practice
+
+            ## Location
+            File:line or module
+
+            ## Problem
+            Describe what's wrong
+
+            ## Suggested Fix
+            How to fix it
+            ```
+
+            If no valuable issues found, respond with "NO_ISSUES_CREATED" and explain why.
