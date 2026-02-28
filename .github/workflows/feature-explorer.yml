@@ -1,10 +1,8 @@
 name: Feature Explorer
-
 on:
   schedule:
     - cron: '0 6 * * *'
   workflow_dispatch:
-
 jobs:
   explore:
     runs-on: ubuntu-latest
@@ -20,9 +18,9 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          echo "recent_issues<<EOF" >> $GITHUB_OUTPUT
-          gh issue list --state all --limit 20 --json title -q '.[].title' >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          # Use JSON output and base64 encode to avoid heredoc/multiline issues
+          ISSUES=$(gh issue list --state all --limit 20 --json title -q '[.[].title] | join(", ")')
+          echo "recent_issues=$ISSUES" >> $GITHUB_OUTPUT
 
       - name: Run OpenCode
         id: opencode_task
@@ -31,29 +29,61 @@ jobs:
           GOOGLE_GENERATIVE_AI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         with:
           model: google/gemini-2.0-flash
-          # We tell the AI to be a "raw JSON generator"
           prompt: |
-            You are a Feature Explorer. Analyze this repo and identify 1-3 feature gaps. 
-            Return ONLY a raw JSON array. No markdown backticks, no text.
-            Existing: ${{ steps.context.outputs.recent_issues }}
-            Format: [{"title": "NAME", "body": "DESC"}]
+            You are a Feature Explorer. Analyze this repo and identify 1-3 feature gaps.
+            Return ONLY a raw JSON array. No markdown backticks, no preamble, no text before or after.
+            Existing issues: ${{ steps.context.outputs.recent_issues }}
+            Required format exactly: [{"title": "NAME", "body": "DESC"}]
+
+      - name: Ensure label exists
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh label create "explorer:feature" --color "0075ca" --description "AI suggested feature" 2>/dev/null || true
 
       - name: Process and Create Issues
         env:
           GH_TOKEN: ${{ github.token }}
-          # Some versions of the action store the text in an output variable
           AI_RESPONSE: ${{ steps.opencode_task.outputs.response }}
         run: |
-          # 1. Save the response and clean it (remove markdown code blocks if present)
-          echo "$AI_RESPONSE" | sed -e 's/```json//g' -e 's/```//g' > features.json
-          
-          # 2. Check if file is valid JSON and not empty
-          if [ -s features.json ] && jq -e . features.json >/dev/null 2>&1; then
+          # Write response to file
+          printf '%s' "$AI_RESPONSE" > raw_response.txt
+
+          # Strip markdown fences, leading/trailing whitespace
+          sed -e 's/```json//g' -e 's/```//g' raw_response.txt | \
+            python3 -c "
+          import sys, json, re
+          text = sys.stdin.read().strip()
+
+          # Extract first JSON array found (handles extra prose)
+          match = re.search(r'\[.*\]', text, re.DOTALL)
+          if not match:
+              print('ERROR: No JSON array found in response')
+              print('Raw response:', text)
+              sys.exit(1)
+
+          try:
+              data = json.loads(match.group())
+              print(json.dumps(data))
+          except json.JSONDecodeError as e:
+              print(f'ERROR: JSON parse failed: {e}')
+              print('Extracted text:', match.group())
+              sys.exit(1)
+          " > features.json
+
+          # Validate and create issues
+          if jq -e 'type == "array" and length > 0' features.json >/dev/null 2>&1; then
+            echo "Creating $(jq length features.json) issue(s)..."
             jq -c '.[]' features.json | while read -r issue; do
               TITLE=$(echo "$issue" | jq -r '.title')
               BODY=$(echo "$issue" | jq -r '.body')
-              gh issue create --title "$TITLE" --body "$BODY" --label "explorer:feature"
+              if [ -n "$TITLE" ] && [ "$TITLE" != "null" ]; then
+                gh issue create --title "$TITLE" --body "$BODY" --label "explorer:feature"
+                echo "Created issue: $TITLE"
+              fi
             done
           else
-            echo "AI did not return valid JSON. Check logs for response: $AI_RESPONSE"
+            echo "ERROR: features.json is not a valid non-empty array"
+            cat features.json
+            exit 1
           fi
