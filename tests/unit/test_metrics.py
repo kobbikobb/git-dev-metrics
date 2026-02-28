@@ -22,7 +22,7 @@ class TestCalculateCycleTime:
 
         result = calculate_cycle_time(prs)
 
-        assert result == 1.0
+        assert result == 24.0
 
     def test_should_return_average_cycle_time_for_multiple_prs(self):
         prs = [
@@ -32,7 +32,7 @@ class TestCalculateCycleTime:
 
         result = calculate_cycle_time(prs)
 
-        assert result == 1.5
+        assert result == 36.0
 
     def test_should_handle_prs_with_different_time_zones(self):
         prs = [
@@ -41,7 +41,7 @@ class TestCalculateCycleTime:
 
         result = calculate_cycle_time(prs)
 
-        assert result == 1.0
+        assert result == 24.0
 
 
 class TestCalculatePrSize:
@@ -64,6 +64,15 @@ class TestCalculatePrSize:
         ]
         result = calculate_pr_size(prs)
         assert result == 225
+
+    def test_should_return_median_size_not_mean(self):
+        prs = [
+            any_pr(additions=100, deletions=0),
+            any_pr(additions=200, deletions=0),
+            any_pr(additions=1000, deletions=0),
+        ]
+        result = calculate_pr_size(prs)
+        assert result == 200
 
 
 class TestCalculateThroughput:

@@ -1,13 +1,31 @@
+import re
 from datetime import datetime
 
 from ..github import fetch_pull_requests, fetch_repositories
 from ..utils import parse_time_period
 from .calculator import (
     calculate_cycle_time,
+    calculate_pickup_time,
     calculate_pr_size,
+    calculate_prs_per_week,
+    calculate_review_time,
     calculate_throughput,
     group_prs_by_devs,
 )
+
+
+def _parse_period_days(event_period: str) -> int:
+    """Extract number of days from period string like '30d', '2w', '1m'."""
+    match = re.match(r"(\d+)(d|w|m)", event_period)
+    if not match:
+        return 30
+    value, unit = match.groups()
+    days = int(value)
+    if unit == "w":
+        days *= 7
+    elif unit == "m":
+        days *= 30
+    return days
 
 
 def get_pull_request_metrics(token: str, org: str, repo: str, event_period: str = "30d") -> dict:
@@ -17,6 +35,10 @@ def get_pull_request_metrics(token: str, org: str, repo: str, event_period: str 
     since = parse_time_period(event_period)
     prs = fetch_pull_requests(token, org, repo, since)
 
+    period_days = _parse_period_days(event_period)
+
+    reviews = {}
+
     devs = group_prs_by_devs(prs)
 
     dev_metrics = {}
@@ -24,13 +46,19 @@ def get_pull_request_metrics(token: str, org: str, repo: str, event_period: str 
         dev_metrics[dev] = {
             "cycle_time": calculate_cycle_time(dev_prs),
             "pr_size": calculate_pr_size(dev_prs),
-            "throughput": calculate_throughput(dev_prs),
+            "pr_count": calculate_throughput(dev_prs),
+            "pickup_time": calculate_pickup_time(dev_prs, reviews),
+            "review_time": calculate_review_time(dev_prs, reviews),
+            "prs_per_week": calculate_prs_per_week(dev_prs, period_days),
         }
 
     return {
         "cycle_time": calculate_cycle_time(prs),
         "pr_size": calculate_pr_size(prs),
-        "throughput": calculate_throughput(prs),
+        "pr_count": calculate_throughput(prs),
+        "pickup_time": calculate_pickup_time(prs, reviews),
+        "review_time": calculate_review_time(prs, reviews),
+        "prs_per_week": calculate_prs_per_week(prs, period_days),
         "dev_metrics": dev_metrics,
     }
 
