@@ -2,7 +2,7 @@ from datetime import UTC, datetime
 
 from github import Github, GithubException
 
-from ..models import PullRequest, Repository
+from ..models import PullRequest, Repository, Review
 from .exceptions import GitHubAPIError, GitHubNotFoundError
 
 
@@ -56,6 +56,42 @@ def fetch_pull_requests(token: str, org: str, repo: str, since: datetime) -> lis
                     "user": {"login": pr.user.login if pr.user else "unknown"},
                 }
             )
+
+        return result
+
+    except GithubException as e:
+        if e.status == 404:
+            raise GitHubNotFoundError(f"Repository {org}/{repo} not found") from e
+        raise GitHubAPIError(f"GitHub API error: {e.data.get('message', str(e))}") from e
+
+
+def fetch_reviews(
+    token: str, org: str, repo: str, pr_numbers: list[int]
+) -> dict[int, list[Review]]:
+    """Fetch all reviews for the given PRs."""
+    try:
+        g = Github(token)
+        repository = g.get_repo(f"{org}/{repo}")
+
+        result: dict[int, list[Review]] = {pr_num: [] for pr_num in pr_numbers}
+
+        for pr_number in pr_numbers:
+            try:
+                pr = repository.get_pull(pr_number)
+                reviews = pr.get_reviews()
+
+                for review in reviews:
+                    result[pr_number].append(
+                        {
+                            "user": {"login": review.user.login if review.user else "unknown"},
+                            "state": review.state,
+                            "submitted_at": review.submitted_at.isoformat()
+                            if review.submitted_at
+                            else "",
+                        }
+                    )
+            except GithubException:
+                continue
 
         return result
 

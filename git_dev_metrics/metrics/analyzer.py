@@ -1,7 +1,7 @@
 import re
 from datetime import datetime
 
-from ..github import fetch_pull_requests, fetch_repositories
+from ..github import fetch_pull_requests, fetch_repositories, fetch_reviews
 from ..utils import parse_time_period
 from .calculator import (
     calculate_cycle_time,
@@ -37,7 +37,8 @@ def get_pull_request_metrics(token: str, org: str, repo: str, event_period: str 
 
     period_days = _parse_period_days(event_period)
 
-    reviews = {}
+    pr_numbers = [pr["number"] for pr in prs]
+    reviews = fetch_reviews(token, org, repo, pr_numbers)
 
     devs = group_prs_by_devs(prs)
 
