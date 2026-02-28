@@ -1,0 +1,34 @@
+name: "AI Executor Agent"
+
+on:
+  issues:
+    types: [labeled]
+
+jobs:
+  execute-task:
+    if: github.event.label.name == 'ready-to-code'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write       # Needed to push branches
+      pull-requests: write  # Needed to create PRs
+      issues: write         # Needed to comment on issues
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Run Executor Agent
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Built-in, no secret setup needed
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          ISSUE_BODY: ${{ github.event.issue.body }}
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+        run: |
+          pip install google-generativeai pygithub
+          python .github/scripts/executor.py
