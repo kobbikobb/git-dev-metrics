@@ -12,10 +12,8 @@ concurrency:
 jobs:
   explore:
     runs-on: ubuntu-latest
-    continue-on-error: true
-    timeout-minutes: 30
     permissions:
-      contents: read
+      contents: write
       issues: write
     steps:
       - uses: actions/checkout@v4
@@ -25,65 +23,39 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          echo "### Recent Issues" >> $GITHUB_STEP_SUMMARY
-          gh issue list --state all --limit 20 --json number,title,labels \
-            -q '.[] | "- #\(.number): \(.title) [\(.labels|join(", "))]"' >> $GITHUB_STEP_SUMMARY || echo "No existing issues" >> $GITHUB_STEP_SUMMARY
-          
-          # Store for prompt injection
-          ISSUES=$(gh issue list --state all --limit 20 -q '(.[] | "\(.title)") | join("|")')
-          echo "recent_issues=$ISSUES" >> $GITHUB_OUTPUT
+          # Safe multi-line output for GitHub Actions
+          echo "recent_issues<<EOF" >> $GITHUB_OUTPUT
+          gh issue list --state all --limit 20 --json title -q '.[].title' >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
-      - uses: anomalyco/opencode/github@v1
+      - name: Run OpenCode
+        uses: anomalyco/opencode/github@v1
         env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GOOGLE_GENERATIVE_AI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         with:
-          model: google/gemini-2.5-flash
+          model: google/gemini-2.0-flash
           prompt: |
-            You are a Feature Explorer. Your job is to understand the project vision and find feature gaps.
+            You are a Feature Explorer. Analyze this repo (Python/Typer/Rich) and find gaps.
+            
+            Existing Issues:
+            ${{ steps.context.outputs.recent_issues }}
 
-            ## Project Context
-            This is a CLI tool for analyzing GitHub development metrics. It uses Python, Typer for CLI, and Rich for terminal output.
+            Output 1-3 high-value features as a JSON array in a file named 'features.json'.
+            Each object MUST have "title" and "body" keys.
+            Example: [{"title": "Add CSV Export", "body": "Allow users to export metrics."}]
+            If no gaps found, output an empty array [].
 
-            ## Existing Issues (for deduplication)
-            Recent issues already in the repo: ${{ steps.context.outputs.recent_issues }}
-            Before creating a new issue, ensure it doesn't duplicate an existing one.
-
-            ## Instructions
-
-            1. **Understand the Vision**: Read README.md, any docs, AGENTS.md, and explore the codebase to understand:
-               - What is this project trying to achieve?
-               - What problems does it solve?
-               - Who is the target user?
-
-            2. **Discover Current Capabilities**: Explore the codebase to understand what features currently exist:
-               - What features are implemented?
-               - What CLI commands exist?
-               - What are the main modules and their purposes?
-
-            3. **Find Feature Gaps**: Identify features that should exist but don't:
-               - Features that solve real user needs
-               - Features that similar projects have
-               - Features that would make the project more useful
-               - Prioritize features aligned with the project's vision (GitHub metrics/analysis)
-
-            4. **Create Issues**: For each valid finding, create a GitHub issue with:
-               - Clear title describing the feature gap
-               - Body explaining: what the feature should do, why it's useful
-               - Label: `explorer:feature`
-
-            ## Output Format
-
-            Create 1-3 issues maximum (focus on highest value, aligned with project vision). For each:
-            ```
-            Title: [Feature Name]: Brief description
-            Body:
-            ## What
-            Describe what this feature should do
-
-            ## Why
-            Why this would be valuable
-            ```
-
-            If no valuable feature gaps found, respond with "NO_ISSUES_CREATED" and explain why.
-
-            Write your findings to $GITHUB_STEP_SUMMARY as well.
+      - name: Create GitHub Issues
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # If the AI created the JSON file, loop through it and post to GitHub
+          if [ -f features.json ]; then
+            jq -c '.[]' features.json | while read -r issue; do
+              TITLE=$(echo "$issue" | jq -r '.title')
+              BODY=$(echo "$issue" | jq -r '.body')
+              gh issue create --title "$TITLE" --body "$BODY" --label "explorer:feature"
+            done
+          else
+            echo "No features.json found."
+          fi
