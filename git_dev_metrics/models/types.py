@@ -27,3 +27,9 @@ class PullRequest(PullRequestInfo):
     additions: int
     deletions: int
     changed_files: int
+
+
+class Review(TypedDict):
+    user: GitHubUser
+    state: str
+    submitted_at: str
