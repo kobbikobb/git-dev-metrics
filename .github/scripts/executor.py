@@ -1,17 +1,45 @@
 import os
-from github import Github
+import subprocess
+from pathlib import Path
+import google.generativeai as genai
 
-# Use the token passed from the workflow env
-gh_token = os.getenv("GITHUB_TOKEN")
-gh = Github(gh_token)
-repo = gh.get_repo(os.getenv("GITHUB_REPOSITORY"))
+genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
-# ... rest of your logic (Gemini call, git apply, etc.) ...
+# Give the model project context
+file_tree = subprocess.check_output(["find", "git_dev_metrics", "-name", "*.py"]).decode()
 
-# Creating the PR now works because of the permissions block in the YAML
-pr = repo.create_pull(
-    title=f"AI Fix: {os.getenv('ISSUE_TITLE')}",
-    body=f"Closes #{os.getenv('ISSUE_NUMBER')}",
-    head=branch_name,
-    base="main"
-)
+# Read all source files into context
+codebase = ""
+for path in Path("git_dev_metrics").rglob("*.py"):
+    codebase += f"\n\n### {path} ###\n{path.read_text()}"
+
+vision = Path("VISION.md").read_text() if Path("VISION.md").exists() else ""
+agents = Path("AGENTS.md").read_text() if Path("AGENTS.md").exists() else ""
+
+prompt = f"""
+You are a developer working on this Python project.
+
+## Guidelines
+{agents}
+
+## Vision
+{vision}
+
+## File Structure
+{file_tree}
+
+## Codebase
+{codebase}
+
+## Issue to fix
+Title: {os.getenv("ISSUE_TITLE")}
+Body: {os.getenv("ISSUE_BODY")}
+
+Respond with a unified diff patch only. No explanation. No markdown fences.
+"""
+
+model = genai.GenerativeModel("gemini-1.5-pro")
+response = model.generate_content(prompt)
+
+with open(os.getenv("PATCH_OUTPUT_PATH", "ai.patch"), "w") as f:
+    f.write(response.text)

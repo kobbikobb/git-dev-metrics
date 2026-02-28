@@ -1,34 +1,97 @@
 name: "AI Executor Agent"
-
 on:
   issues:
     types: [labeled]
 
+concurrency:
+  group: ai-executor-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
 jobs:
   execute-task:
-    if: github.event.label.name == 'ready-to-code'
+    if: github.event.label.name == 'execute'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
-      contents: write       # Needed to push branches
-      pull-requests: write  # Needed to create PRs
-      issues: write         # Needed to comment on issues
+      contents: write
+      pull-requests: write
+      issues: write
 
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: '3.12'
 
-      - name: Run Executor Agent
+      - name: Cache pip dependencies    # ADDED: avoids reinstalling on every run
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('.github/scripts/requirements.txt') }}
+
+      - name: Install dependencies
+        run: pip install -r .github/scripts/requirements.txt    # CHANGED: was inline pip install with unpinned versions
+
+      - name: Run AI Agent
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Built-in, no secret setup needed
           ISSUE_NUMBER: ${{ github.event.issue.number }}
           ISSUE_BODY: ${{ github.event.issue.body }}
           ISSUE_TITLE: ${{ github.event.issue.title }}
+          PATCH_OUTPUT_PATH: ai.patch    # ADDED: tells Python where to write output
+        run: python .github/scripts/executor.py
+
+      - name: Apply patch and push branch    # ADDED: was in Python, now handled by git CLI where it belongs
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          pip install google-generativeai pygithub
-          python .github/scripts/executor.py
+          BRANCH="ai-fix/issue-${{ github.event.issue.number }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$BRANCH"
+          git apply ai.patch
+          git add -A
+          git commit -m "AI Fix: ${{ github.event.issue.title }}"
+          git push origin "$BRANCH"
+          echo "BRANCH=$BRANCH" >> $GITHUB_ENV    # ADDED: pass branch name to next step
+
+      - name: Create Pull Request    # ADDED: was PyGithub call in Python, now uses native action
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = await github.rest.pulls.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `AI Fix: ${{ github.event.issue.title }}`,
+              body: `Closes #${{ github.event.issue.number }}`,
+              head: process.env.BRANCH,
+              base: 'main'
+            });
+            // ADDED: link the PR back to the issue as a comment
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: ${{ github.event.issue.number }},
+              body: `🤖 AI fix ready for review: ${pr.data.html_url}`
+            });
+
+      - name: Comment on failure    # ADDED: silent failures are confusing, notify on the issue
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: ${{ github.event.issue.number }},
+              body: '❌ Executor agent failed. Check [workflow logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}).'
+            });
+```
+
+---
+
+**requirements.txt:**
+```
+# ADDED: pinned versions prevent silent breakage from upstream updates
+google-generativeai==0.8.3
