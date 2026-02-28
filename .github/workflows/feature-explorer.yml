@@ -2,65 +2,58 @@ name: Feature Explorer
 
 on:
   schedule:
-    - cron: "0 6 * * *"
+    - cron: '0 6 * * *'
   workflow_dispatch:
-
-concurrency:
-  group: feature-explorer
-  cancel-in-progress: false
 
 jobs:
   explore:
     runs-on: ubuntu-latest
     permissions:
-      contents: write # To read the repo and save features.json
-      issues: write # To create the actual GitHub issues
-      id-token: write # REQUIRED by OpenCode for secure authentication
+      contents: write
+      issues: write
+      id-token: write
     steps:
       - uses: actions/checkout@v4
 
-      - name: Get recent issues for context
+      - name: Get recent issues
         id: context
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          # Safe multi-line output for GitHub Actions
           echo "recent_issues<<EOF" >> $GITHUB_OUTPUT
           gh issue list --state all --limit 20 --json title -q '.[].title' >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Run OpenCode
+        id: opencode_task
         uses: anomalyco/opencode/github@v1.2.15
         env:
           GOOGLE_GENERATIVE_AI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         with:
           model: google/gemini-2.0-flash
+          # We tell the AI to be a "raw JSON generator"
           prompt: |
-            [STRICT JSON ONLY]
-            You are a Feature Explorer. Analyze this repo (Python/Typer/Rich) and find gaps.
-
-            Existing Issues:
-            ${{ steps.context.outputs.recent_issues }}
-
-            Output 1-3 high-value features as a JSON array in a file named 'features.json'.
-            Each object MUST have "title" and "body" keys.
- 
-            Example: [{"title": "Add CSV Export", "body": "Allow users to export metrics."}]
-            If no gaps found, output an empty array [].
-
+            You are a Feature Explorer. Analyze this repo and identify 1-3 feature gaps. 
+            Return ONLY a raw JSON array. No markdown backticks, no text.
+            Existing: ${{ steps.context.outputs.recent_issues }}
             Format: [{"title": "NAME", "body": "DESC"}]
-            Context: ${{ steps.context.outputs.recent_issues }}
-      - name: Create GitHub Issues
+
+      - name: Process and Create Issues
         env:
           GH_TOKEN: ${{ github.token }}
+          # Some versions of the action store the text in an output variable
+          AI_RESPONSE: ${{ steps.opencode_task.outputs.response }}
         run: |
-          # If the AI created the JSON file, loop through it and post to GitHub
-          if [ -f features.json ]; then
+          # 1. Save the response and clean it (remove markdown code blocks if present)
+          echo "$AI_RESPONSE" | sed -e 's/```json//g' -e 's/```//g' > features.json
+          
+          # 2. Check if file is valid JSON and not empty
+          if [ -s features.json ] && jq -e . features.json >/dev/null 2>&1; then
             jq -c '.[]' features.json | while read -r issue; do
               TITLE=$(echo "$issue" | jq -r '.title')
               BODY=$(echo "$issue" | jq -r '.body')
               gh issue create --title "$TITLE" --body "$BODY" --label "explorer:feature"
             done
           else
-            echo "No features.json found."
+            echo "AI did not return valid JSON. Check logs for response: $AI_RESPONSE"
           fi
