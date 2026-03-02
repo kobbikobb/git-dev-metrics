@@ -5,8 +5,9 @@ import typer
 from questionary import Style
 from rich.console import Console
 
-from .github import GitHubError, get_github_token
+from .github import GitHubError, fetch_org_repositories, get_github_token
 from .metrics import get_pull_request_metrics, get_recent_repositories, print_metrics
+from .utils import load_last_org, save_last_org
 
 app = typer.Typer()
 console = Console()
@@ -46,20 +47,33 @@ def prompt_repo_selection(repos: dict[str, str]) -> list[str]:
 def analyze(
     org: str | None = typer.Option(None, help="GitHub organization name"),
     repo: str | None = typer.Option(None, help="Repository name"),
+    all_repos: bool = typer.Option(False, "--all-repos", help="Analyze all org repositories"),
     period: str = typer.Option("30d", callback=validate_period, help="Time period"),
 ):
     """
     Analyze GitHub repository development metrics.
     """
 
-    if (org is None) != (repo is None):
-        raise typer.BadParameter("Both --org and --repo must be provided, or neither") from None
-
     typer.secho("Configuring GitHub Auth Token...", fg=typer.colors.BRIGHT_YELLOW, bold=True)
     token = get_github_token()
 
-    if org is not None and repo is not None:
+    if org is None:
+        last_org = load_last_org()
+        default = last_org if last_org else ""
+        org = questionary.text(
+            "GitHub organization:",
+            default=default,
+            validate=lambda x: len(x) > 0 if x else "Organization is required",
+        ).ask()
+        if org:
+            save_last_org(org)
+
+    if org and repo is not None:
         selected = [f"{org}/{repo}"]
+    elif all_repos and org:
+        typer.secho(f"Fetching all repositories for {org}...", fg=typer.colors.CYAN)
+        org_repos = fetch_org_repositories(token, org)
+        selected = [r["full_name"] for r in org_repos]
     else:
         repos = get_recent_repositories(token)
         selected = prompt_repo_selection(repos)

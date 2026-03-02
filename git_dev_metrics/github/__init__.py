@@ -8,7 +8,7 @@ from .exceptions import (
     GitHubNotFoundError,
     GitHubRateLimitError,
 )
-from .queries import fetch_pull_requests, fetch_repositories
+from .queries import fetch_org_repositories, fetch_pull_requests, fetch_repositories
 
 __all__ = [
     "GitHubError",
@@ -18,5 +18,6 @@ __all__ = [
     "GitHubNotFoundError",
     "get_github_token",
     "fetch_repositories",
+    "fetch_org_repositories",
     "fetch_pull_requests",
 ]

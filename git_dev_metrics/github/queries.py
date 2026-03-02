@@ -23,6 +23,25 @@ def fetch_repositories(token: str) -> list[Repository]:
         raise GitHubAPIError(f"GitHub API error: {e.data.get('message', str(e))}") from e
 
 
+def fetch_org_repositories(token: str, org: str) -> list[Repository]:
+    """Fetch all repositories for a specific organization."""
+    try:
+        g = Github(token)
+        organization = g.get_organization(org)
+        repos = organization.get_repos(sort="updated", direction="desc")
+
+        return [
+            {"full_name": repo.full_name, "private": repo.private, "last_pushed": repo.pushed_at}
+            for repo in repos
+        ]
+    except GithubException as e:
+        if e.status == 404:
+            raise GitHubNotFoundError(f"Organization {org} not found") from e
+        if e.status == 401:
+            raise GitHubAPIError("Unauthorized. Your token might be expired.") from e
+        raise GitHubAPIError(f"GitHub API error: {e.data.get('message', str(e))}") from e
+
+
 def fetch_pull_requests(token: str, org: str, repo: str, since: datetime) -> list[PullRequest]:
     """Fetch merged pull requests since a given date."""
     since = since.replace(tzinfo=UTC) if since.tzinfo is None else since
