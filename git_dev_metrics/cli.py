@@ -77,6 +77,14 @@ def analyze(
     elif org:
         typer.secho(f"Fetching repositories for {org}...", fg=typer.colors.CYAN)
         org_repos = fetch_org_repositories(token, org)
+        if not org_repos:
+            typer.secho(
+                f"No repositories found for organization '{org}'. "
+                "Make sure the organization exists and you have access to it.",
+                fg=typer.colors.RED,
+                bold=True,
+            )
+            raise typer.Exit(code=1)
         selected = prompt_repo_selection(
             {r["full_name"]: "private" if r["private"] else "public" for r in org_repos}
         )

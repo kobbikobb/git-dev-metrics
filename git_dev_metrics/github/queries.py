@@ -39,6 +39,11 @@ def fetch_org_repositories(token: str, org: str) -> list[Repository]:
             raise GitHubNotFoundError(f"Organization {org} not found") from e
         if e.status == 401:
             raise GitHubAPIError("Unauthorized. Your token might be expired.") from e
+        if e.status == 403:
+            raise GitHubAPIError(
+                f"Access denied to organization '{org}'. "
+                "You may not have permission to view this organization's repositories."
+            ) from e
         raise GitHubAPIError(f"GitHub API error: {e.data.get('message', str(e))}") from e
 
 
