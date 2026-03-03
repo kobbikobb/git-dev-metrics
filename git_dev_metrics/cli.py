@@ -74,6 +74,12 @@ def analyze(
         typer.secho(f"Fetching all repositories for {org}...", fg=typer.colors.CYAN)
         org_repos = fetch_org_repositories(token, org)
         selected = [r["full_name"] for r in org_repos]
+    elif org:
+        typer.secho(f"Fetching repositories for {org}...", fg=typer.colors.CYAN)
+        org_repos = fetch_org_repositories(token, org)
+        selected = prompt_repo_selection(
+            {r["full_name"]: "private" if r["private"] else "public" for r in org_repos}
+        )
     else:
         repos = get_recent_repositories(token)
         selected = prompt_repo_selection(repos)
