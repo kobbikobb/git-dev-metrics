@@ -14,6 +14,7 @@ def print_metrics(metrics, org, repo, period):
         "Pickup Time (h)",
         "Review Time (h)",
         "PRs/Week",
+        "Reviews Given",
     ]:
         overall_table.add_column(col)
 
@@ -25,6 +26,7 @@ def print_metrics(metrics, org, repo, period):
         f"{metrics['pickup_time']:.2f}",
         f"{metrics['review_time']:.2f}",
         f"{metrics['prs_per_week']:.2f}",
+        f"{metrics['reviews_given']:.0f}",
     )
 
     console.print("\n")
@@ -39,6 +41,7 @@ def print_metrics(metrics, org, repo, period):
         "Pickup Time (h)",
         "Review Time (h)",
         "PRs/Week",
+        "Reviews Given",
     ]:
         dev_table.add_column(col)
 
@@ -53,6 +56,7 @@ def print_metrics(metrics, org, repo, period):
             f"{m['pickup_time']:.2f}",
             f"{m['review_time']:.2f}",
             f"{m['prs_per_week']:.2f}",
+            f"{m['reviews_given']:.0f}",
         )
 
     console.print(dev_table)

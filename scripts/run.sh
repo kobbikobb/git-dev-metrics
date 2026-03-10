@@ -2,4 +2,4 @@
 
 set -e
 
-uv run app --org facebook --repo react
+uv run app --org kobbikobb --repo panda

@@ -9,6 +9,7 @@ from .calculator import (
     calculate_pr_size,
     calculate_prs_per_week,
     calculate_review_time,
+    calculate_reviews_given,
     calculate_throughput,
     group_prs_by_devs,
 )
@@ -41,6 +42,7 @@ def get_pull_request_metrics(token: str, org: str, repo: str, event_period: str 
     reviews = fetch_reviews(token, org, repo, pr_numbers)
 
     devs = group_prs_by_devs(prs)
+    reviews_given = calculate_reviews_given(reviews, devs)
 
     dev_metrics = {}
     for dev, dev_prs in devs.items():
@@ -51,6 +53,7 @@ def get_pull_request_metrics(token: str, org: str, repo: str, event_period: str 
             "pickup_time": calculate_pickup_time(dev_prs, reviews),
             "review_time": calculate_review_time(dev_prs, reviews),
             "prs_per_week": calculate_prs_per_week(dev_prs, period_days),
+            "reviews_given": reviews_given.get(dev, 0),
         }
 
     return {
@@ -60,6 +63,7 @@ def get_pull_request_metrics(token: str, org: str, repo: str, event_period: str 
         "pickup_time": calculate_pickup_time(prs, reviews),
         "review_time": calculate_review_time(prs, reviews),
         "prs_per_week": calculate_prs_per_week(prs, period_days),
+        "reviews_given": sum(reviews_given.values()),
         "dev_metrics": dev_metrics,
     }
 
