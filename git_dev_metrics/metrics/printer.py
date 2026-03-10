@@ -8,11 +8,11 @@ def print_metrics(metrics, org, repo, period):
     overall_table = Table(title=f"Repo Metrics (last {period})")
     for col in [
         "Repo",
+        "Pickup Time (h)",
+        "Review Time (h)",
         "Cycle Time (h)",
         "PR Size",
         "Throughput",
-        "Pickup Time (h)",
-        "Review Time (h)",
         "PRs/Week",
         "Reviews Given",
     ]:
@@ -20,11 +20,11 @@ def print_metrics(metrics, org, repo, period):
 
     overall_table.add_row(
         f"{org}/{repo}",
+        f"{metrics['pickup_time']:.2f}",
+        f"{metrics['review_time']:.2f}",
         f"{metrics['cycle_time']:.2f}",
         f"{metrics['pr_size']:.1f}",
         f"{metrics['pr_count']:.2f}",
-        f"{metrics['pickup_time']:.2f}",
-        f"{metrics['review_time']:.2f}",
         f"{metrics['prs_per_week']:.2f}",
         f"{metrics['reviews_given']:.0f}",
     )
@@ -35,11 +35,11 @@ def print_metrics(metrics, org, repo, period):
     dev_table = Table(title="Developer Metrics")
     for col in [
         "Dev",
+        "Pickup Time (h)",
+        "Review Time (h)",
         "Cycle Time (h)",
         "PR Size",
         "Throughput",
-        "Pickup Time (h)",
-        "Review Time (h)",
         "PRs/Week",
         "Reviews Given",
     ]:
@@ -50,11 +50,11 @@ def print_metrics(metrics, org, repo, period):
     ):
         dev_table.add_row(
             dev,
+            f"{m['pickup_time']:.2f}",
+            f"{m['review_time']:.2f}",
             f"{m['cycle_time']:.2f}",
             f"{m['pr_size']:.1f}",
             f"{m['pr_count']:.2f}",
-            f"{m['pickup_time']:.2f}",
-            f"{m['review_time']:.2f}",
             f"{m['prs_per_week']:.2f}",
             f"{m['reviews_given']:.0f}",
         )
