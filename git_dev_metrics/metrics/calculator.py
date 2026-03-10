@@ -115,3 +115,20 @@ def group_prs_by_devs(prs: list[PullRequest]) -> dict[str, list[PullRequest]]:
         dev = pr["user"]["login"]
         devs[dev].append(pr)
     return devs
+
+
+def calculate_reviews_given(reviews: dict, devs: dict[str, list[PullRequest]]) -> dict[str, int]:
+    """Calculate number of PRs reviewed by each developer."""
+    reviewer_counts: dict[str, int] = {dev: 0 for dev in devs}
+
+    for _pr_number, pr_reviews in reviews.items():
+        reviewed_devs = set()
+        for review in pr_reviews:
+            reviewer = review.get("user", {}).get("login")
+            if reviewer and reviewer in reviewer_counts:
+                reviewed_devs.add(reviewer)
+
+        for reviewer in reviewed_devs:
+            reviewer_counts[reviewer] += 1
+
+    return reviewer_counts
