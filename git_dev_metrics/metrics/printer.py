@@ -12,7 +12,7 @@ def print_metrics(metrics, org, repo, period):
         "Review Time (h)",
         "Cycle Time (h)",
         "PR Size",
-        "Throughput",
+        "Total PRs",
         "PRs/Week",
         "Reviews Given",
     ]:
@@ -24,7 +24,7 @@ def print_metrics(metrics, org, repo, period):
         f"{metrics['review_time']:.2f}",
         f"{metrics['cycle_time']:.2f}",
         f"{metrics['pr_size']:.1f}",
-        f"{metrics['pr_count']:.2f}",
+        f"{metrics['pr_count']:.0f}",
         f"{metrics['prs_per_week']:.2f}",
         f"{metrics['reviews_given']:.0f}",
     )
@@ -39,7 +39,7 @@ def print_metrics(metrics, org, repo, period):
         "Review Time (h)",
         "Cycle Time (h)",
         "PR Size",
-        "Throughput",
+        "Total PRs",
         "PRs/Week",
         "Reviews Given",
     ]:
@@ -54,7 +54,7 @@ def print_metrics(metrics, org, repo, period):
             f"{m['review_time']:.2f}",
             f"{m['cycle_time']:.2f}",
             f"{m['pr_size']:.1f}",
-            f"{m['pr_count']:.2f}",
+            f"{m['pr_count']:.0f}",
             f"{m['prs_per_week']:.2f}",
             f"{m['reviews_given']:.0f}",
         )
