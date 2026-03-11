@@ -10,9 +10,9 @@ from .calculator import (
     calculate_throughput,
     median,
 )
-from .dev_printer import ConsoleDevPrinter, DevPrinter, FileDevPrinter
+from .dev_printer import ConsoleDevPrinter, FileDevPrinter
 from .printer import CompositePrinter, Printer, get_default_output_path
-from .repo_printer import ConsoleRepoPrinter, FileRepoPrinter, RepoPrinter
+from .repo_printer import ConsoleRepoPrinter, FileRepoPrinter
 
 __all__ = [
     "get_pull_request_metrics",
@@ -28,10 +28,8 @@ __all__ = [
     "get_default_output_path",
     "Printer",
     "CompositePrinter",
-    "RepoPrinter",
     "ConsoleRepoPrinter",
     "FileRepoPrinter",
-    "DevPrinter",
     "ConsoleDevPrinter",
     "FileDevPrinter",
 ]
