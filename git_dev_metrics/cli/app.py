@@ -3,12 +3,11 @@ import traceback
 import typer
 from rich.console import Console
 
-from .validation import validate_period
-from .prompts import prompt_repo_selection
-
 from ..github import GitHubError, get_github_token
 from ..metrics import get_combined_metrics, get_recent_repositories
 from ..metrics.printer import CompositePrinter, get_default_output_path
+from .prompts import prompt_repo_selection
+from .validation import validate_period
 
 app = typer.Typer()
 console = Console()
