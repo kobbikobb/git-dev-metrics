@@ -33,7 +33,7 @@ def _map_repository(repo: dict) -> Repository:
 
 def _map_pull_request(pr: dict) -> PullRequest:
     """Map GraphQL PR response to internal model."""
-    return {
+    return {  # type: ignore[return-value]
         "number": pr.get("number"),
         "title": pr.get("title"),
         "created_at": _parse_datetime(pr.get("createdAt")),
@@ -47,7 +47,7 @@ def _map_pull_request(pr: dict) -> PullRequest:
 
 def _map_review(review: dict) -> Review:
     """Map GraphQL review response to internal model."""
-    return {
+    return {  # type: ignore[return-value]
         "user": {"login": _author_login(review.get("author"))},
         "state": review.get("state"),
         "submitted_at": _parse_datetime(review.get("submittedAt")),
@@ -77,9 +77,10 @@ def fetch_pull_requests(token: str, org: str, repo: str, since: datetime) -> lis
     result = []
     for pr in prs:
         mapped = _map_pull_request(pr)
-        if mapped["merged_at"] is None:
+        merged_at = mapped["merged_at"]
+        if merged_at is None:
             continue
-        if mapped["merged_at"] < since:
+        if merged_at < since:  # type: ignore[operator]
             break
 
         result.append(mapped)
