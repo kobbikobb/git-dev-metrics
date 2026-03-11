@@ -53,7 +53,6 @@ def analyze(
     org: str | None = typer.Option(None, help="GitHub organization name"),
     repo: str | None = typer.Option(None, help="Repository name"),
     period: str = typer.Option("30d", callback=validate_period, help="Time period"),
-    output: bool = typer.Option(False, "--output", help="Save results to file"),
 ):
     """
     Analyze GitHub repository development metrics.
@@ -80,14 +79,14 @@ def analyze(
         traceback.print_exc()
         raise typer.Exit(code=1) from e
 
-    if output:
-        output_path = get_default_output_path()
-        printer: ConsolePrinter | FilePrinter = FilePrinter(output_path)
-        print_combined_metrics(printer, metrics, period)
-        typer.secho(f"Results saved to {output_path}", fg=typer.colors.GREEN)
-    else:
-        printer = ConsolePrinter()
-        print_combined_metrics(printer, metrics, period)
+    output_path = get_default_output_path()
+    file_printer = FilePrinter(output_path)
+    print_combined_metrics(file_printer, metrics, period)
+
+    console_printer = ConsolePrinter()
+    print_combined_metrics(console_printer, metrics, period)
+
+    typer.secho(f"Results saved to {output_path}", fg=typer.colors.GREEN)
 
 
 def main():

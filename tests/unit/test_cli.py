@@ -25,7 +25,7 @@ class TestCLI:
         result = runner.invoke(app, ["--org", "facebook", "--repo", "react"])
 
         mock_get_prs.assert_called_once_with("fake-token", ["facebook/react"], "30d")
-        mock_print.assert_called_once()
+        assert mock_print.call_count == 2
         assert result.exit_code == 0
 
     def test_should_accept_valid_period(self, mocker):
@@ -39,7 +39,7 @@ class TestCLI:
         result = runner.invoke(app, ["--org", "facebook", "--repo", "react", "--period", "7d"])
 
         mock_get_prs.assert_called_once_with("fake-token", ["facebook/react"], "7d")
-        mock_print.assert_called_once()
+        assert mock_print.call_count == 2
         assert result.exit_code == 0
 
     def test_should_handle_client_error(self, mocker):
