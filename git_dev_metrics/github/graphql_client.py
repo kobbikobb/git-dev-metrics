@@ -5,7 +5,7 @@ from gql.graphql_request import GraphQLRequest
 from gql.transport import exceptions as transport_exceptions
 from gql.transport.requests import RequestsHTTPTransport
 
-from .exceptions import GitHubAPIError, GitHubAuthError, GitHubNotFoundError
+from .exceptions import GitHubAPIError, GitHubAuthError, GitHubNotFoundError, GitHubRateLimitError
 
 GITHUB_GRAPHQL_URL = "https://api.github.com/graphql"
 
@@ -15,7 +15,9 @@ DEFAULT_PAGE_SIZE = 100
 def get_client(token: str) -> Client:
     """Create a GraphQL client with the given token."""
     transport = RequestsHTTPTransport(
-        url=GITHUB_GRAPHQL_URL, headers={"Authorization": f"Bearer {token}"}
+        url=GITHUB_GRAPHQL_URL,
+        headers={"Authorization": f"Bearer {token}"},
+        timeout=30,
     )
     return Client(transport=transport)
 
@@ -52,7 +54,7 @@ def _handle_graphql_error(e: transport_exceptions.TransportQueryError) -> None:
             raise GitHubNotFoundError(message) from e
 
         if "rate limit" in message.lower():
-            raise GitHubAPIError("Rate limit exceeded") from e
+            raise GitHubRateLimitError("Rate limit exceeded") from e
 
     raise GitHubAPIError(e.errors[0].get("message", "GraphQL error"))
 
