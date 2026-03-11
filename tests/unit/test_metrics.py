@@ -238,5 +238,65 @@ class TestParsePeriodDays:
     def test_should_parse_months(self):
         assert _parse_period_days("1m") == 30
 
+
+class TestCalculateReviewsGiven:
+    """Test cases for calculate_reviews_given function."""
+
+    def test_should_return_zero_for_no_reviews(self):
+        from git_dev_metrics.metrics.calculator import calculate_reviews_given
+
+        devs = {"alice": [], "bob": []}
+        reviews = {1: [], 2: []}
+        result = calculate_reviews_given(reviews, devs)
+        assert result == {"alice": 0, "bob": 0}
+
+    def test_should_count_reviews_from_devs(self):
+        from git_dev_metrics.metrics.calculator import calculate_reviews_given, group_prs_by_devs
+
+        prs = [
+            any_pr(id=1, number=1, user={"login": "alice"}),
+            any_pr(id=2, number=2, user={"login": "bob"}),
+        ]
+        devs = group_prs_by_devs(prs)
+        reviews = {
+            1: [
+                {
+                    "user": {"login": "bob"},
+                    "state": "APPROVED",
+                    "submitted_at": "2024-01-01T01:00:00Z",
+                },
+            ],
+            2: [
+                {
+                    "user": {"login": "alice"},
+                    "state": "APPROVED",
+                    "submitted_at": "2024-01-01T02:00:00Z",
+                },
+            ],
+        }
+        result = calculate_reviews_given(reviews, devs)
+        assert result["alice"] == 1
+        assert result["bob"] == 1
+
+    def test_should_include_reviewers_not_in_devs(self):
+        from git_dev_metrics.metrics.calculator import calculate_reviews_given, group_prs_by_devs
+
+        prs = [
+            any_pr(id=1, number=1, user={"login": "alice"}),
+        ]
+        devs = group_prs_by_devs(prs)
+        reviews = {
+            1: [
+                {
+                    "user": {"login": "external-reviewer"},
+                    "state": "APPROVED",
+                    "submitted_at": "2024-01-01T01:00:00Z",
+                },
+            ],
+        }
+        result = calculate_reviews_given(reviews, devs)
+        assert result["alice"] == 0
+        assert result["external-reviewer"] == 1
+
     def test_should_default_to_30_for_invalid(self):
         assert _parse_period_days("invalid") == 30
