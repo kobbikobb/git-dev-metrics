@@ -17,7 +17,7 @@ dependencies = [
 ]
 
 [project.scripts]
-app = "git_dev_metrics.cli:main"
+app = "git_dev_metrics.main:main"
 
 [project.urls]
 Repository = "https://github.com/kobbikobb/git-dev-metrics"

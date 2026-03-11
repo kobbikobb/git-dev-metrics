@@ -1,46 +1,17 @@
 import traceback
 
-import questionary
 import typer
-from questionary import Style
 from rich.console import Console
 
-from .github import GitHubError, get_github_token
-from .metrics import get_combined_metrics, get_recent_repositories
-from .metrics.printer import CompositePrinter, get_default_output_path
+from .validation import validate_period
+from .prompts import prompt_repo_selection
+
+from ..github import GitHubError, get_github_token
+from ..metrics import get_combined_metrics, get_recent_repositories
+from ..metrics.printer import CompositePrinter, get_default_output_path
 
 app = typer.Typer()
 console = Console()
-
-
-def validate_period(period: str) -> str:
-    if not period.endswith("d") or not period[:-1].isdigit():
-        raise typer.BadParameter("Period must be like '7d', '30d', '90d'") from None
-    return period
-
-
-def prompt_repo_selection(repos: dict[str, str]) -> list[str]:
-    choices = [
-        questionary.Choice(
-            title=f"{name} ({visibility})",
-            value=name,
-            checked=True,  # all selected by default
-        )
-        for name, visibility in repos.items()
-    ]
-
-    custom_style = Style(
-        [
-            ("highlighted", "fg:#00b4d8 bold"),  # cursor row
-            ("selected", "fg:#90e0ef"),  # checked items
-        ]
-    )
-
-    selected = questionary.checkbox(
-        "Select repositories to include:", choices=choices, style=custom_style
-    ).ask()
-
-    return selected or list(repos.keys())  # fallback if user cancels
 
 
 @app.command()
@@ -79,11 +50,3 @@ def analyze(
     CompositePrinter(output_path).print_combined_metrics(metrics, period)
 
     typer.secho(f"Results saved to {output_path}", fg=typer.colors.GREEN)
-
-
-def main():
-    app()
-
-
-if __name__ == "__main__":
-    app()
