@@ -2,4 +2,4 @@
 
 set -e
 
-uv run app --org kobbikobb --repo panda
+uv run app --org graphql-python --repo gql

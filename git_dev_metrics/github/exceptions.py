@@ -4,14 +4,14 @@ class GitHubError(Exception):
     pass
 
 
-class GitHubAuthError(GitHubError):
-    """Authentication failed."""
+class GitHubAPIError(GitHubError):
+    """API request failed."""
 
     pass
 
 
-class GitHubAPIError(GitHubError):
-    """API request failed."""
+class GitHubAuthError(GitHubAPIError):
+    """Authentication failed."""
 
     pass
 

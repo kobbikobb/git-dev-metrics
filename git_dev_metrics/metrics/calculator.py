@@ -4,6 +4,15 @@ from datetime import datetime
 from ..models import PullRequest
 
 
+def _to_datetime(value: str | datetime | None) -> datetime | None:
+    """Convert string or datetime to datetime object."""
+    if value is None:
+        return None
+    if isinstance(value, datetime):
+        return value
+    return datetime.fromisoformat(value.replace("Z", "+00:00"))
+
+
 def median(values: list[float | int]) -> float:
     """Return median of a list of values."""
     if not values:
@@ -22,8 +31,10 @@ def calculate_cycle_time(prs: list[PullRequest]) -> float:
 
     cycle_times = []
     for pr in prs:
-        created = datetime.fromisoformat(pr["created_at"].replace("Z", "+00:00"))
-        merged = datetime.fromisoformat(pr["merged_at"].replace("Z", "+00:00"))
+        created = _to_datetime(pr["created_at"])
+        merged = _to_datetime(pr["merged_at"])
+        if created is None or merged is None:
+            continue
         hours = (merged - created).total_seconds() / 3600
         cycle_times.append(hours)
 
@@ -53,14 +64,14 @@ def calculate_pickup_time(prs: list[PullRequest], reviews: dict) -> float:
     for pr in prs:
         pr_number = pr["number"]
         pr_reviews = reviews.get(pr_number, [])
-        created = datetime.fromisoformat(pr["created_at"].replace("Z", "+00:00"))
+        created = _to_datetime(pr["created_at"])
+        if created is None:
+            continue
 
         first_approval = None
         for review in pr_reviews:
             if review.get("state") == "APPROVED":
-                first_approval = datetime.fromisoformat(
-                    review["submitted_at"].replace("Z", "+00:00")
-                )
+                first_approval = _to_datetime(review.get("submitted_at"))
                 break
 
         if first_approval:
@@ -81,17 +92,15 @@ def calculate_review_time(prs: list[PullRequest], reviews: dict) -> float:
     for pr in prs:
         pr_number = pr["number"]
         pr_reviews = reviews.get(pr_number, [])
-        merged = datetime.fromisoformat(pr["merged_at"].replace("Z", "+00:00"))
+        merged = _to_datetime(pr["merged_at"])
 
         first_approval = None
         for review in pr_reviews:
             if review.get("state") == "APPROVED":
-                first_approval = datetime.fromisoformat(
-                    review["submitted_at"].replace("Z", "+00:00")
-                )
+                first_approval = _to_datetime(review.get("submitted_at"))
                 break
 
-        if first_approval:
+        if merged and first_approval:
             hours = (merged - first_approval).total_seconds() / 3600
             review_times.append(hours)
 
@@ -122,13 +131,12 @@ def calculate_reviews_given(reviews: dict, devs: dict[str, list[PullRequest]]) -
     reviewer_counts: dict[str, int] = {dev: 0 for dev in devs}
 
     for _pr_number, pr_reviews in reviews.items():
-        reviewed_devs = set()
         for review in pr_reviews:
             reviewer = review.get("user", {}).get("login")
-            if reviewer and reviewer in reviewer_counts:
-                reviewed_devs.add(reviewer)
-
-        for reviewer in reviewed_devs:
-            reviewer_counts[reviewer] += 1
+            if reviewer:
+                if reviewer in reviewer_counts:
+                    reviewer_counts[reviewer] += 1
+                elif reviewer not in devs:
+                    reviewer_counts[reviewer] = 1
 
     return reviewer_counts

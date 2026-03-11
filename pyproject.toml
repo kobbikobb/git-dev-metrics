@@ -7,8 +7,8 @@ license = {text = "MIT"}
 authors = [{name = "Jakob Jonasson"}]
 requires-python = ">=3.14"
 dependencies = [
+    "gql[requests]>=3.5.0",
     "keyring>=25.7.0",
-    "pygithub>=2.8.1",
     "python-dateutil>=2.9.0.post0",
     "questionary>=2.1.1",
     "requests>=2.32.5",
