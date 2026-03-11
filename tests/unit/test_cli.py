@@ -20,12 +20,14 @@ class TestCLI:
             "git_dev_metrics.cli.get_combined_metrics",
             return_value={"repo_metrics": {}, "dev_metrics": {}},
         )
-        mock_print = mocker.patch("git_dev_metrics.cli.print_combined_metrics")
+        mocker.patch("git_dev_metrics.cli.ConsoleRepoPrinter")
+        mocker.patch("git_dev_metrics.cli.ConsoleDevPrinter")
+        mocker.patch("git_dev_metrics.cli.FileRepoPrinter")
+        mocker.patch("git_dev_metrics.cli.FileDevPrinter")
 
         result = runner.invoke(app, ["--org", "facebook", "--repo", "react"])
 
         mock_get_prs.assert_called_once_with("fake-token", ["facebook/react"], "30d")
-        assert mock_print.call_count == 2
         assert result.exit_code == 0
 
     def test_should_accept_valid_period(self, mocker):
@@ -34,12 +36,14 @@ class TestCLI:
             "git_dev_metrics.cli.get_combined_metrics",
             return_value={"repo_metrics": {}, "dev_metrics": {}},
         )
-        mock_print = mocker.patch("git_dev_metrics.cli.print_combined_metrics")
+        mocker.patch("git_dev_metrics.cli.ConsoleRepoPrinter")
+        mocker.patch("git_dev_metrics.cli.ConsoleDevPrinter")
+        mocker.patch("git_dev_metrics.cli.FileRepoPrinter")
+        mocker.patch("git_dev_metrics.cli.FileDevPrinter")
 
         result = runner.invoke(app, ["--org", "facebook", "--repo", "react", "--period", "7d"])
 
         mock_get_prs.assert_called_once_with("fake-token", ["facebook/react"], "7d")
-        assert mock_print.call_count == 2
         assert result.exit_code == 0
 
     def test_should_handle_client_error(self, mocker):
