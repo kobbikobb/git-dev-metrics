@@ -128,7 +128,7 @@ def get_recent_repositories(token: str) -> dict:
     recent_repos = [
         r
         for r in repos
-        if r["last_pushed"] is not None and r["last_pushed"] >= parse_time_period("d180")
+        if r["last_pushed"] is not None and r["last_pushed"] >= parse_time_period("180d")
     ]
     recent_repos.sort(key=lambda r: r["last_pushed"] or datetime.min, reverse=True)
 
