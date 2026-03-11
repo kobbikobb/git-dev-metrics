@@ -1,7 +1,7 @@
 import re
 from datetime import datetime
 
-from ..github import fetch_pull_requests, fetch_repositories, fetch_reviews
+from ..github import fetch_repo_metrics, fetch_repositories
 from ..utils import parse_time_period
 from .calculator import (
     calculate_cycle_time,
@@ -34,12 +34,9 @@ def get_pull_request_metrics(token: str, org: str, repo: str, event_period: str 
     Get development metrics for a repository over a specified time period.
     """
     since = parse_time_period(event_period)
-    prs = fetch_pull_requests(token, org, repo, since)
+    prs, reviews = fetch_repo_metrics(token, org, repo, since)
 
     period_days = _parse_period_days(event_period)
-
-    pr_numbers = [pr["number"] for pr in prs]
-    reviews = fetch_reviews(token, org, repo, pr_numbers)
 
     devs = group_prs_by_devs(prs)
     reviews_given = calculate_reviews_given(reviews, devs)
@@ -65,6 +62,62 @@ def get_pull_request_metrics(token: str, org: str, repo: str, event_period: str 
         "prs_per_week": calculate_prs_per_week(prs, period_days),
         "reviews_given": sum(reviews_given.values()),
         "dev_metrics": dev_metrics,
+    }
+
+
+def get_combined_metrics(token: str, selected_repos: list[str], event_period: str = "30d") -> dict:
+    """
+    Get combined metrics for multiple repositories.
+
+    Returns dict with:
+    - repo_metrics: dict mapping repo_name -> repo-level metrics
+    - dev_metrics: dict mapping dev_name -> combined dev-level metrics across all repos
+    """
+    since = parse_time_period(event_period)
+    period_days = _parse_period_days(event_period)
+
+    all_prs: list = []
+    all_reviews: dict = {}
+    repo_metrics: dict = {}
+
+    for full_name in selected_repos:
+        org, name = full_name.split("/", 1)
+        prs, reviews = fetch_repo_metrics(token, org, name, since)
+
+        all_prs.extend(prs)
+        all_reviews.update(reviews)
+
+        devs = group_prs_by_devs(prs)
+        reviews_given = calculate_reviews_given(reviews, devs)
+
+        repo_metrics[full_name] = {
+            "cycle_time": calculate_cycle_time(prs),
+            "pr_size": calculate_pr_size(prs),
+            "pr_count": calculate_throughput(prs),
+            "pickup_time": calculate_pickup_time(prs, reviews),
+            "review_time": calculate_review_time(prs, reviews),
+            "prs_per_week": calculate_prs_per_week(prs, period_days),
+            "reviews_given": sum(reviews_given.values()),
+        }
+
+    all_devs = group_prs_by_devs(all_prs)
+    all_reviews_given = calculate_reviews_given(all_reviews, all_devs)
+
+    combined_dev_metrics = {}
+    for dev, dev_prs in all_devs.items():
+        combined_dev_metrics[dev] = {
+            "cycle_time": calculate_cycle_time(dev_prs),
+            "pr_size": calculate_pr_size(dev_prs),
+            "pr_count": calculate_throughput(dev_prs),
+            "pickup_time": calculate_pickup_time(dev_prs, all_reviews),
+            "review_time": calculate_review_time(dev_prs, all_reviews),
+            "prs_per_week": calculate_prs_per_week(dev_prs, period_days),
+            "reviews_given": all_reviews_given.get(dev, 0),
+        }
+
+    return {
+        "repo_metrics": repo_metrics,
+        "dev_metrics": combined_dev_metrics,
     }
 
 

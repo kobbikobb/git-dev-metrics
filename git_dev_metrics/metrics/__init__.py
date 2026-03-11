@@ -1,6 +1,6 @@
 """Metrics"""
 
-from .analyzer import get_pull_request_metrics, get_recent_repositories
+from .analyzer import get_combined_metrics, get_pull_request_metrics, get_recent_repositories
 from .calculator import (
     calculate_cycle_time,
     calculate_pickup_time,
@@ -10,10 +10,11 @@ from .calculator import (
     calculate_throughput,
     median,
 )
-from .printer import print_metrics
+from .printer import print_combined_metrics, print_metrics
 
 __all__ = [
     "get_pull_request_metrics",
+    "get_combined_metrics",
     "get_recent_repositories",
     "calculate_cycle_time",
     "calculate_pr_size",
@@ -23,4 +24,5 @@ __all__ = [
     "calculate_throughput",
     "median",
     "print_metrics",
+    "print_combined_metrics",
 ]
