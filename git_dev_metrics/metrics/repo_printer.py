@@ -1,16 +1,7 @@
-from abc import ABC, abstractmethod
 from pathlib import Path
 
 
-class RepoPrinter(ABC):
-    """Abstract base class for repo metric printers."""
-
-    @abstractmethod
-    def print(self, metrics: dict, period: str) -> None:
-        pass
-
-
-class ConsoleRepoPrinter(RepoPrinter):
+class ConsoleRepoPrinter:
     """Print repo metrics to console using Rich."""
 
     def print(self, metrics: dict, period: str) -> None:
@@ -49,7 +40,7 @@ class ConsoleRepoPrinter(RepoPrinter):
         console.print(table)
 
 
-class FileRepoPrinter(RepoPrinter):
+class FileRepoPrinter:
     """Print repo metrics to markdown file."""
 
     def __init__(self, output_path: Path):

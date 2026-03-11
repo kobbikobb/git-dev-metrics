@@ -1,16 +1,7 @@
-from abc import ABC, abstractmethod
 from pathlib import Path
 
 
-class DevPrinter(ABC):
-    """Abstract base class for dev metric printers."""
-
-    @abstractmethod
-    def print(self, metrics: dict, period: str) -> None:
-        pass
-
-
-class ConsoleDevPrinter(DevPrinter):
+class ConsoleDevPrinter:
     """Print dev metrics to console using Rich."""
 
     def print(self, metrics: dict, period: str) -> None:
@@ -48,7 +39,7 @@ class ConsoleDevPrinter(DevPrinter):
         console.print(table)
 
 
-class FileDevPrinter(DevPrinter):
+class FileDevPrinter:
     """Print dev metrics to markdown file."""
 
     def __init__(self, output_path: Path):
