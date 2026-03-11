@@ -6,7 +6,7 @@ from questionary import Style
 from rich.console import Console
 
 from .github import GitHubError, get_github_token
-from .metrics import get_pull_request_metrics, get_recent_repositories, print_metrics
+from .metrics import get_combined_metrics, get_recent_repositories, print_combined_metrics
 
 app = typer.Typer()
 console = Console()
@@ -66,18 +66,14 @@ def analyze(
 
     typer.secho("Fetching development metrics...", fg=typer.colors.GREEN, bold=True)
 
-    for full_name in selected:
-        repo_org, repo_name = full_name.split("/", 1)
-        try:
-            metrics = get_pull_request_metrics(token, repo_org, repo_name, period)
-        except GitHubError as e:
-            typer.secho(
-                f"Error fetching metrics for {full_name}: {e}", fg=typer.colors.RED, bold=True
-            )
-            traceback.print_exc()
-            raise typer.Exit(code=1) from e
+    try:
+        metrics = get_combined_metrics(token, selected, period)
+    except GitHubError as e:
+        typer.secho(f"Error fetching metrics: {e}", fg=typer.colors.RED, bold=True)
+        traceback.print_exc()
+        raise typer.Exit(code=1) from e
 
-        print_metrics(metrics, repo_org, repo_name, period)
+    print_combined_metrics(metrics, period)
 
 
 def main():

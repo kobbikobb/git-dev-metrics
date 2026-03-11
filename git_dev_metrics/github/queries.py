@@ -2,7 +2,10 @@ from datetime import datetime
 
 from ..models import PullRequest, Repository, Review
 from .graphql_client import execute_paginated_query, get_client
-from .graphql_queries import PULL_REQUESTS_QUERY, REPOSITORIES_QUERY, REVIEWS_QUERY
+from .graphql_queries import (
+    REPO_METRICS_QUERY,
+    REPOSITORIES_QUERY,
+)
 
 PAGE_SIZE = 100
 
@@ -69,7 +72,7 @@ def fetch_pull_requests(token: str, org: str, repo: str, since: datetime) -> lis
     client = get_client(token)
     prs = execute_paginated_query(
         client,
-        PULL_REQUESTS_QUERY,
+        REPO_METRICS_QUERY,
         {"owner": org, "name": repo, "first": PAGE_SIZE},
         "repository.pullRequests",
     )
@@ -98,7 +101,7 @@ def fetch_reviews(
     client = get_client(token)
     prs = execute_paginated_query(
         client,
-        REVIEWS_QUERY,
+        REPO_METRICS_QUERY,
         {"owner": org, "name": repo, "first": PAGE_SIZE},
         "repository.pullRequests",
     )
@@ -114,3 +117,35 @@ def fetch_reviews(
         reviews_by_pr[pr_number] = [_map_review(r) for r in reviews]
 
     return reviews_by_pr
+
+
+def fetch_repo_metrics(
+    token: str, org: str, repo: str, since: datetime
+) -> tuple[list[PullRequest], dict[int, list[Review]]]:
+    """Fetch PRs and reviews in a single query."""
+    client = get_client(token)
+    prs = execute_paginated_query(
+        client,
+        REPO_METRICS_QUERY,
+        {"owner": org, "name": repo, "first": PAGE_SIZE},
+        "repository.pullRequests",
+    )
+
+    mapped_prs: list[PullRequest] = []
+    reviews_by_pr: dict[int, list[Review]] = {}
+
+    for pr in prs:
+        mapped = _map_pull_request(pr)
+        merged_at = mapped["merged_at"]
+        if merged_at is None:
+            continue
+        if merged_at < since:  # type: ignore[operator]
+            break
+
+        pr_number = mapped["number"]
+        mapped_prs.append(mapped)
+
+        reviews = pr.get("reviews", {}).get("nodes", [])
+        reviews_by_pr[pr_number] = [_map_review(r) for r in reviews]
+
+    return mapped_prs, reviews_by_pr
