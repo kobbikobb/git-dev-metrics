@@ -6,7 +6,13 @@ from questionary import Style
 from rich.console import Console
 
 from .github import GitHubError, get_github_token
-from .metrics import get_combined_metrics, get_recent_repositories, print_combined_metrics
+from .metrics import get_combined_metrics, get_recent_repositories
+from .metrics.printer import (
+    ConsolePrinter,
+    FilePrinter,
+    get_default_output_path,
+    print_combined_metrics,
+)
 
 app = typer.Typer()
 console = Console()
@@ -47,6 +53,7 @@ def analyze(
     org: str | None = typer.Option(None, help="GitHub organization name"),
     repo: str | None = typer.Option(None, help="Repository name"),
     period: str = typer.Option("30d", callback=validate_period, help="Time period"),
+    output: bool = typer.Option(False, "--output", help="Save results to file"),
 ):
     """
     Analyze GitHub repository development metrics.
@@ -73,7 +80,14 @@ def analyze(
         traceback.print_exc()
         raise typer.Exit(code=1) from e
 
-    print_combined_metrics(metrics, period)
+    if output:
+        output_path = get_default_output_path()
+        printer: ConsolePrinter | FilePrinter = FilePrinter(output_path)
+        print_combined_metrics(printer, metrics, period)
+        typer.secho(f"Results saved to {output_path}", fg=typer.colors.GREEN)
+    else:
+        printer = ConsolePrinter()
+        print_combined_metrics(printer, metrics, period)
 
 
 def main():

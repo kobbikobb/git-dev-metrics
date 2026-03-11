@@ -21,3 +21,6 @@ dist/
 # AI
 .serena
 PLAN.md
+
+# Generated reports
+metrics_results/
