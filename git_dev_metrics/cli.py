@@ -7,12 +7,9 @@ from rich.console import Console
 
 from .github import GitHubError, get_github_token
 from .metrics import get_combined_metrics, get_recent_repositories
-from .metrics.printer import (
-    ConsolePrinter,
-    FilePrinter,
-    get_default_output_path,
-    print_combined_metrics,
-)
+from .metrics.dev_printer import ConsoleDevPrinter, FileDevPrinter
+from .metrics.printer import get_default_output_path
+from .metrics.repo_printer import ConsoleRepoPrinter, FileRepoPrinter
 
 app = typer.Typer()
 console = Console()
@@ -80,11 +77,14 @@ def analyze(
         raise typer.Exit(code=1) from e
 
     output_path = get_default_output_path()
-    file_printer = FilePrinter(output_path)
-    print_combined_metrics(file_printer, metrics, period)
 
-    console_printer = ConsolePrinter()
-    print_combined_metrics(console_printer, metrics, period)
+    # Save to file
+    FileRepoPrinter(output_path).print(metrics, period)
+    FileDevPrinter(output_path).print(metrics, period)
+
+    # Print to console
+    ConsoleRepoPrinter().print(metrics, period)
+    ConsoleDevPrinter().print(metrics, period)
 
     typer.secho(f"Results saved to {output_path}", fg=typer.colors.GREEN)
 
