@@ -1,7 +1,6 @@
 from datetime import datetime
 
 from ..models import PullRequest, Repository, Review
-from .exceptions import GitHubAPIError
 from .graphql_client import execute_paginated_query, get_client
 from .graphql_queries import PULL_REQUESTS_QUERY, REPOSITORIES_QUERY, REVIEWS_QUERY
 
@@ -26,17 +25,17 @@ def _parse_datetime(dt_str: str | None) -> datetime | None:
 def _map_repository(repo: dict) -> Repository:
     """Map GraphQL repository response to internal model."""
     return {
-        "full_name": repo["fullName"],
-        "private": repo["isPrivate"],
-        "last_pushed": _parse_datetime(repo["pushedAt"]),
+        "full_name": repo.get("fullName"),  # type: ignore[return-value]
+        "private": repo.get("isPrivate", False),
+        "last_pushed": _parse_datetime(repo.get("pushedAt")),
     }
 
 
 def _map_pull_request(pr: dict) -> PullRequest:
     """Map GraphQL PR response to internal model."""
     return {
-        "number": pr["number"],
-        "title": pr["title"],
+        "number": pr.get("number"),
+        "title": pr.get("title"),
         "created_at": _parse_datetime(pr.get("createdAt")),
         "merged_at": _parse_datetime(pr.get("mergedAt")),
         "additions": pr.get("additions", 0),
@@ -58,34 +57,22 @@ def _map_review(review: dict) -> Review:
 def fetch_repositories(token: str) -> list[Repository]:
     """Fetch all repositories accessible with the given token."""
     client = get_client(token)
+    repos = execute_paginated_query(
+        client, REPOSITORIES_QUERY, {"first": PAGE_SIZE}, "viewer.repositories"
+    )
 
-    try:
-        repos = execute_paginated_query(
-            client, REPOSITORIES_QUERY, {"first": PAGE_SIZE}, "viewer.repositories"
-        )
-    except GitHubAPIError:
-        raise
-    except Exception as e:
-        raise GitHubAPIError(f"Failed to fetch repositories: {e}") from e
-
-    return [_map_repository(repo) for repo in repos if repo["fullName"]]
+    return [_map_repository(repo) for repo in repos if repo.get("fullName")]
 
 
 def fetch_pull_requests(token: str, org: str, repo: str, since: datetime) -> list[PullRequest]:
     """Fetch merged pull requests since a given date."""
     client = get_client(token)
-
-    try:
-        prs = execute_paginated_query(
-            client,
-            PULL_REQUESTS_QUERY,
-            {"owner": org, "name": repo, "first": PAGE_SIZE},
-            "repository.pullRequests",
-        )
-    except GitHubAPIError:
-        raise
-    except Exception as e:
-        raise GitHubAPIError(f"Failed to fetch pull requests: {e}") from e
+    prs = execute_paginated_query(
+        client,
+        PULL_REQUESTS_QUERY,
+        {"owner": org, "name": repo, "first": PAGE_SIZE},
+        "repository.pullRequests",
+    )
 
     result = []
     for pr in prs:
@@ -108,18 +95,12 @@ def fetch_reviews(
         return {}
 
     client = get_client(token)
-
-    try:
-        prs = execute_paginated_query(
-            client,
-            REVIEWS_QUERY,
-            {"owner": org, "name": repo, "first": PAGE_SIZE},
-            "repository.pullRequests",
-        )
-    except GitHubAPIError:
-        raise
-    except Exception as e:
-        raise GitHubAPIError(f"Failed to fetch reviews: {e}") from e
+    prs = execute_paginated_query(
+        client,
+        REVIEWS_QUERY,
+        {"owner": org, "name": repo, "first": PAGE_SIZE},
+        "repository.pullRequests",
+    )
 
     reviews_by_pr: dict[int, list[Review]] = {pr_num: [] for pr_num in pr_numbers}
 
