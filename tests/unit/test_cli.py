@@ -1,6 +1,6 @@
 from typer.testing import CliRunner
 
-from git_dev_metrics.cli import app
+from git_dev_metrics.main import app
 
 runner = CliRunner()
 
