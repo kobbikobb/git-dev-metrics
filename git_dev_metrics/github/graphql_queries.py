@@ -10,7 +10,7 @@ REPOSITORIES_QUERY = gql.gql(
                 orderBy: {field: PUSHED_AT, direction: DESC}
             ) {
                 nodes {
-                    fullName
+                    nameWithOwner
                     isPrivate
                     pushedAt
                 }

@@ -26,7 +26,7 @@ class TestFetchRepositories:
                         "repositories": {
                             "nodes": [
                                 {
-                                    "fullName": "user/my-repo",
+                                    "nameWithOwner": "user/my-repo",
                                     "isPrivate": False,
                                     "pushedAt": "2024-01-01T00:00:00Z",
                                 }

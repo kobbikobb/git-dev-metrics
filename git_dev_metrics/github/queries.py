@@ -28,7 +28,7 @@ def _parse_datetime(dt_str: str | None) -> datetime | None:
 def _map_repository(repo: dict) -> Repository:
     """Map GraphQL repository response to internal model."""
     return {
-        "full_name": repo.get("fullName"),  # type: ignore[return-value]
+        "full_name": repo.get("nameWithOwner"),  # type: ignore[return-value]
         "private": repo.get("isPrivate", False),
         "last_pushed": _parse_datetime(repo.get("pushedAt")),
     }
@@ -64,7 +64,7 @@ def fetch_repositories(token: str) -> list[Repository]:
         client, REPOSITORIES_QUERY, {"first": PAGE_SIZE}, "viewer.repositories"
     )
 
-    return [_map_repository(repo) for repo in repos if repo.get("fullName")]
+    return [_map_repository(repo) for repo in repos if repo.get("nameWithOwner")]
 
 
 def fetch_pull_requests(token: str, org: str, repo: str, since: datetime) -> list[PullRequest]:
