@@ -91,8 +91,10 @@ def fetch_pull_requests(token: str, org: str, repo: str, since: datetime) -> lis
         merged_at = mapped["merged_at"]
         if merged_at is None:
             continue
+        # Since we order by UPDATED_AT (not MERGED_AT), we can't break early -
+        # a recently updated PR could have been merged long ago. Filter instead.
         if merged_at < since:  # type: ignore[operator]
-            break
+            continue
 
         result.append(mapped)
 
@@ -147,8 +149,10 @@ def fetch_repo_metrics(
         merged_at = mapped["merged_at"]
         if merged_at is None:
             continue
+        # Since we order by UPDATED_AT (not MERGED_AT), we can't break early -
+        # a recently updated PR could have been merged long ago. Filter instead.
         if merged_at < since:  # type: ignore[operator]
-            break
+            continue
 
         pr_number = mapped["number"]
         mapped_prs.append(mapped)
