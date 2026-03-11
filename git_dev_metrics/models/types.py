@@ -27,6 +27,7 @@ class PullRequest(PullRequestInfo):
     additions: int
     deletions: int
     changed_files: int
+    first_commit_at: datetime | None
 
 
 class Review(TypedDict):

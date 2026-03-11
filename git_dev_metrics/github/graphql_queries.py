@@ -110,6 +110,13 @@ REPO_METRICS_QUERY = gql.gql(
                     author {
                         login
                     }
+                    commits(first: 1) {
+                        nodes {
+                            commit {
+                                committedDate
+                            }
+                        }
+                    }
                     reviews(first: 100) {
                         nodes {
                             author {

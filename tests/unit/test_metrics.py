@@ -72,6 +72,45 @@ class TestCalculateCycleTime:
 
         assert result == 24.0
 
+    def test_should_use_first_commit_when_older_than_created_at(self):
+        prs = [
+            any_pr(
+                created_at="2024-01-02T00:00:00Z",
+                merged_at="2024-01-03T00:00:00Z",
+                first_commit_at="2024-01-01T00:00:00Z",
+            ),
+        ]
+
+        result = calculate_cycle_time(prs)
+
+        assert result == 48.0
+
+    def test_should_use_created_at_when_older_than_first_commit(self):
+        prs = [
+            any_pr(
+                created_at="2024-01-01T00:00:00Z",
+                merged_at="2024-01-03T00:00:00Z",
+                first_commit_at="2024-01-02T00:00:00Z",
+            ),
+        ]
+
+        result = calculate_cycle_time(prs)
+
+        assert result == 48.0
+
+    def test_should_use_created_at_when_first_commit_is_none(self):
+        prs = [
+            any_pr(
+                created_at="2024-01-01T00:00:00Z",
+                merged_at="2024-01-02T00:00:00Z",
+                first_commit_at=None,
+            ),
+        ]
+
+        result = calculate_cycle_time(prs)
+
+        assert result == 24.0
+
 
 class TestCalculatePrSize:
     """Test cases for calculate_pr_size function."""

@@ -36,6 +36,13 @@ def _map_repository(repo: dict) -> Repository:
 
 def _map_pull_request(pr: dict) -> PullRequest:
     """Map GraphQL PR response to internal model."""
+    commits = pr.get("commits", {}).get("nodes", [])
+    first_commit_date = None
+    if commits:
+        commit_data = commits[0].get("commit", {})
+        committed_at = commit_data.get("committedDate")
+        first_commit_date = _parse_datetime(committed_at)
+
     return {  # type: ignore[return-value]
         "number": pr.get("number"),
         "title": pr.get("title"),
@@ -45,6 +52,7 @@ def _map_pull_request(pr: dict) -> PullRequest:
         "deletions": pr.get("deletions", 0),
         "changed_files": pr.get("changedFiles", 0),
         "user": {"login": _author_login(pr.get("author"))},
+        "first_commit_at": first_commit_date,
     }
 
 
