@@ -1,6 +1,7 @@
 import questionary
 from questionary import Style
 
+
 def prompt_repo_selection(repos: dict[str, str]) -> list[str]:
     choices = [
         questionary.Choice(

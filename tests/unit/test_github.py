@@ -11,8 +11,6 @@ from git_dev_metrics.github import (
     fetch_reviews,
 )
 
-from .conftest import any_pr
-
 
 class TestFetchRepositories:
     @responses.activate

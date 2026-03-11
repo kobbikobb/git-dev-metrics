@@ -2,10 +2,10 @@
 
 from git_dev_metrics.metrics import (
     calculate_cycle_time,
-    calculate_pr_size,
     calculate_pickup_time,
-    calculate_review_time,
+    calculate_pr_size,
     calculate_prs_per_week,
+    calculate_review_time,
     calculate_throughput,
     median,
 )
