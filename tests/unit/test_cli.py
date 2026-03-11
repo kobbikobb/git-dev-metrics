@@ -20,10 +20,7 @@ class TestCLI:
             "git_dev_metrics.cli.get_combined_metrics",
             return_value={"repo_metrics": {}, "dev_metrics": {}},
         )
-        mocker.patch("git_dev_metrics.cli.ConsoleRepoPrinter")
-        mocker.patch("git_dev_metrics.cli.ConsoleDevPrinter")
-        mocker.patch("git_dev_metrics.cli.FileRepoPrinter")
-        mocker.patch("git_dev_metrics.cli.FileDevPrinter")
+        mocker.patch("git_dev_metrics.cli.CompositePrinter")
 
         result = runner.invoke(app, ["--org", "facebook", "--repo", "react"])
 
@@ -36,10 +33,7 @@ class TestCLI:
             "git_dev_metrics.cli.get_combined_metrics",
             return_value={"repo_metrics": {}, "dev_metrics": {}},
         )
-        mocker.patch("git_dev_metrics.cli.ConsoleRepoPrinter")
-        mocker.patch("git_dev_metrics.cli.ConsoleDevPrinter")
-        mocker.patch("git_dev_metrics.cli.FileRepoPrinter")
-        mocker.patch("git_dev_metrics.cli.FileDevPrinter")
+        mocker.patch("git_dev_metrics.cli.CompositePrinter")
 
         result = runner.invoke(app, ["--org", "facebook", "--repo", "react", "--period", "7d"])
 
