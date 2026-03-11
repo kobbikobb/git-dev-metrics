@@ -4,7 +4,7 @@ from pathlib import Path
 class ConsoleRepoPrinter:
     """Print repo metrics to console using Rich."""
 
-    def print(self, metrics: dict, period: str) -> None:
+    def print_combined_metrics(self, metrics: dict, period: str) -> None:
         from rich.console import Console
         from rich.table import Table
 
@@ -46,7 +46,7 @@ class FileRepoPrinter:
     def __init__(self, output_path: Path):
         self.output_path = output_path
 
-    def print(self, metrics: dict, period: str) -> None:
+    def print_combined_metrics(self, metrics: dict, period: str) -> None:
         header = (
             "| Repo | Pickup Time (h) | Review Time (h) | Cycle Time (h) | "
             "PR Size | Total PRs | PRs/Week | Reviews Given |"
