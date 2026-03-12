@@ -259,8 +259,12 @@ def identify_bottlenecks(prs: list[OpenPullRequest]) -> dict:
     ]
     overwhelmed_reviewers.sort(key=lambda x: x["pending_count"], reverse=True)
 
+    # Sort by age (oldest first) before limiting
+    stale_prs.sort(key=lambda x: x["age_hours"], reverse=True)
+    waiting_for_review.sort(key=lambda x: x["waiting_hours"], reverse=True)
+
     return {
-        "stale_prs": stale_prs[:10],  # Top 10 stale PRs
+        "stale_prs": stale_prs[:10],  # Top 10 oldest stale PRs
         "waiting_for_review": waiting_for_review[:10],
         "overwhelmed_reviewers": overwhelmed_reviewers[:10],
     }
