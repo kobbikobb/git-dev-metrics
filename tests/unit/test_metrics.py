@@ -11,7 +11,7 @@ from git_dev_metrics.metrics import (
 )
 from git_dev_metrics.metrics.analyzer import _parse_period_days
 
-from .conftest import any_pr
+from .conftest import any_open_pr, any_pr
 
 
 class TestMedian:
@@ -339,3 +339,120 @@ class TestCalculateReviewsGiven:
 
     def test_should_default_to_30_for_invalid(self):
         assert _parse_period_days("invalid") == 30
+
+
+class TestCalculatePrAging:
+    """Test cases for calculate_pr_aging function."""
+
+    def test_should_return_zeros_for_empty_list(self):
+        from git_dev_metrics.metrics.calculator import calculate_pr_aging
+
+        result = calculate_pr_aging([])
+        assert result["open_count"] == 0
+        assert result["stale_count"] == 0
+        assert result["avg_age_hours"] == 0.0
+        assert result["oldest_pr_age_hours"] == 0.0
+
+    def test_should_calculate_aging_for_fresh_prs(self):
+        from datetime import datetime, timezone, timedelta
+        from git_dev_metrics.metrics.calculator import calculate_pr_aging
+
+        now = datetime.now(timezone.utc)
+        recent = now - timedelta(hours=2)
+
+        prs = [any_open_pr(created_at=recent)]
+        result = calculate_pr_aging(prs)
+
+        assert result["open_count"] == 1
+        assert result["stale_count"] == 0
+        assert 1.5 < result["avg_age_hours"] < 2.5
+
+    def test_should_identify_stale_prs(self):
+        from datetime import datetime, timezone, timedelta
+        from git_dev_metrics.metrics.calculator import calculate_pr_aging
+
+        now = datetime.now(timezone.utc)
+        stale = now - timedelta(days=10)
+
+        prs = [any_open_pr(created_at=stale)]
+        result = calculate_pr_aging(prs)
+
+        assert result["open_count"] == 1
+        assert result["stale_count"] == 1
+        assert result["oldest_pr_age_hours"] > 24 * 7  # > 7 days
+
+
+class TestIdentifyBottlenecks:
+    """Test cases for identify_bottlenecks function."""
+
+    def test_should_return_empty_for_no_prs(self):
+        from git_dev_metrics.metrics.calculator import identify_bottlenecks
+
+        result = identify_bottlenecks([])
+        assert result["stale_prs"] == []
+        assert result["waiting_for_review"] == []
+        assert result["overwhelmed_reviewers"] == []
+
+    def test_should_identify_stale_prs(self):
+        from datetime import datetime, timezone, timedelta
+        from git_dev_metrics.metrics.calculator import identify_bottlenecks
+
+        now = datetime.now(timezone.utc)
+        stale = now - timedelta(days=10)
+
+        prs = [
+            any_open_pr(
+                number=123,
+                title="Stale PR",
+                user={"login": "alice"},
+                created_at=stale,
+            )
+        ]
+        result = identify_bottlenecks(prs)
+
+        assert len(result["stale_prs"]) == 1
+        assert result["stale_prs"][0]["number"] == 123
+
+    def test_should_identify_overwhelmed_reviewers(self):
+        from git_dev_metrics.metrics.calculator import identify_bottlenecks
+
+        prs = [
+            any_open_pr(
+                number=1,
+                user={"login": "alice"},
+                requested_reviewers=[
+                    {"login": "bob"},
+                    {"login": "bob"},
+                    {"login": "bob"},
+                    {"login": "bob"},
+                    {"login": "bob"},
+                    {"login": "bob"},
+                ],
+            )
+        ]
+        result = identify_bottlenecks(prs)
+
+        assert len(result["overwhelmed_reviewers"]) == 1
+        assert result["overwhelmed_reviewers"][0]["reviewer"] == "bob"
+        assert result["overwhelmed_reviewers"][0]["pending_count"] == 6
+
+    def test_should_limit_results_to_10(self):
+        from datetime import datetime, timezone, timedelta
+        from git_dev_metrics.metrics.calculator import identify_bottlenecks
+
+        now = datetime.now(timezone.utc)
+        recent = (now - timedelta(hours=1)).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+        prs = [
+            any_open_pr(
+                number=i,
+                user={"login": f"dev{i}"},
+                created_at=recent,
+                requested_reviewers=[{"login": "reviewer"}],
+            )
+            for i in range(15)
+        ]
+        result = identify_bottlenecks(prs)
+
+        assert len(result["overwhelmed_reviewers"]) == 1
+        assert len(result["stale_prs"]) == 0

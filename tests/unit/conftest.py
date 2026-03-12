@@ -1,6 +1,7 @@
+from datetime import datetime, timezone
 from typing import Any
 
-from git_dev_metrics.models import PullRequest
+from git_dev_metrics.models import OpenPullRequest, PullRequest
 
 
 def any_pr(**overrides: Any) -> PullRequest:
@@ -18,5 +19,18 @@ def any_pr(**overrides: Any) -> PullRequest:
         "deletions": 50,
         "changed_files": 5,
         "first_commit_at": None,
+    }
+    return {**defaults, **overrides}  # type: ignore[return-value]
+
+
+def any_open_pr(**overrides: Any) -> OpenPullRequest:
+    """Create an OpenPullRequest with sensible defaults for testing."""
+    now = datetime.now(timezone.utc)
+    defaults: OpenPullRequest = {
+        "number": 1,
+        "title": "Open PR",
+        "user": {"login": "dev1"},
+        "created_at": now,
+        "requested_reviewers": [],
     }
     return {**defaults, **overrides}  # type: ignore[return-value]
