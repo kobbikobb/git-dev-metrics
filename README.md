@@ -4,6 +4,25 @@
 - uv sync
 - uv run app --help
 
+## Usage
+
+```bash
+# Analyze a repository (prompts for token if needed)
+uv run app --org myorg --repo myrepo
+
+# With custom period
+uv run app --org myorg --repo myrepo --period 7d
+
+# With custom output path
+uv run app --org myorg --repo myrepo --output ./my-metrics.md
+```
+
+### Options
+- `--org` - GitHub organization name
+- `--repo` - Repository name  
+- `--period` - Time period (e.g., 7d, 30d, 90d) [default: 30d]
+- `--output` - Output file path (default: ./metrics_results/metrics_TIMESTAMP.md)
+
 ## Linting and Formatting  
 - uv run ruff format
 - uv run ruff check
