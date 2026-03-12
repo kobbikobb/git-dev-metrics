@@ -3,7 +3,7 @@ name = "git-dev-metrics"
 version = "0.1.0"
 description = "CLI tool for analyzing GitHub development metrics"
 readme = "README.md"
-license = {text = "MIT"}
+license = "MIT"
 authors = [{name = "Jakob Jonasson"}]
 requires-python = ">=3.14"
 dependencies = [
@@ -44,6 +44,13 @@ typeCheckingMode = "standard"
 package = true
 
 
+[tool.setuptools.packages.find]
+exclude = ["metrics_results", "tests*"]
+
+[tool.setuptools]
+license-files = ["LICENSE"]
+
+
 [tool.ruff]
 line-length = 100
 target-version = "py314"
@@ -57,6 +64,7 @@ select = [
     "UP",   # pyupgrade (modernize syntax)
     "SIM",  # flake8-simplify
 ]
+ignore = ["B008"]  # typer.Option() in argument defaults is required
 
 [tool.pyright]
 typeCheckingMode = "standard"
