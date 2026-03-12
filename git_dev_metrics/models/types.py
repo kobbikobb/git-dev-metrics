@@ -44,3 +44,4 @@ class OpenPullRequest(TypedDict):
     created_at: datetime | None
     user: GitHubUser
     requested_reviewers: list[GitHubUser]
+    repo: str

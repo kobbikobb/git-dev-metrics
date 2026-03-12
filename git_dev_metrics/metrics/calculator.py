@@ -221,6 +221,7 @@ def identify_bottlenecks(prs: list[OpenPullRequest]) -> dict:
         pr_number = pr.get("number")
         title = pr.get("title", "")
         author = pr.get("user", {}).get("login", "unknown")
+        repo = pr.get("repo", "")
 
         # Check if stale
         if age_hours > STALE_PR_THRESHOLD_HOURS:
@@ -229,6 +230,7 @@ def identify_bottlenecks(prs: list[OpenPullRequest]) -> dict:
                     "number": pr_number,
                     "title": title,
                     "author": author,
+                    "repo": repo,
                     "age_hours": round(age_hours, 2),
                 }
             )
@@ -241,6 +243,7 @@ def identify_bottlenecks(prs: list[OpenPullRequest]) -> dict:
                     "number": pr_number,
                     "title": title,
                     "author": author,
+                    "repo": repo,
                     "waiting_hours": round(age_hours, 2),
                 }
             )

@@ -20,6 +20,8 @@ def print_metrics(metrics: dict, period: str, output_path: Path) -> None:
 
 def print_bottlenecks(bottleneck_data: dict, output_path: Path) -> None:
     """Print bottleneck analysis to the output file."""
+    typer.secho("Analyzing bottlenecks...", fg=typer.colors.YELLOW)
+
     aging = bottleneck_data.get("aging", {})
     bottlenecks = bottleneck_data.get("bottlenecks", {})
 
@@ -37,11 +39,13 @@ def print_bottlenecks(bottleneck_data: dict, output_path: Path) -> None:
         stale_prs = bottlenecks.get("stale_prs", [])
         if stale_prs:
             f.write("## Stale PRs (> 7 days)\n\n")
-            f.write("| PR | Title | Author | Age (hours) |\n")
+            f.write("| Repo | PR | Author | Age (hours) |\n")
             f.write("|---|---|---|---|\n")
             for pr in stale_prs:
-                title = pr["title"][:50]
-                line = f"| #{pr['number']} | {title} | {pr['author']} | {pr['age_hours']:.1f} |\n"
+                title = pr["title"][:40]
+                line = (
+                    f"| {pr['repo']} | #{pr['number']} | {pr['author']} | {pr['age_hours']:.1f} |\n"
+                )
                 f.write(line)
             f.write("\n")
 
@@ -49,13 +53,11 @@ def print_bottlenecks(bottleneck_data: dict, output_path: Path) -> None:
         waiting = bottlenecks.get("waiting_for_review", [])
         if waiting:
             f.write("## PRs Waiting for Review (> 48h)\n\n")
-            f.write("| PR | Title | Author | Waiting (hours) |\n")
+            f.write("| Repo | PR | Author | Waiting (hours) |\n")
             f.write("|---|---|---|---|\n")
             for pr in waiting:
-                title = pr["title"][:50]
-                line = (
-                    f"| #{pr['number']} | {title} | {pr['author']} | {pr['waiting_hours']:.1f} |\n"
-                )
+                title = pr["title"][:40]
+                line = f"| {pr['repo']} | #{pr['number']} | {pr['author']} | {pr['waiting_hours']:.1f} |\n"
                 f.write(line)
             f.write("\n")
 
@@ -69,39 +71,57 @@ def print_bottlenecks(bottleneck_data: dict, output_path: Path) -> None:
                 f.write(f"| {r['reviewer']} | {r['pending_count']} |\n")
             f.write("\n")
 
-    # Also print to console
+    # Console output
     console = Console()
 
-    aging_table = Table(title="PR Aging Summary")
-    aging_table.add_column("Metric", style="cyan")
-    aging_table.add_column("Value", style="magenta")
-    aging_table.add_row("Open PRs", str(aging.get("open_count", 0)))
-    aging_table.add_row("Stale PRs (> 7 days)", str(aging.get("stale_count", 0)))
-    aging_table.add_row("Avg age (hours)", f"{aging.get('avg_age_hours', 0):.1f}")
-    console.print(aging_table)
-
     stale_count = aging.get("stale_count", 0)
+    stale_prs = bottlenecks.get("stale_prs", [])
+
+    # Summary table
+    summary = Table(show_header=False, box=None, padding=(0, 1))
+    summary.add_column("metric", style="bold cyan")
+    summary.add_column("value", style="magenta")
+    summary.add_row("Open PRs", str(aging.get("open_count", 0)))
+    summary.add_row("Stale", str(stale_count))
+    summary.add_row("Avg age", f"{aging.get('avg_age_hours', 0):.1f}h")
+    console.print(summary)
+
+    # Stale PRs table
     if stale_prs:
-        title = "Stale PRs" if stale_count <= 5 else f"Stale PRs (showing 5 of {stale_count})"
+        display_count = min(10, len(stale_prs))
+        title = (
+            f"Oldest PRs ({display_count})"
+            if stale_count <= display_count
+            else f"Oldest PRs ({display_count} of {stale_count})"
+        )
         stale_table = Table(title=title)
-        stale_table.add_column("PR", style="cyan")
-        stale_table.add_column("Author", style="yellow")
-        stale_table.add_column("Age (h)", style="red")
-        for pr in stale_prs[:5]:
-            stale_table.add_row(f"#{pr['number']}", pr["author"], f"{pr['age_hours']:.1f}")
+        stale_table.add_column("Repo", style="dim", width=25)
+        stale_table.add_column("PR", style="cyan", width=6)
+        stale_table.add_column("Author", style="yellow", width=12)
+        stale_table.add_column("Age", style="red", width=8)
+        for pr in stale_prs[:10]:
+            stale_table.add_row(
+                pr.get("repo", ""),
+                f"#{pr['number']}",
+                pr.get("author", ""),
+                f"{pr['age_hours']:.0f}h",
+            )
         console.print(stale_table)
 
-    overwhelmed_count = len(overwhelmed)
+    # Overwhelmed reviewers
+    overwhelmed = bottlenecks.get("overwhelmed_reviewers", [])
     if overwhelmed:
+        overwhelmed_count = len(overwhelmed)
+        display_count = min(10, overwhelmed_count)
         title = (
-            "Overwhelmed Reviewers"
-            if overwhelmed_count <= 5
-            else f"Overwhelmed (showing 5 of {overwhelmed_count})"
+            f"Overwhelmed ({display_count})"
+            if overwhelmed_count <= display_count
+            else f"Overwhelmed ({display_count} of {overwhelmed_count})"
         )
         overwhelmed_table = Table(title=title)
-        overwhelmed_table.add_column("Reviewer", style="cyan")
-        overwhelmed_table.add_column("Pending", style="red")
-        for r in overwhelmed[:5]:
+        overwhelmed_table.add_column("Reviewer", style="cyan", width=20)
+        overwhelmed_table.add_column("Pending", style="red", width=8)
+        for r in overwhelmed[:10]:
             overwhelmed_table.add_row(r["reviewer"], str(r["pending_count"]))
         console.print(overwhelmed_table)
 

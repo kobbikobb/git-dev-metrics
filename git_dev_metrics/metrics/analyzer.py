@@ -145,11 +145,13 @@ def get_bottleneck_metrics(token: str, selected_repos: list[str]) -> dict:
     - aging: overall PR aging stats
     - bottlenecks: stale PRs, waiting PRs, overwhelmed reviewers
     """
-    all_open_prs = []
+    all_open_prs: list = []
 
     for full_name in selected_repos:
         org, name = full_name.split("/", 1)
         open_prs = fetch_open_pull_requests(token, org, name)
+        for pr in open_prs:
+            pr["repo"] = full_name
         all_open_prs.extend(open_prs)
 
     aging = calculate_pr_aging(all_open_prs)

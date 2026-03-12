@@ -32,5 +32,6 @@ def any_open_pr(**overrides: Any) -> OpenPullRequest:
         "user": {"login": "dev1"},
         "created_at": now,
         "requested_reviewers": [],
+        "repo": "owner/repo",
     }
     return {**defaults, **overrides}  # type: ignore[return-value]
