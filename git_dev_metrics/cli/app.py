@@ -1,7 +1,7 @@
 import traceback
+from pathlib import Path
 
 import typer
-from rich.console import Console
 
 from ..github import GitHubError, get_github_token
 from ..metrics import get_combined_metrics, get_recent_repositories
@@ -10,14 +10,29 @@ from .prompts import prompt_repo_selection
 from .validation import validate_period
 
 app = typer.Typer()
-console = Console()
+
+DEFAULT_ORG: str | None = None
+DEFAULT_REPO: str | None = None
+DEFAULT_OUTPUT: Path | None = None
+
+
+def _resolve_output_path(output: Path | None) -> Path:
+    """Resolve output path from user input or return default."""
+    return output if output else get_default_output_path()
+
+
+def _print_metrics(metrics: dict, period: str, output_path: Path) -> None:
+    """Print metrics to the specified output path."""
+    CompositePrinter(output_path).print_combined_metrics(metrics, period)
+    typer.secho(f"Results saved to {output_path}", fg=typer.colors.GREEN)
 
 
 @app.command()
 def analyze(
-    org: str | None = typer.Option(None, help="GitHub organization name"),
-    repo: str | None = typer.Option(None, help="Repository name"),
+    org: str | None = typer.Option(DEFAULT_ORG, help="GitHub organization name"),
+    repo: str | None = typer.Option(DEFAULT_REPO, help="Repository name"),
     period: str = typer.Option("30d", callback=validate_period, help="Time period"),
+    output: Path | None = typer.Option(DEFAULT_OUTPUT, help="Output file path"),
 ):
     """
     Analyze GitHub repository development metrics.
@@ -44,8 +59,5 @@ def analyze(
         traceback.print_exc()
         raise typer.Exit(code=1) from e
 
-    output_path = get_default_output_path()
-
-    CompositePrinter(output_path).print_combined_metrics(metrics, period)
-
-    typer.secho(f"Results saved to {output_path}", fg=typer.colors.GREEN)
+    output_path = _resolve_output_path(output)
+    _print_metrics(metrics, period, output_path)
