@@ -34,3 +34,13 @@ class Review(TypedDict):
     user: GitHubUser
     state: str
     submitted_at: str
+
+
+class OpenPullRequest(TypedDict):
+    """Pull request that is still open."""
+
+    number: int
+    title: str
+    created_at: datetime | None
+    user: GitHubUser
+    requested_reviewers: list[GitHubUser]

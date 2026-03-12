@@ -1,7 +1,7 @@
 import logging
 
 from ..github import GitHubError, get_github_token
-from ..metrics import get_combined_metrics, get_recent_repositories
+from ..metrics import get_bottleneck_metrics, get_combined_metrics, get_recent_repositories
 from .prompts import prompt_repo_selection
 
 logger = logging.getLogger(__name__)
@@ -42,7 +42,13 @@ def run_analyze(
 
     from pathlib import Path
 
-    from .output import print_metrics, resolve_output_path
+    from .output import print_bottlenecks, print_metrics, resolve_output_path
 
     resolved_path = resolve_output_path(Path(output_path) if output_path else None)
     print_metrics(metrics, period, resolved_path)
+
+    try:
+        bottleneck_data = get_bottleneck_metrics(token, selected)
+        print_bottlenecks(bottleneck_data, resolved_path)
+    except GitHubError as e:
+        logger.warning("Could not fetch bottleneck data: %s", e)

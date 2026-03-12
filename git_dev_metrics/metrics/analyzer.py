@@ -1,17 +1,19 @@
 import re
 from datetime import datetime
 
-from ..github import fetch_repo_metrics, fetch_repositories
+from ..github import fetch_open_pull_requests, fetch_repo_metrics, fetch_repositories
 from ..utils import parse_time_period
 from .calculator import (
     calculate_cycle_time,
     calculate_pickup_time,
+    calculate_pr_aging,
     calculate_pr_size,
     calculate_prs_per_week,
     calculate_review_time,
     calculate_reviews_given,
     calculate_throughput,
     group_prs_by_devs,
+    identify_bottlenecks,
 )
 
 
@@ -133,3 +135,27 @@ def get_recent_repositories(token: str) -> dict:
     recent_repos.sort(key=lambda r: r["last_pushed"] or datetime.min, reverse=True)
 
     return {repo["full_name"]: "Private" if repo["private"] else "Public" for repo in recent_repos}
+
+
+def get_bottleneck_metrics(token: str, selected_repos: list[str]) -> dict:
+    """
+    Get bottleneck metrics for selected repositories.
+
+    Returns dict with:
+    - aging: overall PR aging stats
+    - bottlenecks: stale PRs, waiting PRs, overwhelmed reviewers
+    """
+    all_open_prs = []
+
+    for full_name in selected_repos:
+        org, name = full_name.split("/", 1)
+        open_prs = fetch_open_pull_requests(token, org, name)
+        all_open_prs.extend(open_prs)
+
+    aging = calculate_pr_aging(all_open_prs)
+    bottlenecks = identify_bottlenecks(all_open_prs)
+
+    return {
+        "aging": aging,
+        "bottlenecks": bottlenecks,
+    }

@@ -1,7 +1,7 @@
 from collections import defaultdict
-from datetime import datetime
+from datetime import UTC, datetime
 
-from ..models import PullRequest
+from ..models import OpenPullRequest, PullRequest
 
 
 def _to_datetime(value: str | datetime | None) -> datetime | None:
@@ -147,3 +147,120 @@ def calculate_reviews_given(reviews: dict, devs: dict[str, list[PullRequest]]) -
                     reviewer_counts[reviewer] = 1
 
     return reviewer_counts
+
+
+# Bottleneck detection thresholds (in hours)
+STALE_PR_THRESHOLD_HOURS = 24 * 7  # 7 days
+REVIEW_WAIT_THRESHOLD_HOURS = 48  # 2 days
+OVERWHELMED_REVIEWER_COUNT = 5
+
+
+def calculate_pr_aging(prs: list[OpenPullRequest]) -> dict:
+    """Calculate PR aging metrics for open PRs."""
+    if not prs:
+        return {
+            "open_count": 0,
+            "stale_count": 0,
+            "avg_age_hours": 0.0,
+            "oldest_pr_age_hours": 0.0,
+        }
+
+    now = datetime.now(UTC)
+    ages_hours = []
+    stale_count = 0
+
+    for pr in prs:
+        created = _to_datetime(pr.get("created_at"))
+        if created is None:
+            continue
+
+        # Handle naive datetimes
+        if created.tzinfo is None:
+            created = created.replace(tzinfo=UTC)
+
+        age_hours = (now - created).total_seconds() / 3600
+        ages_hours.append(age_hours)
+
+        if age_hours > STALE_PR_THRESHOLD_HOURS:
+            stale_count += 1
+
+    if not ages_hours:
+        return {
+            "open_count": len(prs),
+            "stale_count": 0,
+            "avg_age_hours": 0.0,
+            "oldest_pr_age_hours": 0.0,
+        }
+
+    return {
+        "open_count": len(prs),
+        "stale_count": stale_count,
+        "avg_age_hours": round(sum(ages_hours) / len(ages_hours), 2),
+        "oldest_pr_age_hours": round(max(ages_hours), 2),
+    }
+
+
+def identify_bottlenecks(prs: list[OpenPullRequest]) -> dict:
+    """Identify PRs and reviewers that are bottlenecks."""
+    now = datetime.now(UTC)
+
+    stale_prs = []
+    waiting_for_review = []
+    reviewer_load: dict[str, int] = defaultdict(int)
+
+    for pr in prs:
+        created = _to_datetime(pr.get("created_at"))
+        if created is None:
+            continue
+
+        # Handle naive datetimes
+        if created.tzinfo is None:
+            created = created.replace(tzinfo=UTC)
+
+        age_hours = (now - created).total_seconds() / 3600
+        pr_number = pr.get("number")
+        title = pr.get("title", "")
+        author = pr.get("user", {}).get("login", "unknown")
+
+        # Check if stale
+        if age_hours > STALE_PR_THRESHOLD_HOURS:
+            stale_prs.append(
+                {
+                    "number": pr_number,
+                    "title": title,
+                    "author": author,
+                    "age_hours": round(age_hours, 2),
+                }
+            )
+
+        # Check if waiting for review
+        requested_reviewers = pr.get("requested_reviewers", [])
+        if age_hours > REVIEW_WAIT_THRESHOLD_HOURS and not requested_reviewers:
+            waiting_for_review.append(
+                {
+                    "number": pr_number,
+                    "title": title,
+                    "author": author,
+                    "waiting_hours": round(age_hours, 2),
+                }
+            )
+
+        # Count reviewer load
+        for reviewer in requested_reviewers:
+            reviewer_login = reviewer.get("login")
+            if reviewer_login:
+                reviewer_load[reviewer_login] += 1
+
+    # Find overwhelmed reviewers
+    overwhelmed_reviewers = [
+        {"reviewer": reviewer, "pending_count": count}
+        for reviewer, count in reviewer_load.items()
+        if count >= OVERWHELMED_REVIEWER_COUNT
+    ]
+    overwhelmed_reviewers.sort(key=lambda x: x["pending_count"], reverse=True)
+
+    return {
+        "stale_prs": stale_prs[:10],  # Top 10 stale PRs
+        "waiting_for_review": waiting_for_review[:10],
+        "overwhelmed_reviewers": overwhelmed_reviewers[:10],
+    }

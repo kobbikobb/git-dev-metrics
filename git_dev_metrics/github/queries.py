@@ -1,8 +1,9 @@
 from datetime import datetime
 
-from ..models import PullRequest, Repository, Review
+from ..models import OpenPullRequest, PullRequest, Repository, Review
 from .graphql_client import execute_paginated_query, get_client
 from .graphql_queries import (
+    OPEN_PRS_QUERY,
     REPO_METRICS_QUERY,
     REPOSITORIES_QUERY,
 )
@@ -62,6 +63,24 @@ def _map_review(review: dict) -> Review:
         "user": {"login": _author_login(review.get("author"))},
         "state": review.get("state"),
         "submitted_at": _parse_datetime(review.get("submittedAt")),
+    }
+
+
+def _map_open_pull_request(pr: dict) -> OpenPullRequest:
+    """Map GraphQL open PR response to internal model."""
+    review_requests = pr.get("reviewRequests", {}).get("nodes", [])
+    requested_reviewers = []
+    for rr in review_requests:
+        reviewer = rr.get("requestedReviewer")
+        if reviewer and reviewer.get("login"):
+            requested_reviewers.append({"login": reviewer.get("login")})
+
+    return {  # type: ignore[return-value]
+        "number": pr.get("number"),
+        "title": pr.get("title"),
+        "created_at": _parse_datetime(pr.get("createdAt")),
+        "user": {"login": _author_login(pr.get("author"))},
+        "requested_reviewers": requested_reviewers,
     }
 
 
@@ -161,3 +180,16 @@ def fetch_repo_metrics(
         reviews_by_pr[pr_number] = [_map_review(r) for r in reviews]
 
     return mapped_prs, reviews_by_pr
+
+
+def fetch_open_pull_requests(token: str, org: str, repo: str) -> list[OpenPullRequest]:
+    """Fetch all open pull requests for a repository."""
+    client = get_client(token)
+    prs = execute_paginated_query(
+        client,
+        OPEN_PRS_QUERY,
+        {"owner": org, "name": repo, "first": PAGE_SIZE},
+        "repository.pullRequests",
+    )
+
+    return [_map_open_pull_request(pr) for pr in prs]
