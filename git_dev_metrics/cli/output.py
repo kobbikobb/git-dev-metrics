@@ -77,20 +77,28 @@ def print_bottlenecks(bottleneck_data: dict, output_path: Path) -> None:
     aging_table.add_column("Value", style="magenta")
     aging_table.add_row("Open PRs", str(aging.get("open_count", 0)))
     aging_table.add_row("Stale PRs (> 7 days)", str(aging.get("stale_count", 0)))
-    aging_table.add_row("Average age (hours)", f"{aging.get('avg_age_hours', 0):.1f}")
+    aging_table.add_row("Avg age (hours)", f"{aging.get('avg_age_hours', 0):.1f}")
     console.print(aging_table)
 
+    stale_count = aging.get("stale_count", 0)
     if stale_prs:
-        stale_table = Table(title="Stale PRs (> 7 days)")
+        title = "Stale PRs" if stale_count <= 5 else f"Stale PRs (showing 5 of {stale_count})"
+        stale_table = Table(title=title)
         stale_table.add_column("PR", style="cyan")
         stale_table.add_column("Author", style="yellow")
-        stale_table.add_column("Age (hours)", style="red")
+        stale_table.add_column("Age (h)", style="red")
         for pr in stale_prs[:5]:
             stale_table.add_row(f"#{pr['number']}", pr["author"], f"{pr['age_hours']:.1f}")
         console.print(stale_table)
 
+    overwhelmed_count = len(overwhelmed)
     if overwhelmed:
-        overwhelmed_table = Table(title="Overwhelmed Reviewers (>= 5 pending)")
+        title = (
+            "Overwhelmed Reviewers"
+            if overwhelmed_count <= 5
+            else f"Overwhelmed (showing 5 of {overwhelmed_count})"
+        )
+        overwhelmed_table = Table(title=title)
         overwhelmed_table.add_column("Reviewer", style="cyan")
         overwhelmed_table.add_column("Pending", style="red")
         for r in overwhelmed[:5]:
