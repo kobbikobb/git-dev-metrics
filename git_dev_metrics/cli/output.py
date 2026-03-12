@@ -20,8 +20,6 @@ def print_metrics(metrics: dict, period: str, output_path: Path) -> None:
 
 def print_bottlenecks(bottleneck_data: dict, output_path: Path) -> None:
     """Print bottleneck analysis to the output file."""
-    typer.secho("Analyzing bottlenecks...", fg=typer.colors.YELLOW)
-
     aging = bottleneck_data.get("aging", {})
     bottlenecks = bottleneck_data.get("bottlenecks", {})
 
@@ -77,14 +75,13 @@ def print_bottlenecks(bottleneck_data: dict, output_path: Path) -> None:
     stale_count = aging.get("stale_count", 0)
     stale_prs = bottlenecks.get("stale_prs", [])
 
-    # Summary table
-    summary = Table(show_header=False, box=None, padding=(0, 1))
-    summary.add_column("metric", style="bold cyan")
-    summary.add_column("value", style="magenta")
-    summary.add_row("Open PRs", str(aging.get("open_count", 0)))
-    summary.add_row("Stale", str(stale_count))
-    summary.add_row("Avg age", f"{aging.get('avg_age_hours', 0):.1f}h")
-    console.print(summary)
+    aging_table = Table(title="PR Aging Summary")
+    aging_table.add_column("Metric", style="cyan")
+    aging_table.add_column("Value", style="magenta")
+    aging_table.add_row("Open PRs", str(aging.get("open_count", 0)))
+    aging_table.add_row("Stale PRs (> 7 days)", str(stale_count))
+    aging_table.add_row("Avg age (hours)", f"{aging.get('avg_age_hours', 0):.1f}")
+    console.print(aging_table)
 
     # Stale PRs table
     if stale_prs:
