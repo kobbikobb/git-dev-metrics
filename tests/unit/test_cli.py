@@ -15,12 +15,12 @@ class TestCLI:
         assert result.exit_code != 0
 
     def test_should_run_without_period(self, mocker):
-        mocker.patch("git_dev_metrics.cli.app.get_github_token", return_value="fake-token")
+        mocker.patch("git_dev_metrics.cli.runner.get_github_token", return_value="fake-token")
         mock_get_prs = mocker.patch(
-            "git_dev_metrics.cli.app.get_combined_metrics",
+            "git_dev_metrics.cli.runner.get_combined_metrics",
             return_value={"repo_metrics": {}, "dev_metrics": {}},
         )
-        mocker.patch("git_dev_metrics.cli.app.CompositePrinter")
+        mocker.patch("git_dev_metrics.cli.output.CompositePrinter")
 
         result = runner.invoke(app, ["--org", "facebook", "--repo", "react"])
 
@@ -28,12 +28,12 @@ class TestCLI:
         assert result.exit_code == 0
 
     def test_should_accept_valid_period(self, mocker):
-        mocker.patch("git_dev_metrics.cli.app.get_github_token", return_value="fake-token")
+        mocker.patch("git_dev_metrics.cli.runner.get_github_token", return_value="fake-token")
         mock_get_prs = mocker.patch(
-            "git_dev_metrics.cli.app.get_combined_metrics",
+            "git_dev_metrics.cli.runner.get_combined_metrics",
             return_value={"repo_metrics": {}, "dev_metrics": {}},
         )
-        mocker.patch("git_dev_metrics.cli.app.CompositePrinter")
+        mocker.patch("git_dev_metrics.cli.output.CompositePrinter")
 
         result = runner.invoke(app, ["--org", "facebook", "--repo", "react", "--period", "7d"])
 
@@ -41,8 +41,8 @@ class TestCLI:
         assert result.exit_code == 0
 
     def test_should_handle_client_error(self, mocker):
-        mocker.patch("git_dev_metrics.cli.app.get_github_token", return_value="fake-token")
-        mock_get_prs = mocker.patch("git_dev_metrics.cli.app")
+        mocker.patch("git_dev_metrics.cli.runner.get_github_token", return_value="fake-token")
+        mock_get_prs = mocker.patch("git_dev_metrics.cli.runner")
         mock_get_prs.return_value.get_combined_metrics.side_effect = Exception("API Error")
 
         result = runner.invoke(app, ["--org", "facebook", "--repo", "react"])
