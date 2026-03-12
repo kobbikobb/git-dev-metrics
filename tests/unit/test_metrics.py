@@ -441,7 +441,7 @@ class TestIdentifyBottlenecks:
         from git_dev_metrics.metrics.calculator import identify_bottlenecks
 
         now = datetime.now(timezone.utc)
-        recent = (now - timedelta(hours=1)).strftime("%Y-%m-%dT%H:%M:%SZ")
+        recent = now - timedelta(hours=1)
 
         prs = [
             any_open_pr(
@@ -456,3 +456,26 @@ class TestIdentifyBottlenecks:
 
         assert len(result["overwhelmed_reviewers"]) == 1
         assert len(result["stale_prs"]) == 0
+
+    def test_should_limit_stale_prs_to_10(self):
+        from datetime import datetime, timezone, timedelta
+        from git_dev_metrics.metrics.calculator import calculate_pr_aging, identify_bottlenecks
+
+        now = datetime.now(timezone.utc)
+        stale = now - timedelta(days=10)
+
+        prs = [
+            any_open_pr(
+                number=i,
+                user={"login": "dev1"},
+                created_at=stale,
+                requested_reviewers=[],
+            )
+            for i in range(15)
+        ]
+
+        aging = calculate_pr_aging(prs)
+        result = identify_bottlenecks(prs)
+
+        assert aging["stale_count"] == 15
+        assert len(result["stale_prs"]) == 10  # Limited to 10
