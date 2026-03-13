@@ -28,11 +28,15 @@ Python 3.14+, Typer (CLI), Rich (terminal output), uv (package manager)
 
 ## Code Quality Rules
 
-1. **Max function length: 30 lines** - Keep functions short and focused
-2. **Max complexity: 10** (C901) - Limit branching + nesting depth
-3. **Minimal nesting** - Prefer flat code, extract helper functions
+| Rule | Limit | Enforcement |
+|------|-------|-------------|
+| Max function length | 30 lines | Manual review |
+| Max complexity | 10 | `ruff check .` (C901) |
+| Max file length | 400 lines | Manual review |
+| Line length | 100 chars | `ruff format` |
+| Minimal nesting | - | Prefer flat code, extract helpers |
 
-Run `ruff check .` to verify.
+Run `ruff check .` to verify complexity.
 
 ## Testing
 
