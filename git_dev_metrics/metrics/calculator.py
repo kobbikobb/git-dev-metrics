@@ -152,36 +152,36 @@ def calculate_reviews_given(reviews: dict, devs: dict[str, list[PullRequest]]) -
 STALE_PR_THRESHOLD_HOURS = 24 * 7  # 7 days
 
 
-def get_stale_prs(prs: list[dict], repo: str = "") -> list[dict]:
-    """Return list of stale PRs (> 7 days old), sorted by age (oldest first)."""
+def _calculate_age_hours(created_at: datetime) -> float:
+    """Calculate age in hours from created_at to now."""
     from datetime import UTC, datetime
 
-    if not prs:
-        return []
-
     now = datetime.now(UTC)
-    stale = []
+    if created_at.tzinfo is None:
+        created_at = created_at.replace(tzinfo=UTC)
+    return (now - created_at).total_seconds() / 3600
 
-    for pr in prs:
-        created = pr.get("created_at")
-        if created is None:
-            continue
 
-        if created.tzinfo is None:
-            created = created.replace(tzinfo=UTC)
+def _is_stale_pr(pr: dict, repo: str) -> dict | None:
+    """Check if PR is stale and return data if so."""
+    created = pr.get("created_at")
+    if created is None:
+        return None
 
-        age_hours = (now - created).total_seconds() / 3600
+    age_hours = _calculate_age_hours(created)
+    if age_hours > STALE_PR_THRESHOLD_HOURS:
+        return {
+            "number": pr.get("number"),
+            "title": pr.get("title"),
+            "author": pr.get("author"),
+            "repo": repo,
+            "age_hours": round(age_hours, 1),
+        }
+    return None
 
-        if age_hours > STALE_PR_THRESHOLD_HOURS:
-            stale.append(
-                {
-                    "number": pr.get("number"),
-                    "title": pr.get("title"),
-                    "author": pr.get("author"),
-                    "repo": repo,
-                    "age_hours": round(age_hours, 1),
-                }
-            )
 
+def get_stale_prs(prs: list[dict], repo: str = "") -> list[dict]:
+    """Return list of stale PRs (> 7 days old), sorted by age (oldest first)."""
+    stale = [p for p in (_is_stale_pr(pr, repo) for pr in prs) if p]
     stale.sort(key=lambda x: x["age_hours"], reverse=True)
     return stale
