@@ -3,6 +3,7 @@ from datetime import datetime
 from ..models import PullRequest, Repository, Review
 from .graphql_client import execute_paginated_query, get_client
 from .graphql_queries import (
+    OPEN_PRS_QUERY,
     REPO_METRICS_QUERY,
     REPOSITORIES_QUERY,
 )
@@ -161,3 +162,26 @@ def fetch_repo_metrics(
         reviews_by_pr[pr_number] = [_map_review(r) for r in reviews]
 
     return mapped_prs, reviews_by_pr
+
+
+def fetch_open_prs(token: str, org: str, repo: str) -> list[dict]:
+    """Fetch open pull requests for a repository."""
+    client = get_client(token)
+    prs = execute_paginated_query(
+        client,
+        OPEN_PRS_QUERY,
+        {"owner": org, "name": repo, "first": PAGE_SIZE},
+        "repository.pullRequests",
+    )
+
+    result = []
+    for pr in prs:
+        result.append(
+            {
+                "number": pr.get("number"),
+                "title": pr.get("title"),
+                "created_at": _parse_datetime(pr.get("createdAt")),
+                "author": _author_login(pr.get("author")),
+            }
+        )
+    return result

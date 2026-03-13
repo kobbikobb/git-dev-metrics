@@ -72,3 +72,31 @@ REPO_METRICS_QUERY = gql.gql(
     }
     """
 )
+
+OPEN_PRS_QUERY = gql.gql(
+    """
+    query FetchOpenPRs($owner: String!, $name: String!, $first: Int!, $after: String) {
+        repository(owner: $owner, name: $name) {
+            pullRequests(
+                first: $first
+                after: $after
+                states: OPEN
+                orderBy: {field: CREATED_AT, direction: DESC}
+            ) {
+                nodes {
+                    number
+                    title
+                    createdAt
+                    author {
+                        login
+                    }
+                }
+                pageInfo {
+                    hasNextPage
+                    endCursor
+                }
+            }
+        }
+    }
+    """
+)
