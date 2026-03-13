@@ -1,7 +1,9 @@
 import logging
+from pathlib import Path
 
 from ..github import GitHubError, get_github_token
 from ..metrics import get_combined_metrics, get_recent_repositories
+from .output import print_metrics, print_stale_prs, resolve_output_path
 from .prompts import prompt_repo_selection
 
 logger = logging.getLogger(__name__)
@@ -31,29 +33,31 @@ def _fetch_stale_prs(token: str, selected: list[str]) -> list[dict]:
 
 
 def run_analyze(
-    org: str | None, repo: str | None, period: str, output_path: str | None, verbose: bool
+    org: str | None,
+    repo: str | None,
+    period: str,
+    output: Path | None,
 ) -> None:
-    """Orchestrate the full analyze flow."""
-    from pathlib import Path
-
-    from .output import print_metrics, print_stale_prs, resolve_output_path
-
+    """
+    Orchestrate the full analyze flow.
+    Raises AnalysisError on failure.
+    """
     token = get_github_token()
-    selected = (
-        [f"{org}/{repo}"] if org and repo else prompt_repo_selection(get_recent_repositories(token))
-    )
+
+    if org is not None and repo is not None:
+        selected = [f"{org}/{repo}"]
+    else:
+        repos = get_recent_repositories(token)
+        selected = prompt_repo_selection(repos)
 
     try:
         metrics = get_combined_metrics(token, selected, period)
     except GitHubError as e:
-        logger.error("Error fetching metrics: %s", e)
-        if verbose:
-            logger.exception("Full traceback:")
         raise AnalysisError(str(e)) from e
 
-    resolved_path = resolve_output_path(Path(output_path) if output_path else None)
-    print_metrics(metrics, period, resolved_path)
+    output_path = resolve_output_path(output)
+    print_metrics(metrics, period, output_path)
 
     stale_prs = _fetch_stale_prs(token, selected)
     if stale_prs:
-        print_stale_prs(stale_prs, resolved_path)
+        print_stale_prs(stale_prs, output_path)

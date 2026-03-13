@@ -29,9 +29,11 @@ def analyze(
             org=org,
             repo=repo,
             period=period,
-            output_path=str(output) if output else None,
-            verbose=verbose,
+            output=output,
         )
     except AnalysisError as e:
+        logger.error("Analysis failed: %s", e)
+        if verbose:
+            logger.exception("Full traceback:")
         typer.secho(f"Analysis failed: {e}", fg=typer.colors.RED, bold=True)
         raise typer.Exit(code=1) from e
