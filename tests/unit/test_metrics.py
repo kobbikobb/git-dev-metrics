@@ -348,7 +348,7 @@ class TestGetStalePrs:
         from datetime import datetime
         from git_dev_metrics.metrics.calculator import get_stale_prs
 
-        result = get_stale_prs([])
+        result = get_stale_prs([], "myrepo")
         assert result == []
 
     def test_should_return_fresh_prs(self):
@@ -364,7 +364,7 @@ class TestGetStalePrs:
                 "author": "alice",
             },
         ]
-        result = get_stale_prs(prs)
+        result = get_stale_prs(prs, "myrepo")
         assert result == []
 
     def test_should_identify_stale_prs(self):
@@ -380,10 +380,11 @@ class TestGetStalePrs:
                 "author": "alice",
             },
         ]
-        result = get_stale_prs(prs)
+        result = get_stale_prs(prs, "myrepo")
         assert len(result) == 1
         assert result[0]["number"] == 1
         assert result[0]["author"] == "alice"
+        assert result[0]["repo"] == "myrepo"
         assert result[0]["age_hours"] > 24 * 7  # More than 7 days
 
     def test_should_sort_by_age_oldest_first(self):
@@ -405,6 +406,7 @@ class TestGetStalePrs:
                 "author": "bob",
             },
         ]
-        result = get_stale_prs(prs)
+        result = get_stale_prs(prs, "myrepo")
         assert result[0]["number"] == 2  # Older first
         assert result[1]["number"] == 1
+        assert result[0]["repo"] == "myrepo"
