@@ -63,8 +63,12 @@ select = [
     "B",    # flake8-bugbear (common bugs)
     "UP",   # pyupgrade (modernize syntax)
     "SIM",  # flake8-simplify
+    "C901", # max function complexity (nesting/branching)
 ]
 ignore = ["B008"]  # typer.Option() in argument defaults is required
+
+[tool.ruff.lint.mccabe]
+max-complexity = 10  # Rule 2: max nesting/branching depth
 
 [tool.pyright]
 typeCheckingMode = "standard"

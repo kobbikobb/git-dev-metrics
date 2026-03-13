@@ -59,6 +59,30 @@ def _handle_graphql_error(e: transport_exceptions.TransportQueryError) -> None:
     raise GitHubAPIError(e.errors[0].get("message", "GraphQL error"))
 
 
+def _extract_nodes(result: dict[str, Any], path: str) -> list[dict[str, Any]]:
+    """Extract nodes from a GraphQL result following the given path."""
+    current: Any = result
+    keys = path.split(".")
+
+    for key in keys:
+        if isinstance(current, dict):
+            current = current.get(key, {})
+            if isinstance(current, dict) and "nodes" in current:
+                current = current.get("nodes", [])
+        elif isinstance(current, list):
+            break
+
+    return current if isinstance(current, list) else []
+
+
+def _get_page_info(result: dict[str, Any], path: str) -> dict[str, Any]:
+    """Extract page info from a GraphQL result following the given path."""
+    page_info: Any = result
+    for key in path.split("."):
+        page_info = page_info.get(key, {})
+    return page_info if isinstance(page_info, dict) else {}
+
+
 def execute_paginated_query(
     client: Client,
     query: GraphQLRequest,
@@ -90,34 +114,10 @@ def execute_paginated_query(
             variables_copy.pop("after", None)
 
         result = execute_query(client, query, variables_copy)
+        current = _extract_nodes(result, path)
+        all_nodes.extend(current)
 
-        # Navigate to the nodes using the path
-        current: Any = result
-        keys = path.split(".")
-
-        for i, key in enumerate(keys):
-            if isinstance(current, dict):
-                current = current.get(key, {})
-                # After getting a dict, check if it has "nodes" - that's the list we want
-                if isinstance(current, dict) and "nodes" in current:
-                    # If this is the last key in the path, we want the nodes
-                    if i == len(keys) - 1:
-                        current = current.get("nodes", [])
-                    else:
-                        # Otherwise, continue navigating
-                        current = current.get("nodes", [])
-            elif isinstance(current, list):
-                # If we hit a list, we're done with the path
-                break
-
-        if isinstance(current, list):
-            all_nodes.extend(current)
-
-        # Get page info to check for more pages
-        page_info = result
-        for key in path.split("."):
-            page_info = page_info.get(key, {})
-
+        page_info = _get_page_info(result, path)
         has_next_page = page_info.get("hasNextPage", False)
         if not has_next_page:
             break
