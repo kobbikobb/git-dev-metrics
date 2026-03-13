@@ -16,52 +16,12 @@ def print_metrics(metrics: dict, period: str, output_path: Path) -> None:
     typer.secho(f"Results saved to {output_path}", fg=typer.colors.GREEN)
 
 
-def _print_stale_prs_console(stale_prs: list[dict]) -> None:
-    """Print stale PRs table to console."""
-    from rich.console import Console
-    from rich.table import Table
-
-    console = Console()
-    table = Table(title="Stale PRs (> 7 days)")
-    table.add_column("Repo", style="dim")
-    table.add_column("PR", style="cyan")
-    table.add_column("Title", style="white")
-    table.add_column("Author", style="magenta")
-    table.add_column("Age (h)", style="yellow", justify="right")
-
-    for pr in stale_prs:
-        title = pr["title"][:35] + "..." if len(pr["title"]) > 35 else pr["title"]
-        table.add_row(
-            pr.get("repo", ""),
-            f"#{pr['number']}",
-            title,
-            pr["author"],
-            f"{pr['age_hours']:.0f}",
-        )
-
-    console.print("\n")
-    console.print(table)
-
-
-def _print_stale_prs_file(stale_prs: list[dict], output_path: Path) -> None:
-    """Append stale PRs to output file in markdown format."""
-    with open(output_path, "a") as f:
-        f.write("\n# Stale PRs\n\n")
-        f.write(f"Total stale PRs: {len(stale_prs)}\n\n")
-        f.write("| Repo | PR | Title | Author | Age (hours) |\n")
-        f.write("|---|---|---|---|---|\n")
-        for pr in stale_prs:
-            title = pr["title"][:40] + "..." if len(pr["title"]) > 40 else pr["title"]
-            f.write(
-                f"| {pr.get('repo', '')} | #{pr['number']} | {title} | "
-                f"{pr['author']} | {pr['age_hours']:.0f} |\n"
-            )
-
-
 def print_stale_prs(stale_prs: list[dict], output_path: Path) -> None:
-    """Print stale PRs to console and append to output file."""
+    """Print stale PRs to console and file."""
     import typer
 
-    _print_stale_prs_console(stale_prs)
-    _print_stale_prs_file(stale_prs, output_path)
+    from ..metrics.printer import ConsoleStalePRPrinter, FileStalePRPrinter
+
+    ConsoleStalePRPrinter().print_stale_prs(stale_prs)
+    FileStalePRPrinter(output_path).print_stale_prs(stale_prs)
     typer.secho(f"Stale PRs saved to {output_path}", fg=typer.colors.YELLOW)
