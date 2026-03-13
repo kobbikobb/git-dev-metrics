@@ -19,6 +19,7 @@ def run_analyze(
     period: str,
     output_path: str | None,
     verbose: bool,
+    stale: bool = False,
 ) -> None:
     """
     Orchestrate the full analyze flow.
@@ -46,3 +47,21 @@ def run_analyze(
 
     resolved_path = resolve_output_path(Path(output_path) if output_path else None)
     print_metrics(metrics, period, resolved_path)
+
+    if stale:
+        from ..github.queries import fetch_open_prs
+        from ..metrics.calculator import get_stale_prs
+
+        stale_prs = []
+        for full_repo in selected:
+            org, repo_name = full_repo.split("/")
+            try:
+                open_prs = fetch_open_prs(token, org, repo_name)
+                stale_prs.extend(get_stale_prs(open_prs))
+            except GitHubError as e:
+                logger.warning("Could not fetch stale PRs for %s: %s", full_repo, e)
+
+        if stale_prs:
+            from .output import print_stale_prs
+
+            print_stale_prs(stale_prs, resolved_path)

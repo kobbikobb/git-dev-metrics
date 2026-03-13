@@ -147,3 +147,40 @@ def calculate_reviews_given(reviews: dict, devs: dict[str, list[PullRequest]]) -
                     reviewer_counts[reviewer] = 1
 
     return reviewer_counts
+
+
+STALE_PR_THRESHOLD_HOURS = 24 * 7  # 7 days
+
+
+def get_stale_prs(prs: list[dict]) -> list[dict]:
+    """Return list of stale PRs (> 7 days old), sorted by age (oldest first)."""
+    from datetime import UTC, datetime
+
+    if not prs:
+        return []
+
+    now = datetime.now(UTC)
+    stale = []
+
+    for pr in prs:
+        created = pr.get("created_at")
+        if created is None:
+            continue
+
+        if created.tzinfo is None:
+            created = created.replace(tzinfo=UTC)
+
+        age_hours = (now - created).total_seconds() / 3600
+
+        if age_hours > STALE_PR_THRESHOLD_HOURS:
+            stale.append(
+                {
+                    "number": pr.get("number"),
+                    "title": pr.get("title"),
+                    "author": pr.get("author"),
+                    "age_hours": round(age_hours, 1),
+                }
+            )
+
+    stale.sort(key=lambda x: x["age_hours"], reverse=True)
+    return stale
