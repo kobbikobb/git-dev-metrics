@@ -24,14 +24,16 @@ def print_stale_prs(stale_prs: list[dict], output_path: Path) -> None:
 
     console = Console()
     table = Table(title="Stale PRs (> 7 days)")
+    table.add_column("Repo", style="dim")
     table.add_column("PR", style="cyan")
     table.add_column("Title", style="white")
     table.add_column("Author", style="magenta")
     table.add_column("Age (h)", style="yellow", justify="right")
 
     for pr in stale_prs:
-        title = pr["title"][:40] + "..." if len(pr["title"]) > 40 else pr["title"]
+        title = pr["title"][:35] + "..." if len(pr["title"]) > 35 else pr["title"]
         table.add_row(
+            pr.get("repo", ""),
             f"#{pr['number']}",
             title,
             pr["author"],
@@ -44,10 +46,13 @@ def print_stale_prs(stale_prs: list[dict], output_path: Path) -> None:
     with open(output_path, "a") as f:
         f.write("\n# Stale PRs\n\n")
         f.write(f"Total stale PRs: {len(stale_prs)}\n\n")
-        f.write("| PR | Title | Author | Age (hours) |\n")
-        f.write("|---|---|---|---|\n")
+        f.write("| Repo | PR | Title | Author | Age (hours) |\n")
+        f.write("|---|---|---|---|---|\n")
         for pr in stale_prs:
-            title = pr["title"][:50] + "..." if len(pr["title"]) > 50 else pr["title"]
-            f.write(f"| #{pr['number']} | {title} | {pr['author']} | {pr['age_hours']:.0f} |\n")
+            title = pr["title"][:40] + "..." if len(pr["title"]) > 40 else pr["title"]
+            f.write(
+                f"| {pr.get('repo', '')} | #{pr['number']} | {title} | "
+                f"{pr['author']} | {pr['age_hours']:.0f} |\n"
+            )
 
     typer.secho(f"Stale PRs saved to {output_path}", fg=typer.colors.YELLOW)

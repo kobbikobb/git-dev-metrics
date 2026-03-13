@@ -152,7 +152,7 @@ def calculate_reviews_given(reviews: dict, devs: dict[str, list[PullRequest]]) -
 STALE_PR_THRESHOLD_HOURS = 24 * 7  # 7 days
 
 
-def get_stale_prs(prs: list[dict]) -> list[dict]:
+def get_stale_prs(prs: list[dict], repo: str = "") -> list[dict]:
     """Return list of stale PRs (> 7 days old), sorted by age (oldest first)."""
     from datetime import UTC, datetime
 
@@ -178,6 +178,7 @@ def get_stale_prs(prs: list[dict]) -> list[dict]:
                     "number": pr.get("number"),
                     "title": pr.get("title"),
                     "author": pr.get("author"),
+                    "repo": repo,
                     "age_hours": round(age_hours, 1),
                 }
             )

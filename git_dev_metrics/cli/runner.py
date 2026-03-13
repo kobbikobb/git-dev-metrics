@@ -55,7 +55,7 @@ def run_analyze(
             from ..metrics.calculator import get_stale_prs
 
             open_prs = fetch_open_prs(token, org, repo_name)
-            stale_prs.extend(get_stale_prs(open_prs))
+            stale_prs.extend(get_stale_prs(open_prs, repo_name))
         except GitHubError as e:
             logger.warning("Could not fetch stale PRs for %s: %s", full_repo, e)
 
