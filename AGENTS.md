@@ -26,6 +26,14 @@ Python 3.14+, Typer (CLI), Rich (terminal output), uv (package manager)
 - Docstrings: Google-style (Args, Returns, Raises), concise
 - Errors: custom exceptions from `type_definitions.py` (`GitHubError` hierarchy); `from None` to suppress tracebacks
 
+## Code Quality Rules
+
+1. **Max function length: 30 lines** - Keep functions short and focused
+2. **Max complexity: 10** (C901) - Limit branching + nesting depth
+3. **Minimal nesting** - Prefer flat code, extract helper functions
+
+Run `ruff check .` to verify.
+
 ## Testing
 
 - pytest, class-based: `Test<ClassName>` / `test_should_<behavior>`
