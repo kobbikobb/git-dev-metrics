@@ -38,7 +38,6 @@ class CompositePrinter(Printer):
         self._console_printer = ConsolePrinter()
         self._file_printer = FilePrinter(output_path or get_default_output_path())
         self._console_stale_printer = ConsoleStalePRPrinter()
-        self._file_stale_printer: FileStalePRPrinter | None = None
 
     def print_combined_metrics(self, metrics: dict, period: str) -> None:
         self._console_printer.print_combined_metrics(metrics, period)
@@ -50,10 +49,22 @@ class CompositePrinter(Printer):
         FileStalePRPrinter(path).print_stale_prs(stale_prs)
 
 
+def print_combined_metrics(metrics: dict, period: str, output_path: Path | None = None) -> None:
+    """Print metrics to console and file."""
+    CompositePrinter(output_path).print_combined_metrics(metrics, period)
+
+
+def print_stale_prs(stale_prs: list[dict], output_path: Path | None = None) -> None:
+    """Print stale PRs to console and file."""
+    CompositePrinter(output_path).print_stale_prs(stale_prs, output_path)
+
+
 __all__ = [
     "Printer",
     "ConsolePrinter",
     "FilePrinter",
     "CompositePrinter",
+    "print_combined_metrics",
+    "print_stale_prs",
     "get_default_output_path",
 ]
