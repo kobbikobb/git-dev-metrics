@@ -11,8 +11,8 @@ def _prompt_for_token() -> str:
     print("- Repository access: All repositories (or select specific repos)")
     print("- Permissions:")
     print("  - Contents: Read")
-    print("  - Pull requests: Read and write")
-    print("  - Members: Read (if analyzing organization repos)")
+    print("  - Metadata: Read")
+    print("  - Pull requests: Read")
     token = getpass("PAT: ")
     if not token:
         raise GitHubAuthError("No token provided")
