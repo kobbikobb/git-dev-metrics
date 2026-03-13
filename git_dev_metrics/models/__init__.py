@@ -1,10 +1,19 @@
 """Models"""
 
-from .types import GitHubUser, OpenPullRequest, PullRequest, PullRequestInfo, Repository, Review
+from .types import (
+    GitHubOrganization,
+    GitHubUser,
+    OpenPullRequest,
+    PullRequest,
+    PullRequestInfo,
+    Repository,
+    Review,
+)
 
 __all__ = [
     "Repository",
     "GitHubUser",
+    "GitHubOrganization",
     "PullRequestInfo",
     "PullRequest",
     "OpenPullRequest",

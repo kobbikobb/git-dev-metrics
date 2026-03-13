@@ -1,10 +1,18 @@
 import logging
 from pathlib import Path
 
-from ..github import GitHubError, get_github_token
-from ..metrics import get_combined_metrics, get_recent_repositories
+from ..github import (
+    GitHubError,
+    fetch_org_repositories,
+    fetch_organizations,
+    fetch_repositories,
+    get_github_token,
+    load_last_org,
+    save_last_org,
+)
+from ..metrics import get_combined_metrics
 from .output import print_metrics, print_stale_prs, resolve_output_path
-from .prompts import prompt_repo_selection
+from .prompts import prompt_org_selection, prompt_repo_selection
 
 logger = logging.getLogger(__name__)
 
@@ -17,15 +25,14 @@ class AnalysisError(Exception):
 
 def _fetch_stale_prs(token: str, selected: list[str]) -> list[dict]:
     """Fetch stale PRs from all selected repositories."""
-    from ..github import GitHubError
-    from ..github.queries import fetch_open_prs
+    from ..github import fetch_open_prs as _fetch_open_prs
     from ..metrics.calculator import get_stale_prs
 
     stale_prs = []
     for full_repo in selected:
         org, repo_name = full_repo.split("/")
         try:
-            open_prs = fetch_open_prs(token, org, repo_name)
+            open_prs = _fetch_open_prs(token, org, repo_name)
             stale_prs.extend(get_stale_prs(open_prs, full_repo))
         except GitHubError as e:
             logger.warning("Could not fetch stale PRs for %s: %s", full_repo, e)
@@ -33,8 +40,6 @@ def _fetch_stale_prs(token: str, selected: list[str]) -> list[dict]:
 
 
 def run_analyze(
-    org: str | None,
-    repo: str | None,
     period: str,
     output: Path | None,
 ) -> None:
@@ -44,11 +49,18 @@ def run_analyze(
     """
     token = get_github_token()
 
-    if org is not None and repo is not None:
-        selected = [f"{org}/{repo}"]
+    organizations = fetch_organizations(token)
+
+    if organizations:
+        last_org = load_last_org()
+        selected_org = prompt_org_selection(organizations, last_org)
+        save_last_org(selected_org)
+        repos = fetch_org_repositories(token, selected_org)
     else:
-        repos = get_recent_repositories(token)
-        selected = prompt_repo_selection(repos)
+        repos = fetch_repositories(token)
+
+    repo_options = {repo["full_name"]: "Private" if repo["private"] else "Public" for repo in repos}
+    selected = prompt_repo_selection(repo_options)
 
     try:
         metrics = get_combined_metrics(token, selected, period)
