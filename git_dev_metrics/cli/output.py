@@ -20,8 +20,5 @@ def print_stale_prs(stale_prs: list[dict], output_path: Path) -> None:
     """Print stale PRs to console and file."""
     import typer
 
-    from ..metrics.printer import ConsoleStalePRPrinter, FileStalePRPrinter
-
-    ConsoleStalePRPrinter().print_stale_prs(stale_prs)
-    FileStalePRPrinter(output_path).print_stale_prs(stale_prs)
+    CompositePrinter(output_path).print_stale_prs(stale_prs, output_path)
     typer.secho(f"Stale PRs saved to {output_path}", fg=typer.colors.YELLOW)
