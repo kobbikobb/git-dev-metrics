@@ -17,7 +17,6 @@ def analyze(
     ),
     output: Path | None = typer.Option(None, help="Output file path"),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Show full error tracebacks"),
-    stale: bool = typer.Option(False, "--stale", help="Show stale PRs (> 7 days)"),
 ) -> None:
     """
     Analyze GitHub repository development metrics.
@@ -38,7 +37,6 @@ def analyze(
             period=period,
             output_path=str(output) if output else None,
             verbose=verbose,
-            stale=stale,
         )
     except AnalysisError as e:
         typer.secho(f"Analysis failed: {e}", fg=typer.colors.RED, bold=True)
