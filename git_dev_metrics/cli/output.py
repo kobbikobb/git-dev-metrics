@@ -1,6 +1,14 @@
 from pathlib import Path
 
-from ..metrics.printer import CompositePrinter, get_default_output_path
+from ..metrics.printer import (
+    get_default_output_path,
+)
+from ..metrics.printer import (
+    print_combined_metrics as _print_combined_metrics,
+)
+from ..metrics.printer import (
+    print_stale_prs as _print_stale_prs,
+)
 
 
 def resolve_output_path(output: Path | None) -> Path:
@@ -12,7 +20,7 @@ def print_metrics(metrics: dict, period: str, output_path: Path) -> None:
     """Print metrics to the specified output path."""
     import typer
 
-    CompositePrinter(output_path).print_combined_metrics(metrics, period)
+    _print_combined_metrics(metrics, period, output_path)
     typer.secho(f"Results saved to {output_path}", fg=typer.colors.GREEN)
 
 
@@ -20,5 +28,5 @@ def print_stale_prs(stale_prs: list[dict], output_path: Path) -> None:
     """Print stale PRs to console and file."""
     import typer
 
-    CompositePrinter(output_path).print_stale_prs(stale_prs, output_path)
+    _print_stale_prs(stale_prs, output_path)
     typer.secho(f"Stale PRs saved to {output_path}", fg=typer.colors.YELLOW)
