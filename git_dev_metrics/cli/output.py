@@ -55,7 +55,10 @@ def print_bottlenecks(bottleneck_data: dict, output_path: Path) -> None:
             f.write("|---|---|---|---|\n")
             for pr in waiting:
                 title = pr["title"][:40]
-                line = f"| {pr['repo']} | #{pr['number']} | {pr['author']} | {pr['waiting_hours']:.1f} |\n"
+                line = (
+                    f"| {pr['repo']} | #{pr['number']} | {pr['author']} | "
+                    f"{pr['waiting_hours']:.1f} |\n"
+                )
                 f.write(line)
             f.write("\n")
 
