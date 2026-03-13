@@ -22,9 +22,10 @@ class ConsolePrinter(Printer):
 class FilePrinter(Printer):
     """Print metrics to markdown file."""
 
-    def __init__(self, output_path: Path) -> None:
-        self._repo_printer = FileRepoPrinter(output_path)
-        self._dev_printer = FileDevPrinter(output_path)
+    def __init__(self, output_path: Path | None = None) -> None:
+        path = output_path or get_default_output_path()
+        self._repo_printer = FileRepoPrinter(path)
+        self._dev_printer = FileDevPrinter(path)
 
     def print_combined_metrics(self, metrics: dict, period: str) -> None:
         self._repo_printer.print_combined_metrics(metrics, period)
@@ -36,17 +37,17 @@ class CompositePrinter(Printer):
 
     def __init__(self, output_path: Path | None = None) -> None:
         self._console_printer = ConsolePrinter()
-        self._file_printer = FilePrinter(output_path or get_default_output_path())
+        self._file_printer = FilePrinter(output_path)
         self._console_stale_printer = ConsoleStalePRPrinter()
+        self._file_stale_printer = FileStalePRPrinter(output_path or get_default_output_path())
 
     def print_combined_metrics(self, metrics: dict, period: str) -> None:
         self._console_printer.print_combined_metrics(metrics, period)
         self._file_printer.print_combined_metrics(metrics, period)
 
-    def print_stale_prs(self, stale_prs: list[dict], output_path: Path | None = None) -> None:
+    def print_stale_prs(self, stale_prs: list[dict]) -> None:
         self._console_stale_printer.print_stale_prs(stale_prs)
-        path = output_path or get_default_output_path()
-        FileStalePRPrinter(path).print_stale_prs(stale_prs)
+        self._file_stale_printer.print_stale_prs(stale_prs)
 
 
 def print_combined_metrics(metrics: dict, period: str, output_path: Path | None = None) -> None:
@@ -56,7 +57,7 @@ def print_combined_metrics(metrics: dict, period: str, output_path: Path | None 
 
 def print_stale_prs(stale_prs: list[dict], output_path: Path | None = None) -> None:
     """Print stale PRs to console and file."""
-    CompositePrinter(output_path).print_stale_prs(stale_prs, output_path)
+    CompositePrinter(output_path).print_stale_prs(stale_prs)
 
 
 __all__ = [
@@ -66,5 +67,4 @@ __all__ = [
     "CompositePrinter",
     "print_combined_metrics",
     "print_stale_prs",
-    "get_default_output_path",
 ]
