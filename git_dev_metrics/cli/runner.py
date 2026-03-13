@@ -26,7 +26,7 @@ def _fetch_stale_prs(token: str, selected: list[str]) -> list[dict]:
         org, repo_name = full_repo.split("/")
         try:
             open_prs = fetch_open_prs(token, org, repo_name)
-            stale_prs.extend(get_stale_prs(open_prs, repo_name))
+            stale_prs.extend(get_stale_prs(open_prs, full_repo))
         except GitHubError as e:
             logger.warning("Could not fetch stale PRs for %s: %s", full_repo, e)
     return stale_prs
