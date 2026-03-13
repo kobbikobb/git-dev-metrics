@@ -38,11 +38,19 @@ Python 3.14+, Typer (CLI), Rich (terminal output), uv (package manager)
 
 Run `ruff check .` to verify complexity.
 
+## Consistency Guidelines
+
+- **Types**: Always use defined TypedDicts from `models/` (e.g., `PullRequest`, `OpenPullRequest`). Never return raw `dict` unless truly generic.
+- **Datetime fields**: Use ISO strings (`str`) in models/mappings, convert to `datetime` internally only when needed for calculations.
+- **Testability**: When code depends on `datetime.now()` or similar, inject a `clock` parameter (e.g., `clock: Callable[[], datetime] | None = None`) so tests can provide deterministic values.
+- **Follow existing patterns**: Check similar functions in the codebase before adding new patterns (e.g., how `fetch_repo_metrics` returns typed data).
+
 ## Testing
 
 - pytest, class-based: `Test<ClassName>` / `test_should_<behavior>`
 - Use `any_pr(**overrides)` fixture from `conftest.py`
 - Mock HTTP with `responses` library
+- For time-dependent logic, inject a `clock` parameter and pass `lambda: known_time` in tests
 
 ## CI
 lint → test+coverage → security audit (pip-audit)
