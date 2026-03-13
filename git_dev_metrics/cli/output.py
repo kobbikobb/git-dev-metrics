@@ -17,8 +17,29 @@ def print_metrics(metrics: dict, period: str, output_path: Path) -> None:
 
 
 def print_stale_prs(stale_prs: list[dict], output_path: Path) -> None:
-    """Append stale PRs to the output file."""
+    """Print stale PRs to console and append to output file."""
     import typer
+    from rich.console import Console
+    from rich.table import Table
+
+    console = Console()
+    table = Table(title="Stale PRs (> 7 days)")
+    table.add_column("PR", style="cyan")
+    table.add_column("Title", style="white")
+    table.add_column("Author", style="magenta")
+    table.add_column("Age (h)", style="yellow", justify="right")
+
+    for pr in stale_prs:
+        title = pr["title"][:40] + "..." if len(pr["title"]) > 40 else pr["title"]
+        table.add_row(
+            f"#{pr['number']}",
+            title,
+            pr["author"],
+            f"{pr['age_hours']:.0f}",
+        )
+
+    console.print("\n")
+    console.print(table)
 
     with open(output_path, "a") as f:
         f.write("\n# Stale PRs\n\n")
@@ -27,6 +48,6 @@ def print_stale_prs(stale_prs: list[dict], output_path: Path) -> None:
         f.write("|---|---|---|---|\n")
         for pr in stale_prs:
             title = pr["title"][:50] + "..." if len(pr["title"]) > 50 else pr["title"]
-            f.write(f"| #{pr['number']} | {title} | {pr['author']} | {pr['age_hours']} |\n")
+            f.write(f"| #{pr['number']} | {title} | {pr['author']} | {pr['age_hours']:.0f} |\n")
 
     typer.secho(f"Stale PRs saved to {output_path}", fg=typer.colors.YELLOW)
