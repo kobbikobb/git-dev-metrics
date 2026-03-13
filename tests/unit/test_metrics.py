@@ -348,14 +348,14 @@ class TestGetStalePrs:
     """Test cases for get_stale_prs function."""
 
     def test_should_return_empty_for_empty_list(self):
-        from datetime import datetime
         from git_dev_metrics.metrics.calculator import get_stale_prs
 
         result = get_stale_prs([], "myrepo")
         assert result == []
 
     def test_should_return_fresh_prs(self):
-        from datetime import datetime, timedelta, UTC
+        from datetime import UTC, datetime, timedelta
+
         from git_dev_metrics.metrics.calculator import get_stale_prs
 
         now = datetime.now(UTC)
@@ -376,7 +376,8 @@ class TestGetStalePrs:
         assert result == []
 
     def test_should_identify_stale_prs(self):
-        from datetime import datetime, timedelta, UTC
+        from datetime import UTC, datetime, timedelta
+
         from git_dev_metrics.metrics.calculator import get_stale_prs
 
         now = datetime.now(UTC)
@@ -401,7 +402,8 @@ class TestGetStalePrs:
         assert result[0]["age_hours"] > 24 * 7  # More than 7 days
 
     def test_should_sort_by_age_oldest_first(self):
-        from datetime import datetime, timedelta, UTC
+        from datetime import UTC, datetime, timedelta
+
         from git_dev_metrics.metrics.calculator import get_stale_prs
 
         now = datetime.now(UTC)

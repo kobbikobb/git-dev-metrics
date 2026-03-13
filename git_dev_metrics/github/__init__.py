@@ -1,6 +1,7 @@
 """Github auth and data fetching."""
 
 from .auth import get_github_token
+from .auth_cache import load_last_org, save_last_org
 from .exceptions import (
     GitHubAPIError,
     GitHubAuthError,
@@ -8,7 +9,15 @@ from .exceptions import (
     GitHubNotFoundError,
     GitHubRateLimitError,
 )
-from .queries import fetch_pull_requests, fetch_repo_metrics, fetch_repositories, fetch_reviews
+from .queries import (
+    fetch_open_prs,
+    fetch_org_repositories,
+    fetch_organizations,
+    fetch_pull_requests,
+    fetch_repo_metrics,
+    fetch_repositories,
+    fetch_reviews,
+)
 
 __all__ = [
     "GitHubError",
@@ -18,7 +27,12 @@ __all__ = [
     "GitHubNotFoundError",
     "get_github_token",
     "fetch_repositories",
+    "fetch_organizations",
+    "fetch_org_repositories",
     "fetch_pull_requests",
     "fetch_reviews",
     "fetch_repo_metrics",
+    "fetch_open_prs",
+    "load_last_org",
+    "save_last_org",
 ]

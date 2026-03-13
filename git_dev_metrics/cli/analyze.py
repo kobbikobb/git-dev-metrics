@@ -10,8 +10,6 @@ logger = logging.getLogger(__name__)
 
 
 def analyze(
-    org: str | None = typer.Option(None, help="GitHub organization name"),
-    repo: str | None = typer.Option(None, help="Repository name"),
     period: str = typer.Option(
         "30d", callback=validate_period, help="Time period (e.g. 7d, 30d, 90d)"
     ),
@@ -19,15 +17,10 @@ def analyze(
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Show full error tracebacks"),
 ) -> None:
     """Analyze GitHub repository development metrics."""
-    from .validation import validate_org_repo_pair
-
-    validate_org_repo_pair(org, repo)
     typer.secho("Configuring GitHub Auth Token...", fg=typer.colors.BRIGHT_YELLOW, bold=True)
 
     try:
         run_analyze(
-            org=org,
-            repo=repo,
             period=period,
             output=output,
         )

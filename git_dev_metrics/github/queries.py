@@ -1,9 +1,11 @@
 from datetime import datetime
 
-from ..models import OpenPullRequest, PullRequest, Repository, Review
+from ..models import GitHubOrganization, OpenPullRequest, PullRequest, Repository, Review
 from .graphql_client import execute_paginated_query, get_client
 from .graphql_queries import (
     OPEN_PRS_QUERY,
+    ORG_REPOSITORIES_QUERY,
+    ORGANIZATIONS_QUERY,
     REPO_METRICS_QUERY,
     REPOSITORIES_QUERY,
 )
@@ -71,6 +73,39 @@ def fetch_repositories(token: str) -> list[Repository]:
     client = get_client(token)
     repos = execute_paginated_query(
         client, REPOSITORIES_QUERY, {"first": PAGE_SIZE}, "viewer.repositories"
+    )
+
+    return [_map_repository(repo) for repo in repos if repo.get("nameWithOwner")]
+
+
+def fetch_organizations(token: str) -> list[GitHubOrganization]:
+    """Fetch all organizations the user belongs to."""
+    client = get_client(token)
+    orgs = execute_paginated_query(
+        client, ORGANIZATIONS_QUERY, {"first": PAGE_SIZE}, "viewer.organizations"
+    )
+
+    result: list[GitHubOrganization] = []
+    for org in orgs:
+        login = org.get("login")
+        if login:
+            result.append(
+                {
+                    "login": login,
+                    "name": org.get("name"),
+                }
+            )
+    return result
+
+
+def fetch_org_repositories(token: str, org: str) -> list[Repository]:
+    """Fetch all repositories for a specific organization."""
+    client = get_client(token)
+    repos = execute_paginated_query(
+        client,
+        ORG_REPOSITORIES_QUERY,
+        {"login": org, "first": PAGE_SIZE},
+        "organization.repositories",
     )
 
     return [_map_repository(repo) for repo in repos if repo.get("nameWithOwner")]

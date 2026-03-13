@@ -5,6 +5,7 @@ import requests
 
 SERVICE_NAME = "github-dev-metrics"
 TOKEN_KEY = "github_token"
+ORG_KEY = "last_org"
 
 
 def save_token(token: str) -> None:
@@ -32,3 +33,15 @@ def delete_token() -> None:
     """Delete token from system keyring."""
     with suppress(Exception):
         keyring.delete_password(SERVICE_NAME, TOKEN_KEY)
+
+
+def save_last_org(org: str) -> None:
+    """Save last selected org to system keyring."""
+    keyring.set_password(SERVICE_NAME, ORG_KEY, org)
+
+
+def load_last_org() -> str | None:
+    """Load last selected org from system keyring."""
+    with suppress(Exception):
+        return keyring.get_password(SERVICE_NAME, ORG_KEY)
+    return None
