@@ -31,11 +31,7 @@ def _fetch_stale_prs(token: str, selected: list[str]) -> list[dict]:
 
 
 def run_analyze(
-    org: str | None,
-    repo: str | None,
-    period: str,
-    output_path: str | None,
-    verbose: bool,
+    org: str | None, repo: str | None, period: str, output_path: str | None, verbose: bool
 ) -> None:
     """Orchestrate the full analyze flow."""
     from pathlib import Path
