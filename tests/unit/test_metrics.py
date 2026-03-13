@@ -1,5 +1,7 @@
 """Unit tests for reports.py functions."""
 
+from typing import cast
+
 from git_dev_metrics.metrics import (
     calculate_cycle_time,
     calculate_pickup_time,
@@ -10,6 +12,7 @@ from git_dev_metrics.metrics import (
     median,
 )
 from git_dev_metrics.metrics.analyzer import _parse_period_days
+from git_dev_metrics.models import OpenPullRequest
 
 from .conftest import any_pr
 
@@ -356,15 +359,20 @@ class TestGetStalePrs:
         from git_dev_metrics.metrics.calculator import get_stale_prs
 
         now = datetime.now(UTC)
-        prs = [
-            {
-                "number": 1,
-                "title": "Fresh PR",
-                "created_at": now - timedelta(days=1),
-                "author": "alice",
-            },
-        ]
-        result = get_stale_prs(prs, "myrepo")
+        prs = cast(
+            list[OpenPullRequest],
+            [
+                {
+                    "number": 1,
+                    "title": "Fresh PR",
+                    "created_at": (now - timedelta(days=1)).isoformat(),
+                    "merged_at": None,
+                    "user": {"login": "alice"},
+                },
+            ],
+        )
+        clock = lambda: now
+        result = get_stale_prs(prs, "myrepo", clock)
         assert result == []
 
     def test_should_identify_stale_prs(self):
@@ -372,15 +380,20 @@ class TestGetStalePrs:
         from git_dev_metrics.metrics.calculator import get_stale_prs
 
         now = datetime.now(UTC)
-        prs = [
-            {
-                "number": 1,
-                "title": "Stale PR",
-                "created_at": now - timedelta(days=10),
-                "author": "alice",
-            },
-        ]
-        result = get_stale_prs(prs, "myrepo")
+        prs = cast(
+            list[OpenPullRequest],
+            [
+                {
+                    "number": 1,
+                    "title": "Stale PR",
+                    "created_at": (now - timedelta(days=10)).isoformat(),
+                    "merged_at": None,
+                    "user": {"login": "alice"},
+                },
+            ],
+        )
+        clock = lambda: now
+        result = get_stale_prs(prs, "myrepo", clock)
         assert len(result) == 1
         assert result[0]["number"] == 1
         assert result[0]["author"] == "alice"
@@ -392,21 +405,27 @@ class TestGetStalePrs:
         from git_dev_metrics.metrics.calculator import get_stale_prs
 
         now = datetime.now(UTC)
-        prs = [
-            {
-                "number": 1,
-                "title": "Newer stale",
-                "created_at": now - timedelta(days=8),
-                "author": "alice",
-            },
-            {
-                "number": 2,
-                "title": "Older stale",
-                "created_at": now - timedelta(days=15),
-                "author": "bob",
-            },
-        ]
-        result = get_stale_prs(prs, "myrepo")
+        prs = cast(
+            list[OpenPullRequest],
+            [
+                {
+                    "number": 1,
+                    "title": "Newer stale",
+                    "created_at": (now - timedelta(days=8)).isoformat(),
+                    "merged_at": None,
+                    "user": {"login": "alice"},
+                },
+                {
+                    "number": 2,
+                    "title": "Older stale",
+                    "created_at": (now - timedelta(days=15)).isoformat(),
+                    "merged_at": None,
+                    "user": {"login": "bob"},
+                },
+            ],
+        )
+        clock = lambda: now
+        result = get_stale_prs(prs, "myrepo", clock)
         assert result[0]["number"] == 2  # Older first
         assert result[1]["number"] == 1
         assert result[0]["repo"] == "myrepo"

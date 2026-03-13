@@ -1,7 +1,8 @@
 from collections import defaultdict
+from collections.abc import Callable
 from datetime import datetime
 
-from ..models import PullRequest
+from ..models import OpenPullRequest, PullRequest
 
 
 def _to_datetime(value: str | datetime | None) -> datetime | None:
@@ -152,36 +153,47 @@ def calculate_reviews_given(reviews: dict, devs: dict[str, list[PullRequest]]) -
 STALE_PR_THRESHOLD_HOURS = 24 * 7  # 7 days
 
 
-def _calculate_age_hours(created_at: datetime) -> float:
+def _calculate_age_hours(
+    created_at: str | datetime, clock: Callable[[], datetime] | None = None
+) -> float:
     """Calculate age in hours from created_at to now."""
     from datetime import UTC, datetime
 
-    now = datetime.now(UTC)
-    if created_at.tzinfo is None:
-        created_at = created_at.replace(tzinfo=UTC)
-    return (now - created_at).total_seconds() / 3600
+    now = clock() if clock else datetime.now(UTC)
+    parsed: datetime | None = (
+        _to_datetime(created_at) if isinstance(created_at, str) else created_at
+    )
+    if parsed is None:
+        return 0.0
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=UTC)
+    return (now - parsed).total_seconds() / 3600
 
 
-def _is_stale_pr(pr: dict, repo: str) -> dict | None:
+def _is_stale_pr(
+    pr: OpenPullRequest, repo: str, clock: Callable[[], datetime] | None = None
+) -> dict | None:
     """Check if PR is stale and return data if so."""
     created = pr.get("created_at")
     if created is None:
         return None
 
-    age_hours = _calculate_age_hours(created)
+    age_hours = _calculate_age_hours(created, clock)
     if age_hours > STALE_PR_THRESHOLD_HOURS:
         return {
             "number": pr.get("number"),
             "title": pr.get("title"),
-            "author": pr.get("author"),
+            "author": pr.get("user", {}).get("login"),
             "repo": repo,
             "age_hours": round(age_hours, 1),
         }
     return None
 
 
-def get_stale_prs(prs: list[dict], repo: str = "") -> list[dict]:
+def get_stale_prs(
+    prs: list[OpenPullRequest], repo: str = "", clock: Callable[[], datetime] | None = None
+) -> list[dict]:
     """Return list of stale PRs (> 7 days old), sorted by age (oldest first)."""
-    stale = [p for p in (_is_stale_pr(pr, repo) for pr in prs) if p]
+    stale = [p for p in (_is_stale_pr(pr, repo, clock) for pr in prs) if p]
     stale.sort(key=lambda x: x["age_hours"], reverse=True)
     return stale

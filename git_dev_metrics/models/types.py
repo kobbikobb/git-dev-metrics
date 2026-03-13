@@ -34,3 +34,11 @@ class Review(TypedDict):
     user: GitHubUser
     state: str
     submitted_at: str
+
+
+class OpenPullRequest(TypedDict):
+    number: int
+    title: str
+    created_at: str | None
+    merged_at: str | None
+    user: GitHubUser
