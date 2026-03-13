@@ -1,3 +1,5 @@
+from contextlib import suppress
+
 import keyring
 import requests
 
@@ -12,10 +14,9 @@ def save_token(token: str) -> None:
 
 def load_token() -> str | None:
     """Load token from system keyring."""
-    try:
+    with suppress(Exception):
         return keyring.get_password(SERVICE_NAME, TOKEN_KEY)
-    except Exception:
-        return None
+    return None
 
 
 def is_token_valid(token: str) -> bool:
@@ -25,3 +26,9 @@ def is_token_valid(token: str) -> bool:
         headers={"Authorization": f"token {token}"},
     )
     return response.status_code == 200
+
+
+def delete_token() -> None:
+    """Delete token from system keyring."""
+    with suppress(Exception):
+        keyring.delete_password(SERVICE_NAME, TOKEN_KEY)
