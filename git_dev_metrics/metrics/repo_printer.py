@@ -1,5 +1,16 @@
 from pathlib import Path
 
+REPO_COLUMNS = [
+    "Repo",
+    "Pickup Time (h)",
+    "Review Time (h)",
+    "Cycle Time (h)",
+    "PR Size",
+    "Total PRs",
+    "PRs/Week",
+    "Reviews Given",
+]
+
 
 class ConsoleRepoPrinter:
     """Print repo metrics to console using Rich."""
@@ -10,16 +21,7 @@ class ConsoleRepoPrinter:
 
         console = Console()
         table = Table(title=f"Repo Metrics (last {period})")
-        for col in [
-            "Repo",
-            "Pickup Time (h)",
-            "Review Time (h)",
-            "Cycle Time (h)",
-            "PR Size",
-            "Total PRs",
-            "PRs/Week",
-            "Reviews Given",
-        ]:
+        for col in REPO_COLUMNS:
             table.add_column(col)
 
         for repo_name, m in sorted(

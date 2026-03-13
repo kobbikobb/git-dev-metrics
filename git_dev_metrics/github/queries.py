@@ -130,6 +130,25 @@ def fetch_reviews(
     return reviews_by_pr
 
 
+def _filter_and_map_pr(prs: list[dict], since: datetime) -> tuple[list, dict]:
+    """Filter PRs by date and map to internal format."""
+    mapped_prs = []
+    reviews_by_pr = {}
+
+    for pr in prs:
+        mapped = _map_pull_request(pr)
+        merged_at = mapped["merged_at"]
+        if merged_at is None or merged_at < since:  # type: ignore[reportOperatorIssue]
+            continue
+
+        pr_number = mapped["number"]
+        mapped_prs.append(mapped)
+        reviews = pr.get("reviews", {}).get("nodes", [])
+        reviews_by_pr[pr_number] = [_map_review(r) for r in reviews]
+
+    return mapped_prs, reviews_by_pr
+
+
 def fetch_repo_metrics(
     token: str, org: str, repo: str, since: datetime
 ) -> tuple[list[PullRequest], dict[int, list[Review]]]:
@@ -142,26 +161,7 @@ def fetch_repo_metrics(
         "repository.pullRequests",
     )
 
-    mapped_prs: list[PullRequest] = []
-    reviews_by_pr: dict[int, list[Review]] = {}
-
-    for pr in prs:
-        mapped = _map_pull_request(pr)
-        merged_at = mapped["merged_at"]
-        if merged_at is None:
-            continue
-        # Since we order by UPDATED_AT (not MERGED_AT), we can't break early -
-        # a recently updated PR could have been merged long ago. Filter instead.
-        if merged_at < since:  # type: ignore[operator]
-            continue
-
-        pr_number = mapped["number"]
-        mapped_prs.append(mapped)
-
-        reviews = pr.get("reviews", {}).get("nodes", [])
-        reviews_by_pr[pr_number] = [_map_review(r) for r in reviews]
-
-    return mapped_prs, reviews_by_pr
+    return _filter_and_map_pr(prs, since)
 
 
 def fetch_open_prs(token: str, org: str, repo: str) -> list[dict]:

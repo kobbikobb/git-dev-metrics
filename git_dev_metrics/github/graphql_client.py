@@ -83,6 +83,27 @@ def _get_page_info(result: dict[str, Any], path: str) -> dict[str, Any]:
     return page_info if isinstance(page_info, dict) else {}
 
 
+def _fetch_page(
+    client: Client,
+    query: GraphQLRequest,
+    variables_copy: dict[str, Any],
+    cursor: str | None,
+    path: str,
+) -> tuple[list[dict[str, Any]], str | None]:
+    """Fetch a single page and return nodes + next cursor."""
+    if cursor:
+        variables_copy["after"] = cursor
+    else:
+        variables_copy.pop("after", None)
+
+    result = execute_query(client, query, variables_copy)
+    nodes = _extract_nodes(result, path)
+    page_info = _get_page_info(result, path)
+
+    next_cursor = page_info.get("endCursor") if page_info.get("hasNextPage") else None
+    return nodes, next_cursor
+
+
 def execute_paginated_query(
     client: Client,
     query: GraphQLRequest,
@@ -90,39 +111,14 @@ def execute_paginated_query(
     path: str,
     page_size: int = DEFAULT_PAGE_SIZE,
 ) -> list[dict[str, Any]]:
-    """
-    Execute a paginated GraphQL query and return all results.
-
-    Args:
-        client: GraphQL client
-        query: GraphQL query
-        variables: Query variables (will be modified with after/cursor)
-        path: Dot-separated path to the nodes in the response (e.g., "repository.pullRequests")
-        page_size: Number of items per page
-
-    Returns:
-        List of all nodes fetched across all pages
-    """
+    """Execute a paginated GraphQL query and return all results."""
     all_nodes = []
     variables_copy = {**variables, "first": page_size}
     cursor = None
 
     while True:
-        if cursor:
-            variables_copy["after"] = cursor
-        else:
-            variables_copy.pop("after", None)
-
-        result = execute_query(client, query, variables_copy)
-        current = _extract_nodes(result, path)
-        all_nodes.extend(current)
-
-        page_info = _get_page_info(result, path)
-        has_next_page = page_info.get("hasNextPage", False)
-        if not has_next_page:
-            break
-
-        cursor = page_info.get("endCursor")
+        nodes, cursor = _fetch_page(client, query, variables_copy, cursor, path)
+        all_nodes.extend(nodes)
         if not cursor:
             break
 

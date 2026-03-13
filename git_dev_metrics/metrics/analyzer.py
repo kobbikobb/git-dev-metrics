@@ -29,21 +29,10 @@ def _parse_period_days(event_period: str) -> int:
     return days
 
 
-def get_pull_request_metrics(token: str, org: str, repo: str, event_period: str = "30d") -> dict:
-    """
-    Get development metrics for a repository over a specified time period.
-    """
-    since = parse_time_period(event_period)
-    prs, reviews = fetch_repo_metrics(token, org, repo, since)
-
-    period_days = _parse_period_days(event_period)
-
-    devs = group_prs_by_devs(prs)
-    reviews_given = calculate_reviews_given(reviews, devs)
-
-    dev_metrics = {}
-    for dev, dev_prs in devs.items():
-        dev_metrics[dev] = {
+def _build_dev_metrics(devs: dict, reviews: dict, period_days: int, reviews_given: dict) -> dict:
+    """Build dev-level metrics dict."""
+    return {
+        dev: {
             "cycle_time": calculate_cycle_time(dev_prs),
             "pr_size": calculate_pr_size(dev_prs),
             "pr_count": calculate_throughput(dev_prs),
@@ -52,6 +41,19 @@ def get_pull_request_metrics(token: str, org: str, repo: str, event_period: str 
             "prs_per_week": calculate_prs_per_week(dev_prs, period_days),
             "reviews_given": reviews_given.get(dev, 0),
         }
+        for dev, dev_prs in devs.items()
+    }
+
+
+def get_pull_request_metrics(token: str, org: str, repo: str, event_period: str = "30d") -> dict:
+    """Get development metrics for a repository over a specified time period."""
+    since = parse_time_period(event_period)
+    period_days = _parse_period_days(event_period)
+    prs, reviews = fetch_repo_metrics(token, org, repo, since)
+
+    devs = group_prs_by_devs(prs)
+    reviews_given = calculate_reviews_given(reviews, devs)
+    dev_metrics = _build_dev_metrics(devs, reviews, period_days, reviews_given)
 
     return {
         "cycle_time": calculate_cycle_time(prs),
@@ -65,14 +67,23 @@ def get_pull_request_metrics(token: str, org: str, repo: str, event_period: str 
     }
 
 
-def get_combined_metrics(token: str, selected_repos: list[str], event_period: str = "30d") -> dict:
-    """
-    Get combined metrics for multiple repositories.
+def _build_metrics(prs: list, reviews: dict, period_days: int) -> dict:
+    """Build metrics dict for a list of PRs."""
+    devs = group_prs_by_devs(prs)
+    reviews_given = calculate_reviews_given(reviews, devs)
+    return {
+        "cycle_time": calculate_cycle_time(prs),
+        "pr_size": calculate_pr_size(prs),
+        "pr_count": calculate_throughput(prs),
+        "pickup_time": calculate_pickup_time(prs, reviews),
+        "review_time": calculate_review_time(prs, reviews),
+        "prs_per_week": calculate_prs_per_week(prs, period_days),
+        "reviews_given": sum(reviews_given.values()),
+    }
 
-    Returns dict with:
-    - repo_metrics: dict mapping repo_name -> repo-level metrics
-    - dev_metrics: dict mapping dev_name -> combined dev-level metrics across all repos
-    """
+
+def get_combined_metrics(token: str, selected_repos: list[str], event_period: str = "30d") -> dict:
+    """Get combined metrics for multiple repositories."""
     since = parse_time_period(event_period)
     period_days = _parse_period_days(event_period)
 
@@ -86,34 +97,11 @@ def get_combined_metrics(token: str, selected_repos: list[str], event_period: st
 
         all_prs.extend(prs)
         all_reviews.update(reviews)
-
-        devs = group_prs_by_devs(prs)
-        reviews_given = calculate_reviews_given(reviews, devs)
-
-        repo_metrics[full_name] = {
-            "cycle_time": calculate_cycle_time(prs),
-            "pr_size": calculate_pr_size(prs),
-            "pr_count": calculate_throughput(prs),
-            "pickup_time": calculate_pickup_time(prs, reviews),
-            "review_time": calculate_review_time(prs, reviews),
-            "prs_per_week": calculate_prs_per_week(prs, period_days),
-            "reviews_given": sum(reviews_given.values()),
-        }
+        repo_metrics[full_name] = _build_metrics(prs, reviews, period_days)
 
     all_devs = group_prs_by_devs(all_prs)
     all_reviews_given = calculate_reviews_given(all_reviews, all_devs)
-
-    combined_dev_metrics = {}
-    for dev, dev_prs in all_devs.items():
-        combined_dev_metrics[dev] = {
-            "cycle_time": calculate_cycle_time(dev_prs),
-            "pr_size": calculate_pr_size(dev_prs),
-            "pr_count": calculate_throughput(dev_prs),
-            "pickup_time": calculate_pickup_time(dev_prs, all_reviews),
-            "review_time": calculate_review_time(dev_prs, all_reviews),
-            "prs_per_week": calculate_prs_per_week(dev_prs, period_days),
-            "reviews_given": all_reviews_given.get(dev, 0),
-        }
+    combined_dev_metrics = _build_dev_metrics(all_devs, all_reviews, period_days, all_reviews_given)
 
     return {
         "repo_metrics": repo_metrics,

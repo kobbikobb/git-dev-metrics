@@ -18,16 +18,10 @@ def analyze(
     output: Path | None = typer.Option(None, help="Output file path"),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Show full error tracebacks"),
 ) -> None:
-    """
-    Analyze GitHub repository development metrics.
-
-    If --org and --repo are omitted, you will be prompted to select
-    from your recently active repositories.
-    """
+    """Analyze GitHub repository development metrics."""
     from .validation import validate_org_repo_pair
 
     validate_org_repo_pair(org, repo)
-
     typer.secho("Configuring GitHub Auth Token...", fg=typer.colors.BRIGHT_YELLOW, bold=True)
 
     try:

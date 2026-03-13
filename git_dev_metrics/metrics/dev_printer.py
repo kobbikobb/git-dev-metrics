@@ -1,5 +1,16 @@
 from pathlib import Path
 
+DEV_COLUMNS = [
+    "Dev",
+    "Pickup Time (h)",
+    "Review Time (h)",
+    "Cycle Time (h)",
+    "PR Size",
+    "Total PRs",
+    "PRs/Week",
+    "Reviews Given",
+]
+
 
 class ConsoleDevPrinter:
     """Print dev metrics to console using Rich."""
@@ -10,16 +21,7 @@ class ConsoleDevPrinter:
 
         console = Console()
         table = Table(title="Developer Metrics (combined)")
-        for col in [
-            "Dev",
-            "Pickup Time (h)",
-            "Review Time (h)",
-            "Cycle Time (h)",
-            "PR Size",
-            "Total PRs",
-            "PRs/Week",
-            "Reviews Given",
-        ]:
+        for col in DEV_COLUMNS:
             table.add_column(col)
 
         for dev, m in sorted(

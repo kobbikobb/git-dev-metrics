@@ -16,9 +16,8 @@ def print_metrics(metrics: dict, period: str, output_path: Path) -> None:
     typer.secho(f"Results saved to {output_path}", fg=typer.colors.GREEN)
 
 
-def print_stale_prs(stale_prs: list[dict], output_path: Path) -> None:
-    """Print stale PRs to console and append to output file."""
-    import typer
+def _print_stale_prs_console(stale_prs: list[dict]) -> None:
+    """Print stale PRs table to console."""
     from rich.console import Console
     from rich.table import Table
 
@@ -43,6 +42,9 @@ def print_stale_prs(stale_prs: list[dict], output_path: Path) -> None:
     console.print("\n")
     console.print(table)
 
+
+def _print_stale_prs_file(stale_prs: list[dict], output_path: Path) -> None:
+    """Append stale PRs to output file in markdown format."""
     with open(output_path, "a") as f:
         f.write("\n# Stale PRs\n\n")
         f.write(f"Total stale PRs: {len(stale_prs)}\n\n")
@@ -55,4 +57,11 @@ def print_stale_prs(stale_prs: list[dict], output_path: Path) -> None:
                 f"{pr['author']} | {pr['age_hours']:.0f} |\n"
             )
 
+
+def print_stale_prs(stale_prs: list[dict], output_path: Path) -> None:
+    """Print stale PRs to console and append to output file."""
+    import typer
+
+    _print_stale_prs_console(stale_prs)
+    _print_stale_prs_file(stale_prs, output_path)
     typer.secho(f"Stale PRs saved to {output_path}", fg=typer.colors.YELLOW)
