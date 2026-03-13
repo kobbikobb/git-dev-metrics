@@ -339,3 +339,72 @@ class TestCalculateReviewsGiven:
 
     def test_should_default_to_30_for_invalid(self):
         assert _parse_period_days("invalid") == 30
+
+
+class TestGetStalePrs:
+    """Test cases for get_stale_prs function."""
+
+    def test_should_return_empty_for_empty_list(self):
+        from datetime import datetime
+        from git_dev_metrics.metrics.calculator import get_stale_prs
+
+        result = get_stale_prs([])
+        assert result == []
+
+    def test_should_return_fresh_prs(self):
+        from datetime import datetime, timedelta, UTC
+        from git_dev_metrics.metrics.calculator import get_stale_prs
+
+        now = datetime.now(UTC)
+        prs = [
+            {
+                "number": 1,
+                "title": "Fresh PR",
+                "created_at": now - timedelta(days=1),
+                "author": "alice",
+            },
+        ]
+        result = get_stale_prs(prs)
+        assert result == []
+
+    def test_should_identify_stale_prs(self):
+        from datetime import datetime, timedelta, UTC
+        from git_dev_metrics.metrics.calculator import get_stale_prs
+
+        now = datetime.now(UTC)
+        prs = [
+            {
+                "number": 1,
+                "title": "Stale PR",
+                "created_at": now - timedelta(days=10),
+                "author": "alice",
+            },
+        ]
+        result = get_stale_prs(prs)
+        assert len(result) == 1
+        assert result[0]["number"] == 1
+        assert result[0]["author"] == "alice"
+        assert result[0]["age_hours"] > 24 * 7  # More than 7 days
+
+    def test_should_sort_by_age_oldest_first(self):
+        from datetime import datetime, timedelta, UTC
+        from git_dev_metrics.metrics.calculator import get_stale_prs
+
+        now = datetime.now(UTC)
+        prs = [
+            {
+                "number": 1,
+                "title": "Newer stale",
+                "created_at": now - timedelta(days=8),
+                "author": "alice",
+            },
+            {
+                "number": 2,
+                "title": "Older stale",
+                "created_at": now - timedelta(days=15),
+                "author": "bob",
+            },
+        ]
+        result = get_stale_prs(prs)
+        assert result[0]["number"] == 2  # Older first
+        assert result[1]["number"] == 1
