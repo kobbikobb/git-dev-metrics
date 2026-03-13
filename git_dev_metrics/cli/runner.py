@@ -11,6 +11,7 @@ from ..github import (
     save_last_org,
 )
 from ..metrics import get_combined_metrics
+from ..utils import parse_time_period
 from .output import print_metrics, print_stale_prs, resolve_output_path
 from .prompts import prompt_org_selection, prompt_repo_selection
 
@@ -39,6 +40,11 @@ def _fetch_stale_prs(token: str, selected: list[str]) -> list[dict]:
     return stale_prs
 
 
+def _filter_repos_by_period(repos: list, since) -> list:
+    """Filter repos to only those with recent pushes."""
+    return [repo for repo in repos if repo.get("last_pushed") and repo["last_pushed"] >= since]
+
+
 def run_analyze(
     period: str,
     output: Path | None,
@@ -58,6 +64,9 @@ def run_analyze(
         repos = fetch_org_repositories(token, selected_org)
     else:
         repos = fetch_repositories(token)
+
+    since = parse_time_period(period)
+    repos = _filter_repos_by_period(repos, since)
 
     repo_options = {repo["full_name"]: "Private" if repo["private"] else "Public" for repo in repos}
     selected = prompt_repo_selection(repo_options)
