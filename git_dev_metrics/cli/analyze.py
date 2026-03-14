@@ -17,8 +17,6 @@ def analyze(
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Show full error tracebacks"),
 ) -> None:
     """Analyze GitHub repository development metrics."""
-    typer.secho("Configuring GitHub Auth Token...", fg=typer.colors.BRIGHT_YELLOW, bold=True)
-
     try:
         run_analyze(
             period=period,
