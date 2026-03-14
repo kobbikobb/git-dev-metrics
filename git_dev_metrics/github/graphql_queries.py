@@ -136,8 +136,10 @@ OPEN_PRS_QUERY = gql.gql(
                     }
                     reviewRequests(first: 10) {
                         nodes {
-                            reviewer {
-                                login
+                            requestedReviewer {
+                                ... on User {
+                                    login
+                                }
                             }
                         }
                     }
