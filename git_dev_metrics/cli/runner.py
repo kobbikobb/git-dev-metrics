@@ -8,12 +8,14 @@ from ..github import (
     fetch_repositories,
     get_github_token,
     load_last_org,
+    load_last_period,
     save_last_org,
+    save_last_period,
 )
 from ..metrics import get_combined_metrics
 from ..utils import parse_time_period
 from .output import print_metrics, print_stale_prs, resolve_output_path
-from .prompts import prompt_org_selection, prompt_repo_selection
+from .prompts import prompt_org_selection, prompt_period_selection, prompt_repo_selection
 
 logger = logging.getLogger(__name__)
 
@@ -46,7 +48,6 @@ def _filter_repos_by_period(repos: list, since) -> list:
 
 
 def run_analyze(
-    period: str,
     output: Path | None,
 ) -> None:
     """
@@ -54,6 +55,10 @@ def run_analyze(
     Raises AnalysisError on failure.
     """
     token = get_github_token()
+
+    last_period = load_last_period()
+    period = prompt_period_selection(last_period)
+    save_last_period(period)
 
     organizations = fetch_organizations(token)
 
