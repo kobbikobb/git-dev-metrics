@@ -13,7 +13,9 @@ class TestCLI:
     def test_should_run(self, mocker):
         mocker.patch("git_dev_metrics.cli.runner.get_github_token", return_value="fake-token")
         mocker.patch("git_dev_metrics.cli.runner.load_last_period", return_value=None)
+        mocker.patch("git_dev_metrics.cli.runner.save_last_period")
         mocker.patch("git_dev_metrics.cli.runner.load_last_org", return_value=None)
+        mocker.patch("git_dev_metrics.cli.runner.save_last_org")
         mock_get_prs = mocker.patch(
             "git_dev_metrics.cli.runner.get_combined_metrics",
             return_value={"repo_metrics": {}, "dev_metrics": {}},
@@ -57,7 +59,9 @@ class TestCLI:
     def test_should_handle_client_error(self, mocker):
         mocker.patch("git_dev_metrics.cli.runner.get_github_token", return_value="fake-token")
         mocker.patch("git_dev_metrics.cli.runner.load_last_period", return_value=None)
+        mocker.patch("git_dev_metrics.cli.runner.save_last_period")
         mocker.patch("git_dev_metrics.cli.runner.load_last_org", return_value=None)
+        mocker.patch("git_dev_metrics.cli.runner.save_last_org")
         mocker.patch(
             "git_dev_metrics.cli.runner.prompt_period_selection",
             return_value="30d",
