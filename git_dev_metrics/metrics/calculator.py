@@ -189,6 +189,8 @@ def _is_stale_pr(
             "repo": repo,
             "age_hours": round(age_hours, 1),
             "age_days": round(age_hours / 24, 1),
+            "is_draft": pr.get("is_draft", False),
+            "is_approved": pr.get("is_approved", False),
             "url": f"https://github.com/{repo}/pull/{pr.get('number')}",
         }
     return None
@@ -201,49 +203,3 @@ def get_stale_prs(
     stale = [p for p in (_is_stale_pr(pr, repo, clock) for pr in prs) if p]
     stale.sort(key=lambda x: x["age_hours"], reverse=True)
     return stale
-
-
-def _map_pr_data(pr: OpenPullRequest, repo: str, age_hours: float) -> dict:
-    return {
-        "number": pr.get("number"),
-        "title": pr.get("title"),
-        "author": pr.get("user", {}).get("login"),
-        "repo": repo,
-        "age_hours": round(age_hours, 1),
-        "age_days": round(age_hours / 24, 1),
-        "is_draft": pr.get("is_draft", False),
-        "review_requests": pr.get("review_requests", []),
-        "labels": pr.get("labels", []),
-        "url": f"https://github.com/{repo}/pull/{pr.get('number')}",
-    }
-
-
-def get_draft_prs(
-    prs: list[OpenPullRequest], repo: str = "", clock: Callable[[], datetime] | None = None
-) -> list[dict]:
-    """Return list of draft PRs, sorted by age (oldest first)."""
-    drafts = []
-    for pr in prs:
-        if pr.get("is_draft", False):
-            created = pr.get("created_at")
-            if created is not None:
-                age_hours = _calculate_age_hours(created, clock)
-                drafts.append(_map_pr_data(pr, repo, age_hours))
-    drafts.sort(key=lambda x: x["age_hours"], reverse=True)
-    return drafts
-
-
-def get_awaiting_review_prs(
-    prs: list[OpenPullRequest], repo: str = "", clock: Callable[[], datetime] | None = None
-) -> list[dict]:
-    """Return list of PRs awaiting review (have review requests), sorted by age (oldest first)."""
-    awaiting = []
-    for pr in prs:
-        review_requests = pr.get("review_requests", [])
-        if review_requests and not pr.get("is_draft", False):
-            created = pr.get("created_at")
-            if created is not None:
-                age_hours = _calculate_age_hours(created, clock)
-                awaiting.append(_map_pr_data(pr, repo, age_hours))
-    awaiting.sort(key=lambda x: x["age_hours"], reverse=True)
-    return awaiting
