@@ -1,5 +1,7 @@
 from pathlib import Path
 
+MAX_STALE_PRS_DISPLAY = 10
+
 
 def _calculate_summary(prs: list[dict]) -> tuple[int, float]:
     """Calculate total count and average age in days."""
@@ -13,10 +15,13 @@ def _truncate(text: str, length: int) -> str:
     return text[:length] + "..." if len(text) > length else text
 
 
-TITLE_CONSOLE_LENGTH = 35
-TITLE_FILE_LENGTH = 40
-REVIEWERS_CONSOLE_LENGTH = 25
-REVIEWERS_FILE_LENGTH = 35
+def _check_mark(value: bool) -> str:
+    """Return check mark or cross mark for boolean."""
+    return "✓" if value else "✗"
+
+
+TITLE_CONSOLE_LENGTH = 30
+TITLE_FILE_LENGTH = 35
 
 
 class ConsoleStalePRPrinter:
@@ -31,23 +36,34 @@ class ConsoleStalePRPrinter:
 
         console = Console()
         total, avg_age = _calculate_summary(stale_prs)
+        display_prs = stale_prs[:MAX_STALE_PRS_DISPLAY]
 
         console.print("\n")
-        console.print(f"[bold]Stale PRs: {total} | Avg Age: {avg_age:.1f} days[/bold]\n")
+        if total > MAX_STALE_PRS_DISPLAY:
+            console.print(
+                f"[bold]Stale PRs: {total} (showing {MAX_STALE_PRS_DISPLAY}) | Avg Age: "
+                f"{avg_age:.1f} days[/bold]\n"
+            )
+        else:
+            console.print(f"[bold]Stale PRs: {total} | Avg Age: {avg_age:.1f} days[/bold]\n")
 
         table = Table(title="Stale PRs (> 7 days)")
         table.add_column("PR", style="cyan")
         table.add_column("Title", style="white")
         table.add_column("Repo", style="dim")
         table.add_column("Author", style="magenta")
+        table.add_column("Draft", style="cyan", justify="center")
+        table.add_column("Approved", style="green", justify="center")
         table.add_column("Age (d)", style="yellow", justify="right")
 
-        for pr in stale_prs:
+        for pr in display_prs:
             table.add_row(
                 f"[link={pr['url']}]#{pr['number']}[/link]",
                 _truncate(pr["title"], TITLE_CONSOLE_LENGTH),
                 pr.get("repo", ""),
                 pr["author"],
+                _check_mark(pr.get("is_draft", False)),
+                _check_mark(pr.get("is_approved", False)),
                 f"{pr['age_days']:.1f}",
             )
 
@@ -65,16 +81,26 @@ class FileStalePRPrinter:
             return
 
         total, avg_age = _calculate_summary(stale_prs)
+        display_prs = stale_prs[:MAX_STALE_PRS_DISPLAY]
 
         with open(self.output_path, "a") as f:
             f.write("\n# Stale PRs\n\n")
-            f.write(f"**Total: {total} | Avg Age: {avg_age:.1f} days**\n\n")
-            f.write("| PR | Title | Repo | Author | Age (days) |\n")
-            f.write("|---|---|---|---|---|\n")
-            for pr in stale_prs:
+            if total > MAX_STALE_PRS_DISPLAY:
+                f.write(
+                    f"**Total: {total} (showing {MAX_STALE_PRS_DISPLAY}) | Avg Age: "
+                    f"{avg_age:.1f} days**\n\n"
+                )
+            else:
+                f.write(f"**Total: {total} | Avg Age: {avg_age:.1f} days**\n\n")
+            f.write("| PR | Title | Repo | Author | Draft | Approved | Age (days) |\n")
+            f.write("|---|---|---|---|---|---|---|\n")
+            for pr in display_prs:
                 row = (
                     f"| [#{pr['number']}]({pr['url']}) | "
                     f"{_truncate(pr['title'], TITLE_FILE_LENGTH)} | "
-                    f"{pr.get('repo', '')} | {pr['author']} | {pr['age_days']:.1f} |\n"
+                    f"{pr.get('repo', '')} | {pr['author']} | "
+                    f"{_check_mark(pr.get('is_draft', False))} | "
+                    f"{_check_mark(pr.get('is_approved', False))} | "
+                    f"{pr['age_days']:.1f} |\n"
                 )
                 f.write(row)

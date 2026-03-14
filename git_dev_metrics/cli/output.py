@@ -4,9 +4,6 @@ from ..metrics.printer import (
     get_default_output_path,
 )
 from ..metrics.printer import (
-    print_bottleneck_prs as _print_bottleneck_prs,
-)
-from ..metrics.printer import (
     print_combined_metrics as _print_combined_metrics,
 )
 from ..metrics.printer import (
@@ -33,13 +30,3 @@ def print_stale_prs(stale_prs: list[dict], output_path: Path) -> None:
 
     _print_stale_prs(stale_prs, output_path)
     typer.secho(f"Stale PRs saved to {output_path}", fg=typer.colors.YELLOW)
-
-
-def print_bottleneck_prs(
-    draft_prs: list[dict], awaiting_review_prs: list[dict], output_path: Path
-) -> None:
-    """Print bottleneck PRs to console and file."""
-    import typer
-
-    _print_bottleneck_prs(draft_prs, awaiting_review_prs, output_path)
-    typer.secho(f"Bottleneck PRs saved to {output_path}", fg=typer.colors.CYAN)

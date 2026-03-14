@@ -148,6 +148,11 @@ OPEN_PRS_QUERY = gql.gql(
                             name
                         }
                     }
+                    reviews(first: 100) {
+                        nodes {
+                            state
+                        }
+                    }
                 }
                 pageInfo {
                     hasNextPage

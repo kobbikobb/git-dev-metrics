@@ -368,6 +368,10 @@ class TestGetStalePrs:
                     "created_at": (now - timedelta(days=1)).isoformat(),
                     "merged_at": None,
                     "user": {"login": "alice"},
+                    "is_draft": False,
+                    "is_approved": False,
+                    "review_requests": [],
+                    "labels": [],
                 },
             ],
         )
@@ -390,6 +394,10 @@ class TestGetStalePrs:
                     "created_at": (now - timedelta(days=10)).isoformat(),
                     "merged_at": None,
                     "user": {"login": "alice"},
+                    "is_draft": False,
+                    "is_approved": False,
+                    "review_requests": [],
+                    "labels": [],
                 },
             ],
         )
@@ -400,6 +408,8 @@ class TestGetStalePrs:
         assert result[0]["author"] == "alice"
         assert result[0]["repo"] == "myrepo"
         assert result[0]["age_hours"] > 24 * 7  # More than 7 days
+        assert result[0]["is_draft"] is False
+        assert result[0]["is_approved"] is False
 
     def test_should_sort_by_age_oldest_first(self):
         from datetime import UTC, datetime, timedelta
@@ -416,6 +426,10 @@ class TestGetStalePrs:
                     "created_at": (now - timedelta(days=8)).isoformat(),
                     "merged_at": None,
                     "user": {"login": "alice"},
+                    "is_draft": False,
+                    "is_approved": False,
+                    "review_requests": [],
+                    "labels": [],
                 },
                 {
                     "number": 2,
@@ -423,6 +437,10 @@ class TestGetStalePrs:
                     "created_at": (now - timedelta(days=15)).isoformat(),
                     "merged_at": None,
                     "user": {"login": "bob"},
+                    "is_draft": False,
+                    "is_approved": False,
+                    "review_requests": [],
+                    "labels": [],
                 },
             ],
         )
@@ -431,224 +449,3 @@ class TestGetStalePrs:
         assert result[0]["number"] == 2  # Older first
         assert result[1]["number"] == 1
         assert result[0]["repo"] == "myrepo"
-
-
-class TestGetDraftPrs:
-    """Test cases for get_draft_prs function."""
-
-    def test_should_return_empty_for_empty_list(self):
-        from git_dev_metrics.metrics.calculator import get_draft_prs
-
-        result = get_draft_prs([], "myrepo")
-        assert result == []
-
-    def test_should_return_non_draft_prs(self):
-        from datetime import UTC, datetime, timedelta
-
-        from git_dev_metrics.metrics.calculator import get_draft_prs
-
-        now = datetime.now(UTC)
-        prs = cast(
-            list[OpenPullRequest],
-            [
-                {
-                    "number": 1,
-                    "title": "Regular PR",
-                    "created_at": (now - timedelta(days=1)).isoformat(),
-                    "merged_at": None,
-                    "user": {"login": "alice"},
-                    "is_draft": False,
-                    "review_requests": [],
-                    "labels": [],
-                },
-            ],
-        )
-        clock = lambda: now
-        result = get_draft_prs(prs, "myrepo", clock)
-        assert result == []
-
-    def test_should_identify_draft_prs(self):
-        from datetime import UTC, datetime, timedelta
-
-        from git_dev_metrics.metrics.calculator import get_draft_prs
-
-        now = datetime.now(UTC)
-        prs = cast(
-            list[OpenPullRequest],
-            [
-                {
-                    "number": 1,
-                    "title": "Draft PR",
-                    "created_at": (now - timedelta(days=3)).isoformat(),
-                    "merged_at": None,
-                    "user": {"login": "alice"},
-                    "is_draft": True,
-                    "review_requests": [],
-                    "labels": [],
-                },
-            ],
-        )
-        clock = lambda: now
-        result = get_draft_prs(prs, "myrepo", clock)
-        assert len(result) == 1
-        assert result[0]["number"] == 1
-        assert result[0]["is_draft"] is True
-
-    def test_should_sort_by_age_oldest_first(self):
-        from datetime import UTC, datetime, timedelta
-
-        from git_dev_metrics.metrics.calculator import get_draft_prs
-
-        now = datetime.now(UTC)
-        prs = cast(
-            list[OpenPullRequest],
-            [
-                {
-                    "number": 1,
-                    "title": "Newer draft",
-                    "created_at": (now - timedelta(days=2)).isoformat(),
-                    "merged_at": None,
-                    "user": {"login": "alice"},
-                    "is_draft": True,
-                    "review_requests": [],
-                    "labels": [],
-                },
-                {
-                    "number": 2,
-                    "title": "Older draft",
-                    "created_at": (now - timedelta(days=10)).isoformat(),
-                    "merged_at": None,
-                    "user": {"login": "bob"},
-                    "is_draft": True,
-                    "review_requests": [],
-                    "labels": [],
-                },
-            ],
-        )
-        clock = lambda: now
-        result = get_draft_prs(prs, "myrepo", clock)
-        assert result[0]["number"] == 2  # Older first
-        assert result[1]["number"] == 1
-
-
-class TestGetAwaitingReviewPrs:
-    """Test cases for get_awaiting_review_prs function."""
-
-    def test_should_return_empty_for_empty_list(self):
-        from git_dev_metrics.metrics.calculator import get_awaiting_review_prs
-
-        result = get_awaiting_review_prs([], "myrepo")
-        assert result == []
-
-    def test_should_exclude_draft_prs_with_review_requests(self):
-        from datetime import UTC, datetime, timedelta
-
-        from git_dev_metrics.metrics.calculator import get_awaiting_review_prs
-
-        now = datetime.now(UTC)
-        prs = cast(
-            list[OpenPullRequest],
-            [
-                {
-                    "number": 1,
-                    "title": "Draft with review request",
-                    "created_at": (now - timedelta(days=1)).isoformat(),
-                    "merged_at": None,
-                    "user": {"login": "alice"},
-                    "is_draft": True,
-                    "review_requests": ["bob"],
-                    "labels": [],
-                },
-            ],
-        )
-        clock = lambda: now
-        result = get_awaiting_review_prs(prs, "myrepo", clock)
-        assert result == []
-
-    def test_should_identify_prs_awaiting_review(self):
-        from datetime import UTC, datetime, timedelta
-
-        from git_dev_metrics.metrics.calculator import get_awaiting_review_prs
-
-        now = datetime.now(UTC)
-        prs = cast(
-            list[OpenPullRequest],
-            [
-                {
-                    "number": 1,
-                    "title": "Awaiting review",
-                    "created_at": (now - timedelta(days=2)).isoformat(),
-                    "merged_at": None,
-                    "user": {"login": "alice"},
-                    "is_draft": False,
-                    "review_requests": ["bob", "charlie"],
-                    "labels": [],
-                },
-            ],
-        )
-        clock = lambda: now
-        result = get_awaiting_review_prs(prs, "myrepo", clock)
-        assert len(result) == 1
-        assert result[0]["number"] == 1
-        assert result[0]["review_requests"] == ["bob", "charlie"]
-
-    def test_should_exclude_prs_without_review_requests(self):
-        from datetime import UTC, datetime, timedelta
-
-        from git_dev_metrics.metrics.calculator import get_awaiting_review_prs
-
-        now = datetime.now(UTC)
-        prs = cast(
-            list[OpenPullRequest],
-            [
-                {
-                    "number": 1,
-                    "title": "No review requested",
-                    "created_at": (now - timedelta(days=1)).isoformat(),
-                    "merged_at": None,
-                    "user": {"login": "alice"},
-                    "is_draft": False,
-                    "review_requests": [],
-                    "labels": [],
-                },
-            ],
-        )
-        clock = lambda: now
-        result = get_awaiting_review_prs(prs, "myrepo", clock)
-        assert result == []
-
-    def test_should_sort_by_age_oldest_first(self):
-        from datetime import UTC, datetime, timedelta
-
-        from git_dev_metrics.metrics.calculator import get_awaiting_review_prs
-
-        now = datetime.now(UTC)
-        prs = cast(
-            list[OpenPullRequest],
-            [
-                {
-                    "number": 1,
-                    "title": "Newer awaiting",
-                    "created_at": (now - timedelta(days=1)).isoformat(),
-                    "merged_at": None,
-                    "user": {"login": "alice"},
-                    "is_draft": False,
-                    "review_requests": ["bob"],
-                    "labels": [],
-                },
-                {
-                    "number": 2,
-                    "title": "Older awaiting",
-                    "created_at": (now - timedelta(days=5)).isoformat(),
-                    "merged_at": None,
-                    "user": {"login": "bob"},
-                    "is_draft": False,
-                    "review_requests": ["charlie"],
-                    "labels": [],
-                },
-            ],
-        )
-        clock = lambda: now
-        result = get_awaiting_review_prs(prs, "myrepo", clock)
-        assert result[0]["number"] == 2  # Older first
-        assert result[1]["number"] == 1
