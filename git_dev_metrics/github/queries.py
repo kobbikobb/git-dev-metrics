@@ -217,7 +217,9 @@ def fetch_open_prs(token: str, org: str, repo: str) -> list[OpenPullRequest]:
             continue
         review_requests = pr.get("reviewRequests", {}).get("nodes", [])
         reviewers = [
-            r.get("reviewer", {}).get("login", "") for r in review_requests if r.get("reviewer")
+            r.get("requestedReviewer", {}).get("login", "")
+            for r in review_requests
+            if r.get("requestedReviewer")
         ]
         labels = pr.get("labels", {}).get("nodes", [])
         label_names = [label.get("name", "") for label in labels if label.get("name")]
