@@ -3,6 +3,39 @@ from questionary import Style
 
 from ..models import GitHubOrganization
 
+PERIOD_OPTIONS = [
+    ("Last 7 days", "7d"),
+    ("Last 14 days", "14d"),
+    ("Last 30 days", "30d"),
+    ("Last 60 days", "60d"),
+    ("Last 90 days", "90d"),
+    ("Last 180 days", "180d"),
+    ("Last 365 days", "365d"),
+]
+
+
+def prompt_period_selection(default: str | None = None) -> str:
+    """Prompt user to select the time period."""
+    choices = [
+        questionary.Choice(title=title, value=value, checked=(value == default))
+        for title, value in PERIOD_OPTIONS
+    ]
+
+    custom_style = Style(
+        [
+            ("highlighted", "fg:#00b4d8 bold"),
+            ("selected", "fg:#90e0ef"),
+        ]
+    )
+
+    selected = questionary.select(
+        "Select time period:",
+        choices=choices,
+        style=custom_style,
+    ).ask()
+
+    return selected or default or "30d"
+
 
 def prompt_org_selection(orgs: list[GitHubOrganization], default: str | None = None) -> str:
     """Prompt user to select an organization."""

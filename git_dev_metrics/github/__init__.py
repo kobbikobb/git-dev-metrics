@@ -1,7 +1,7 @@
 """Github auth and data fetching."""
 
 from .auth import get_github_token
-from .auth_cache import load_last_org, save_last_org
+from .auth_cache import load_last_org, load_last_period, save_last_org, save_last_period
 from .exceptions import (
     GitHubAPIError,
     GitHubAuthError,
@@ -35,4 +35,6 @@ __all__ = [
     "fetch_open_prs",
     "load_last_org",
     "save_last_org",
+    "load_last_period",
+    "save_last_period",
 ]
