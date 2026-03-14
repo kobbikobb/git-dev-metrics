@@ -12,7 +12,12 @@ from ..github import (
 )
 from ..metrics import get_combined_metrics
 from ..utils import parse_time_period
-from .output import print_metrics, print_stale_prs, resolve_output_path
+from .output import (
+    print_bottleneck_prs,
+    print_metrics,
+    print_stale_prs,
+    resolve_output_path,
+)
 from .prompts import (
     prompt_org_name,
     prompt_period_selection,
@@ -44,6 +49,24 @@ def _fetch_stale_prs(token: str, selected: list[str]) -> list[dict]:
 
     stale_prs.sort(key=lambda x: x["age_hours"], reverse=True)
     return stale_prs
+
+
+def _fetch_bottleneck_prs(token: str, selected: list[str]) -> tuple[list[dict], list[dict]]:
+    """Fetch bottleneck PRs (drafts, awaiting review) from all selected repositories."""
+    from ..github import fetch_open_prs as _fetch_open_prs
+    from ..metrics.calculator import get_awaiting_review_prs, get_draft_prs
+
+    draft_prs = []
+    awaiting_review_prs = []
+    for full_repo in selected:
+        org, repo_name = full_repo.split("/")
+        try:
+            open_prs = _fetch_open_prs(token, org, repo_name)
+            draft_prs.extend(get_draft_prs(open_prs, full_repo))
+            awaiting_review_prs.extend(get_awaiting_review_prs(open_prs, full_repo))
+        except GitHubError as e:
+            logger.warning("Could not fetch bottleneck PRs for %s: %s", full_repo, e)
+    return draft_prs, awaiting_review_prs
 
 
 def _filter_repos_by_period(repos: list, since) -> list:
@@ -96,3 +119,7 @@ def run_analyze(
     stale_prs = _fetch_stale_prs(token, selected)
     if stale_prs:
         print_stale_prs(stale_prs, output_path)
+
+    draft_prs, awaiting_review_prs = _fetch_bottleneck_prs(token, selected)
+    if draft_prs or awaiting_review_prs:
+        print_bottleneck_prs(draft_prs, awaiting_review_prs, output_path)

@@ -42,3 +42,11 @@ class OpenPullRequest(TypedDict):
     created_at: str | None
     merged_at: str | None
     user: GitHubUser
+    is_draft: bool
+    review_requests: list[str]
+    labels: list[str]
+
+
+class GitHubOrganization(TypedDict):
+    login: str
+    name: str | None
