@@ -14,7 +14,11 @@ from ..github import (
 )
 from ..metrics import get_combined_metrics
 from ..utils import parse_time_period
-from .output import print_metrics, print_stale_prs, resolve_output_path
+from .output import (
+    print_metrics,
+    print_stale_prs,
+    resolve_output_path,
+)
 from .prompts import prompt_org_selection, prompt_period_selection, prompt_repo_selection
 
 logger = logging.getLogger(__name__)

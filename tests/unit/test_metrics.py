@@ -368,6 +368,10 @@ class TestGetStalePrs:
                     "created_at": (now - timedelta(days=1)).isoformat(),
                     "merged_at": None,
                     "user": {"login": "alice"},
+                    "is_draft": False,
+                    "is_approved": False,
+                    "review_requests": [],
+                    "labels": [],
                 },
             ],
         )
@@ -390,6 +394,10 @@ class TestGetStalePrs:
                     "created_at": (now - timedelta(days=10)).isoformat(),
                     "merged_at": None,
                     "user": {"login": "alice"},
+                    "is_draft": False,
+                    "is_approved": False,
+                    "review_requests": [],
+                    "labels": [],
                 },
             ],
         )
@@ -400,6 +408,8 @@ class TestGetStalePrs:
         assert result[0]["author"] == "alice"
         assert result[0]["repo"] == "myrepo"
         assert result[0]["age_hours"] > 24 * 7  # More than 7 days
+        assert result[0]["is_draft"] is False
+        assert result[0]["is_approved"] is False
 
     def test_should_sort_by_age_oldest_first(self):
         from datetime import UTC, datetime, timedelta
@@ -416,6 +426,10 @@ class TestGetStalePrs:
                     "created_at": (now - timedelta(days=8)).isoformat(),
                     "merged_at": None,
                     "user": {"login": "alice"},
+                    "is_draft": False,
+                    "is_approved": False,
+                    "review_requests": [],
+                    "labels": [],
                 },
                 {
                     "number": 2,
@@ -423,6 +437,10 @@ class TestGetStalePrs:
                     "created_at": (now - timedelta(days=15)).isoformat(),
                     "merged_at": None,
                     "user": {"login": "bob"},
+                    "is_draft": False,
+                    "is_approved": False,
+                    "review_requests": [],
+                    "labels": [],
                 },
             ],
         )
