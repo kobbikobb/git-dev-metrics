@@ -215,6 +215,12 @@ def fetch_open_prs(token: str, org: str, repo: str) -> list[OpenPullRequest]:
         title = pr.get("title")
         if number is None or title is None:
             continue
+        review_requests = pr.get("reviewRequests", {}).get("nodes", [])
+        reviewers = [
+            r.get("reviewer", {}).get("login", "") for r in review_requests if r.get("reviewer")
+        ]
+        labels = pr.get("labels", {}).get("nodes", [])
+        label_names = [label.get("name", "") for label in labels if label.get("name")]
         result.append(
             {
                 "number": number,
@@ -222,6 +228,9 @@ def fetch_open_prs(token: str, org: str, repo: str) -> list[OpenPullRequest]:
                 "created_at": pr.get("createdAt"),
                 "merged_at": None,
                 "user": {"login": _author_login(pr.get("author"))},
+                "is_draft": pr.get("isDraft", False),
+                "review_requests": reviewers,
+                "labels": label_names,
             }
         )
     return result
