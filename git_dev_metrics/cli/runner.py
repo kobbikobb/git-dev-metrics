@@ -64,10 +64,10 @@ def run_analyze(
     last_period = load_last_period()
     last_org = load_last_org()
 
-    selected_org = org or prompt_org_name(last_org)
+    selected_org = org if org is not None else prompt_org_name(last_org)
     save_last_org(selected_org)
 
-    period = period or prompt_period_selection(last_period or "30d")
+    period = period if period is not None else prompt_period_selection(last_period or "30d")
     save_last_period(period)
 
     repos = fetch_org_repositories(token, selected_org)
@@ -77,10 +77,9 @@ def run_analyze(
 
     repo_options = {repo["full_name"]: "Private" if repo["private"] else "Public" for repo in repos}
 
-    if repo:
-        selected = (
-            [f"{selected_org}/{repo}"] if repo in repo_options else [f"{selected_org}/{repo}"]
-        )
+    if repo is not None:
+        full_name = f"{selected_org}/{repo}"
+        selected = [full_name] if full_name in repo_options else [full_name]
     else:
         selected = prompt_repo_selection(repo_options)
 
