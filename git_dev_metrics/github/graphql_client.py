@@ -7,14 +7,21 @@ from gql import Client
 from gql.graphql_request import GraphQLRequest
 from gql.transport import exceptions as transport_exceptions
 from gql.transport.requests import RequestsHTTPTransport
+from rich.console import Console
+from rich.live import Live
 
 from .exceptions import GitHubAPIError, GitHubAuthError, GitHubNotFoundError, GitHubRateLimitError
+
+logger = logging.getLogger(__name__)
+console = Console()
+
+SPINNER_FRAMES = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
 
 logger = logging.getLogger(__name__)
 
 GITHUB_GRAPHQL_URL = "https://api.github.com/graphql"
 
-DEFAULT_PAGE_SIZE = 100
+DEFAULT_PAGE_SIZE = 50
 DEFAULT_TIMEOUT = 60
 
 
@@ -123,28 +130,35 @@ def execute_paginated_query(
     name = variables.get("name", "")
     repo_id = f"{owner}/{name}" if owner and name else path
 
-    logger.info(f"Fetching: {repo_id}")
     all_nodes = []
     variables_copy = {**variables, "first": page_size}
     cursor = None
     page_num = 0
 
-    while True:
-        start = time.perf_counter()
-        nodes, cursor = _fetch_page(client, query, variables_copy, cursor, path)
-        elapsed = time.perf_counter() - start
+    spinner_idx = 0
 
-        page_num += 1
-        debug_msg = f"  {repo_id} page {page_num}: {len(nodes)} nodes, cursor={cursor is not None}"
-        logger.debug("%s, time=%.2fs", debug_msg, elapsed)
+    with Live(console=console, transient=True, refresh_per_second=10) as live:
+        live.update(f"[bold blue]{SPINNER_FRAMES[0]}[/bold blue] Fetching {repo_id}...")
 
-        for node in nodes:
-            if stop_if and stop_if(node):
-                logger.info(f"  {repo_id}: stopped early after {len(all_nodes)} PRs")
-                return all_nodes
-            all_nodes.append(node)
-        if not cursor:
-            break
+        while True:
+            start = time.perf_counter()
+            nodes, cursor = _fetch_page(client, query, variables_copy, cursor, path)
+            elapsed = time.perf_counter() - start
 
-    logger.info(f"  {repo_id}: fetched {len(all_nodes)} items")
+            page_num += 1
+            spinner_idx = (spinner_idx + 1) % len(SPINNER_FRAMES)
+            live.update(
+                f"[bold blue]{SPINNER_FRAMES[spinner_idx]}[/bold blue] "
+                f"Fetching {repo_id}... page {page_num} ({len(all_nodes)} items, {elapsed:.1f}s)"
+            )
+
+            for node in nodes:
+                if stop_if and stop_if(node):
+                    console.print(f"[green]✓[/green] {repo_id}: {len(all_nodes)} PRs")
+                    return all_nodes
+                all_nodes.append(node)
+            if not cursor:
+                break
+
+    console.print(f"[green]✓[/green] {repo_id}: {len(all_nodes)} items")
     return all_nodes
