@@ -213,7 +213,7 @@ def _percentile(values: list[float], p: float) -> float:
 BENCHMARKS = {
     "cycle_time": {"excellent": 4, "good": 24, "ok": 72},  # hours
     "pr_size": {"excellent": 100, "good": 400, "ok": 800},  # lines
-    "prs_per_week": {"excellent": 3, "good": 5, "ok": 1},  # count (higher is better up to 5)
+    "prs_per_week": {"excellent": 5, "good": 3, "ok": 2},  # count
 }
 
 
@@ -229,7 +229,9 @@ def _calc_benchmark_penalty(current: float, metric: str) -> int:
             return 0
         if current >= bench["good"]:
             return 10
-        return 25
+        if current >= bench["ok"]:
+            return 20
+        return 35
     else:
         if current <= bench["excellent"]:
             return 0
