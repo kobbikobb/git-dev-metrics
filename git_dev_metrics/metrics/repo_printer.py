@@ -38,10 +38,14 @@ class ConsoleRepoPrinter:
 
         all_repo_metrics = list(metrics["repo_metrics"].values())
 
-        for repo_name, m in sorted(
-            metrics["repo_metrics"].items(), key=lambda x: x[1]["pr_count"], reverse=True
-        ):
+        sorted_repos = []
+        for repo_name, m in metrics["repo_metrics"].items():
             health = calculate_health_score(m, all_repo_metrics)
+            sorted_repos.append((repo_name, m, health))
+
+        sorted_repos.sort(key=lambda x: x[2])
+
+        for repo_name, m, health in sorted_repos:
             color = _get_health_color(health)
             table.add_row(
                 repo_name,
@@ -78,10 +82,14 @@ class FileRepoPrinter:
 
         all_repo_metrics = list(metrics["repo_metrics"].values())
 
-        for repo_name, m in sorted(
-            metrics["repo_metrics"].items(), key=lambda x: x[1]["pr_count"], reverse=True
-        ):
+        sorted_repos = []
+        for repo_name, m in metrics["repo_metrics"].items():
             health = calculate_health_score(m, all_repo_metrics)
+            sorted_repos.append((repo_name, m, health))
+
+        sorted_repos.sort(key=lambda x: x[2])
+
+        for repo_name, m, health in sorted_repos:
             emoji = "✅" if health >= 80 else "⚠️" if health >= 60 else "❌"
             row = (
                 f"| {repo_name} | {emoji}{health} | {m['pickup_time']:.2f} | "
