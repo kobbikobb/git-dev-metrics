@@ -50,7 +50,12 @@ ORG_REPOSITORIES_QUERY = gql.gql(
 
 REPO_METRICS_QUERY = gql.gql(
     """
-    query FetchRepoMetrics($owner: String!, $name: String!, $first: Int!, $after: String) {
+    query FetchRepoMetrics(
+        $owner: String!
+        $name: String!
+        $first: Int!
+        $after: String
+    ) {
         repository(owner: $owner, name: $name) {
             pullRequests(
                 first: $first
@@ -76,8 +81,8 @@ REPO_METRICS_QUERY = gql.gql(
                             }
                         }
                     }
-                    # Note: max 100 reviews per PR - truncates if more
-                    reviews(first: 100) {
+                    # Note: max 10 reviews per PR - truncates if more
+                    reviews(first: 10) {
                         nodes {
                             author {
                                 login
