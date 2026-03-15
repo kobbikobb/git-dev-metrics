@@ -125,23 +125,27 @@ def calculate_prs_per_week(prs: list[PullRequest], period_days: int) -> float:
     return round(len(prs) / weeks, 2)
 
 
+KNOWN_BOTS = {"dependabot", "snyk-io", "github-actions", "renovate[bot]", "dependabot[bot]"}
+
+
 def group_prs_by_devs(prs: list[PullRequest]) -> dict[str, list[PullRequest]]:
-    """Group PRs by developer."""
+    """Group PRs by developer, excluding known bots."""
     devs = defaultdict(list)
     for pr in prs:
         dev = pr["user"]["login"]
-        devs[dev].append(pr)
+        if dev not in KNOWN_BOTS:
+            devs[dev].append(pr)
     return devs
 
 
 def calculate_reviews_given(reviews: dict, devs: dict[str, list[PullRequest]]) -> dict[str, int]:
-    """Calculate number of PRs reviewed by each developer."""
+    """Calculate number of PRs reviewed by each developer, excluding bots."""
     reviewer_counts: dict[str, int] = {dev: 0 for dev in devs}
 
     for _pr_number, pr_reviews in reviews.items():
         for review in pr_reviews:
             reviewer = review.get("user", {}).get("login")
-            if reviewer:
+            if reviewer and reviewer not in KNOWN_BOTS:
                 if reviewer in reviewer_counts:
                     reviewer_counts[reviewer] += 1
                 elif reviewer not in devs:
