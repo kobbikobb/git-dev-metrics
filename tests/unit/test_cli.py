@@ -26,16 +26,12 @@ class TestCLI:
             return_value="30d",
         )
         mocker.patch(
-            "git_dev_metrics.cli.runner.prompt_org_selection",
+            "git_dev_metrics.cli.runner.prompt_org_name",
             return_value="test-org",
         )
         mocker.patch(
             "git_dev_metrics.cli.runner.prompt_repo_selection",
             return_value=["test-org/repo1", "test-org/repo2"],
-        )
-        mocker.patch(
-            "git_dev_metrics.cli.runner.fetch_organizations",
-            return_value=[{"login": "test-org", "name": "Test Org"}],
         )
         mocker.patch(
             "git_dev_metrics.cli.runner.fetch_org_repositories",
@@ -67,16 +63,12 @@ class TestCLI:
             return_value="30d",
         )
         mocker.patch(
-            "git_dev_metrics.cli.runner.prompt_org_selection",
+            "git_dev_metrics.cli.runner.prompt_org_name",
             return_value="test-org",
         )
         mocker.patch(
             "git_dev_metrics.cli.runner.prompt_repo_selection",
             return_value=["test-org/repo1"],
-        )
-        mocker.patch(
-            "git_dev_metrics.cli.runner.fetch_organizations",
-            return_value=[{"login": "test-org", "name": "Test Org"}],
         )
         mocker.patch(
             "git_dev_metrics.cli.runner.fetch_org_repositories",
