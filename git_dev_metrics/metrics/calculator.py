@@ -198,3 +198,51 @@ def get_stale_prs(
     stale = [p for p in (_is_stale_pr(pr, repo, clock) for pr in prs) if p]
     stale.sort(key=lambda x: x["age_hours"], reverse=True)
     return stale
+
+
+def _mean(values: list[float]) -> float:
+    """Return mean of a list of values."""
+    if not values:
+        return 0.0
+    return sum(values) / len(values)
+
+
+def _std_dev(values: list[float]) -> float:
+    """Return standard deviation of a list of values."""
+    if len(values) < 2:
+        return 0.0
+    m = _mean(values)
+    variance = sum((x - m) ** 2 for x in values) / len(values)
+    return variance**0.5
+
+
+def calculate_health_score(metrics: dict, all_metrics: list[dict]) -> int:
+    """Calculate health score (0-100) based on how metrics compare to the group.
+
+    Returns 100 for healthy (at or below median), lower for outliers.
+    """
+    if not all_metrics:
+        return 100
+
+    score = 100
+
+    for key in ["cycle_time", "pickup_time", "review_time", "pr_size"]:
+        raw_values = [m.get(key, 0) for m in all_metrics if m.get(key)]
+        values: list[float] = [float(v) for v in raw_values if v is not None]
+        if not values:
+            continue
+
+        mean = _mean(values)
+        std = _std_dev(values)
+        if std == 0:
+            continue
+
+        current = float(metrics.get(key, 0) or 0)
+        z_score = (current - mean) / std
+
+        if z_score > 2:
+            score -= 20
+        elif z_score > 1:
+            score -= 10
+
+    return max(0, score)
