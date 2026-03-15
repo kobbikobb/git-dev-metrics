@@ -55,6 +55,7 @@ def _map_pull_request(pr: dict) -> PullRequest:
         "changed_files": pr.get("changedFiles", 0),
         "user": {"login": _author_login(pr.get("author"))},
         "first_commit_at": first_commit_date,
+        "body": pr.get("body"),
     }
 
 

@@ -431,3 +431,102 @@ class TestGetStalePrs:
         assert result[0]["number"] == 2  # Older first
         assert result[1]["number"] == 1
         assert result[0]["repo"] == "myrepo"
+
+
+class TestIsAiCoauthored:
+    """Test cases for is_ai_coauthored function."""
+
+    def test_should_return_false_for_none(self):
+        from git_dev_metrics.metrics.calculator import is_ai_coauthored
+
+        result = is_ai_coauthored(None)
+        assert result is False
+
+    def test_should_return_false_for_empty_string(self):
+        from git_dev_metrics.metrics.calculator import is_ai_coauthored
+
+        result = is_ai_coauthored("")
+        assert result is False
+
+    def test_should_return_false_for_no_coauthored_by(self):
+        from git_dev_metrics.metrics.calculator import is_ai_coauthored
+
+        result = is_ai_coauthored("This is a regular PR description")
+        assert result is False
+
+    def test_should_return_true_for_coauthored_by(self):
+        from git_dev_metrics.metrics.calculator import is_ai_coauthored
+
+        result = is_ai_coauthored("Co-Authored-By: GitHub <noreply@github.com>")
+        assert result is True
+
+    def test_should_return_true_for_coauthored_by_in_body(self):
+        from git_dev_metrics.metrics.calculator import is_ai_coauthored
+
+        body = """
+        This PR was created with help from an AI assistant.
+
+        Co-Authored-By: Copilot <copilot@github.com>
+        """
+        result = is_ai_coauthored(body)
+        assert result is True
+
+    def test_should_be_case_insensitive(self):
+        from git_dev_metrics.metrics.calculator import is_ai_coauthored
+
+        result = is_ai_coauthored("co-authored-by: someone@example.com")
+        assert result is True
+
+
+class TestCalculateAiPercentage:
+    """Test cases for calculate_ai_percentage function."""
+
+    def test_should_return_zero_for_empty_list(self):
+        from git_dev_metrics.metrics.calculator import calculate_ai_percentage
+
+        result = calculate_ai_percentage([])
+        assert result == 0.0
+
+    def test_should_return_zero_for_no_ai_prs(self):
+        from git_dev_metrics.metrics.calculator import calculate_ai_percentage
+
+        prs = [
+            any_pr(body=None),
+            any_pr(body="Regular PR"),
+            any_pr(body=None),
+        ]
+        result = calculate_ai_percentage(prs)
+        assert result == 0.0
+
+    def test_should_calculate_percentage_correctly(self):
+        from git_dev_metrics.metrics.calculator import calculate_ai_percentage
+
+        prs = [
+            any_pr(body="Co-Authored-By: someone@example.com"),
+            any_pr(body="Regular PR"),
+            any_pr(body="Co-Authored-By: another@example.com"),
+            any_pr(body="Another regular PR"),
+        ]
+        result = calculate_ai_percentage(prs)
+        assert result == 50.0
+
+    def test_should_handle_all_ai_prs(self):
+        from git_dev_metrics.metrics.calculator import calculate_ai_percentage
+
+        prs = [
+            any_pr(body="Co-Authored-By: someone@example.com"),
+            any_pr(body="Co-Authored-By: another@example.com"),
+        ]
+        result = calculate_ai_percentage(prs)
+        assert result == 100.0
+
+    def test_should_round_to_one_decimal(self):
+        from git_dev_metrics.metrics.calculator import calculate_ai_percentage
+
+        prs = [
+            any_pr(body="Co-Authored-By: someone@example.com"),
+            any_pr(body="Regular PR"),
+            any_pr(body="Regular PR"),
+        ]
+        result = calculate_ai_percentage(prs)
+        assert result == 33.3

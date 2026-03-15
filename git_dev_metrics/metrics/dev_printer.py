@@ -12,6 +12,7 @@ DEV_COLUMNS = [
     "Total PRs",
     "PRs/Week",
     "Reviews Given",
+    "AI",
 ]
 
 
@@ -48,6 +49,7 @@ class ConsoleDevPrinter:
                 f"{m['pr_count']:.0f}",
                 f"{m['prs_per_week']:.2f}",
                 f"{m['reviews_given']:.0f}",
+                f"{m['ai_percentage']:.0f}%",
             )
 
         console.print(table)
@@ -62,11 +64,11 @@ class FileDevPrinter:
     def print_combined_metrics(self, metrics: dict, period: str) -> None:
         header = (
             "| Dev | Health | Pickup Time (h) | Review Time (h) | Cycle Time (h) | "
-            "PR Size | Total PRs | PRs/Week | Reviews Given |"
+            "PR Size | Total PRs | PRs/Week | Reviews Given | AI |"
         )
         separator = (
             "|------|--------|------------------|-----------------|----------------|"
-            "---------|-----------|-----------|---------------|"
+            "---------|-----------|-----------|---------------|-----|"
         )
         lines = ["", "# Developer Metrics (combined)", "", header, separator]
 
@@ -89,7 +91,8 @@ class FileDevPrinter:
             row = (
                 f"| {dev} | {emoji}{health} | {m['pickup_time']:.2f} | "
                 f"{m['review_time']:.2f} | {m['cycle_time']:.2f} | {m['pr_size']:.1f} | "
-                f"{m['pr_count']:.0f} | {m['prs_per_week']:.2f} | {m['reviews_given']:.0f} |"
+                f"{m['pr_count']:.0f} | {m['prs_per_week']:.2f} | {m['reviews_given']:.0f} | "
+                f"{m['ai_percentage']:.0f}% |"
             )
             lines.append(row)
 

@@ -1,9 +1,25 @@
+import re
 from collections import defaultdict
 from collections.abc import Callable
 from datetime import datetime
 
 from ..constants import KNOWN_BOT_LOGINS
 from ..models import OpenPullRequest, PullRequest
+
+
+def is_ai_coauthored(pr_body: str | None) -> bool:
+    """Check if PR body contains Co-Authored-By header (indicates AI assistance)."""
+    if not pr_body:
+        return False
+    return bool(re.search(r"Co-Authored-By:", pr_body, re.IGNORECASE))
+
+
+def calculate_ai_percentage(prs: list[PullRequest]) -> float:
+    """Calculate percentage of PRs with AI co-authors."""
+    if not prs:
+        return 0.0
+    ai_count = sum(1 for pr in prs if is_ai_coauthored(pr.get("body")))
+    return round((ai_count / len(prs)) * 100, 1)
 
 
 def _to_datetime(value: str | datetime | None) -> datetime | None:

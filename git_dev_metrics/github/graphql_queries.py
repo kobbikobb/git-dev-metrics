@@ -74,6 +74,7 @@ REPO_METRICS_QUERY = gql.gql(
                     author {
                         login
                     }
+                    body
                     commits(first: 1) {
                         nodes {
                             commit {
