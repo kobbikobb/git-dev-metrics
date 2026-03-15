@@ -117,7 +117,7 @@ def fetch_pull_requests(token: str, org: str, repo: str, since: datetime) -> lis
 
 
 def fetch_reviews(
-    token: str, org: str, repo: str, pr_numbers: list[int]
+    token: str, org: str, repo: str, pr_numbers: list[int], since: datetime
 ) -> dict[int, list[Review]]:
     """Fetch all reviews for the given PRs."""
     if not pr_numbers:
@@ -168,11 +168,20 @@ def fetch_repo_metrics(
 ) -> tuple[list[PullRequest], dict[int, list[Review]]]:
     """Fetch PRs and reviews in a single query."""
     client = get_client(token)
+
+    def stop_at_old_pr(node: dict) -> bool:
+        merged_at = node.get("mergedAt")
+        if not merged_at:
+            return False
+        pr_merged = datetime.fromisoformat(merged_at.replace("Z", "+00:00"))
+        return pr_merged < since
+
     prs = execute_paginated_query(
         client,
         REPO_METRICS_QUERY,
         {"owner": org, "name": repo, "first": PAGE_SIZE},
         "repository.pullRequests",
+        stop_if=stop_at_old_pr,
     )
 
     return _filter_and_map_pr(prs, since)

@@ -1,3 +1,6 @@
+import logging
+import time
+from collections.abc import Callable
 from typing import Any
 
 from gql import Client
@@ -7,9 +10,12 @@ from gql.transport.requests import RequestsHTTPTransport
 
 from .exceptions import GitHubAPIError, GitHubAuthError, GitHubNotFoundError, GitHubRateLimitError
 
+logger = logging.getLogger(__name__)
+
 GITHUB_GRAPHQL_URL = "https://api.github.com/graphql"
 
 DEFAULT_PAGE_SIZE = 100
+DEFAULT_TIMEOUT = 60
 
 
 def get_client(token: str) -> Client:
@@ -17,7 +23,7 @@ def get_client(token: str) -> Client:
     transport = RequestsHTTPTransport(
         url=GITHUB_GRAPHQL_URL,
         headers={"Authorization": f"Bearer {token}"},
-        timeout=30,
+        timeout=DEFAULT_TIMEOUT,
     )
     return Client(transport=transport)
 
@@ -110,16 +116,35 @@ def execute_paginated_query(
     variables: dict[str, Any],
     path: str,
     page_size: int = DEFAULT_PAGE_SIZE,
+    stop_if: Callable[[dict[str, Any]], bool] | None = None,
 ) -> list[dict[str, Any]]:
     """Execute a paginated GraphQL query and return all results."""
+    owner = variables.get("owner", "")
+    name = variables.get("name", "")
+    repo_id = f"{owner}/{name}" if owner and name else path
+
+    logger.info(f"Fetching: {repo_id}")
     all_nodes = []
     variables_copy = {**variables, "first": page_size}
     cursor = None
+    page_num = 0
 
     while True:
+        start = time.perf_counter()
         nodes, cursor = _fetch_page(client, query, variables_copy, cursor, path)
-        all_nodes.extend(nodes)
+        elapsed = time.perf_counter() - start
+
+        page_num += 1
+        debug_msg = f"  {repo_id} page {page_num}: {len(nodes)} nodes, cursor={cursor is not None}"
+        logger.debug("%s, time=%.2fs", debug_msg, elapsed)
+
+        for node in nodes:
+            if stop_if and stop_if(node):
+                logger.info(f"  {repo_id}: stopped early after {len(all_nodes)} PRs")
+                return all_nodes
+            all_nodes.append(node)
         if not cursor:
             break
 
+    logger.info(f"  {repo_id}: fetched {len(all_nodes)} items")
     return all_nodes
