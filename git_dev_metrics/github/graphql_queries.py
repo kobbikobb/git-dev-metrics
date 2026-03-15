@@ -116,8 +116,23 @@ OPEN_PRS_QUERY = gql.gql(
                     number
                     title
                     createdAt
+                    isDraft
                     author {
                         login
+                    }
+                    reviewRequests(first: 10) {
+                        nodes {
+                            requestedReviewer {
+                                ... on User {
+                                    login
+                                }
+                            }
+                        }
+                    }
+                    reviews(first: 100) {
+                        nodes {
+                            state
+                        }
                     }
                 }
                 pageInfo {
