@@ -200,26 +200,20 @@ def get_stale_prs(
     return stale
 
 
-def _mean(values: list[float]) -> float:
-    """Return mean of a list of values."""
+def _percentile(values: list[float], p: float) -> float:
+    """Return the p-th percentile of values (0-100)."""
     if not values:
         return 0.0
-    return sum(values) / len(values)
-
-
-def _std_dev(values: list[float]) -> float:
-    """Return standard deviation of a list of values."""
-    if len(values) < 2:
-        return 0.0
-    m = _mean(values)
-    variance = sum((x - m) ** 2 for x in values) / len(values)
-    return variance**0.5
+    sorted_values = sorted(values)
+    idx = int(len(sorted_values) * p / 100)
+    idx = min(idx, len(sorted_values) - 1)
+    return sorted_values[idx]
 
 
 def calculate_health_score(metrics: dict, all_metrics: list[dict]) -> int:
-    """Calculate health score (0-100) based on how metrics compare to the group.
+    """Calculate health score (0-100) based on percentile rankings.
 
-    Returns 100 for healthy (at or below median), lower for outliers.
+    Returns 100 for healthy (at or below 50th percentile), lower for outliers.
     """
     if not all_metrics:
         return 100
@@ -228,21 +222,23 @@ def calculate_health_score(metrics: dict, all_metrics: list[dict]) -> int:
 
     for key in ["cycle_time", "pickup_time", "review_time", "pr_size"]:
         raw_values = [m.get(key, 0) for m in all_metrics if m.get(key)]
-        values: list[float] = [float(v) for v in raw_values if v is not None]
+        values: list[float] = [float(v) for v in raw_values if v is not None and float(v) > 0]
         if not values:
             continue
 
-        mean = _mean(values)
-        std = _std_dev(values)
-        if std == 0:
+        current = float(metrics.get(key, 0) or 0)
+        if current == 0:
             continue
 
-        current = float(metrics.get(key, 0) or 0)
-        z_score = (current - mean) / std
+        p50 = _percentile(values, 50)
+        p75 = _percentile(values, 75)
+        p90 = _percentile(values, 90)
 
-        if z_score > 2:
-            score -= 20
-        elif z_score > 1:
-            score -= 10
+        if current >= p90:
+            score -= 25
+        elif current >= p75:
+            score -= 15
+        elif current > p50 and p50 > 0:
+            score -= 5
 
     return max(0, score)
