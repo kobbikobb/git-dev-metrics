@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from .calculator import calculate_health_score
+from .health import calculate_health_score
 
 REPO_COLUMNS = [
     "Repo",
