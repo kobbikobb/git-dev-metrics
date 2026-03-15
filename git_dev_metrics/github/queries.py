@@ -169,19 +169,14 @@ def fetch_repo_metrics(
     """Fetch PRs and reviews in a single query."""
     client = get_client(token)
 
-    def stop_at_old_pr(node: dict) -> bool:
-        merged_at = node.get("mergedAt")
-        if not merged_at:
-            return False
-        pr_merged = datetime.fromisoformat(merged_at.replace("Z", "+00:00"))
-        return pr_merged < since
-
+    # Note: We can't use stop_if optimization here because PRs are ordered by
+    # UPDATED_AT, not MERGED_AT. A recently updated PR could have been merged
+    # long ago, causing us to miss newer merged PRs on later pages.
     prs = execute_paginated_query(
         client,
         REPO_METRICS_QUERY,
         {"owner": org, "name": repo, "first": PAGE_SIZE},
         "repository.pullRequests",
-        stop_if=stop_at_old_pr,
     )
 
     return _filter_and_map_pr(prs, since)
