@@ -125,23 +125,27 @@ def calculate_prs_per_week(prs: list[PullRequest], period_days: int) -> float:
     return round(len(prs) / weeks, 2)
 
 
+KNOWN_BOTS = {"dependabot", "snyk-io", "github-actions", "renovate[bot]", "dependabot[bot]"}
+
+
 def group_prs_by_devs(prs: list[PullRequest]) -> dict[str, list[PullRequest]]:
-    """Group PRs by developer."""
+    """Group PRs by developer, excluding known bots."""
     devs = defaultdict(list)
     for pr in prs:
         dev = pr["user"]["login"]
-        devs[dev].append(pr)
+        if dev not in KNOWN_BOTS:
+            devs[dev].append(pr)
     return devs
 
 
 def calculate_reviews_given(reviews: dict, devs: dict[str, list[PullRequest]]) -> dict[str, int]:
-    """Calculate number of PRs reviewed by each developer."""
+    """Calculate number of PRs reviewed by each developer, excluding bots."""
     reviewer_counts: dict[str, int] = {dev: 0 for dev in devs}
 
     for _pr_number, pr_reviews in reviews.items():
         for review in pr_reviews:
             reviewer = review.get("user", {}).get("login")
-            if reviewer:
+            if reviewer and reviewer not in KNOWN_BOTS:
                 if reviewer in reviewer_counts:
                     reviewer_counts[reviewer] += 1
                 elif reviewer not in devs:
@@ -210,6 +214,34 @@ def _percentile(values: list[float], p: float) -> float:
     return sorted_values[idx]
 
 
+def _calc_metric_penalty(current: float, values: list[float], lower_is_worse: bool) -> int:
+    """Calculate penalty for a metric based on percentile."""
+    if not values or current <= 0:
+        return 0
+
+    p50 = _percentile(values, 50)
+    p75 = _percentile(values, 75)
+    p90 = _percentile(values, 90)
+    p10 = _percentile(values, 10)
+    p25 = _percentile(values, 25)
+
+    if lower_is_worse:
+        if current >= p90:
+            return 25
+        if current >= p75:
+            return 15
+        if current > p50 and p50 > 0:
+            return 5
+    else:
+        if current <= p10:
+            return 25
+        if current <= p25:
+            return 15
+        if current <= p50:
+            return 5
+    return 0
+
+
 def calculate_health_score(metrics: dict, all_metrics: list[dict]) -> int:
     """Calculate health score (0-100) based on percentile rankings.
 
@@ -230,26 +262,7 @@ def calculate_health_score(metrics: dict, all_metrics: list[dict]) -> int:
             continue
 
         current = float(metrics.get(key, 0) or 0)
-
-        p50 = _percentile(values, 50)
-        p75 = _percentile(values, 75)
-        p90 = _percentile(values, 90)
-        p10 = _percentile(values, 10)
-        p25 = _percentile(values, 25)
-
-        if key in lower_is_worse:
-            if current >= p90:
-                score -= 25
-            elif current >= p75:
-                score -= 15
-            elif current > p50 and p50 > 0:
-                score -= 5
-        else:
-            if current > 0 and current <= p10:
-                score -= 25
-            elif current <= p25:
-                score -= 15
-            elif current <= p50:
-                score -= 5
+        penalty = _calc_metric_penalty(current, values, key in lower_is_worse)
+        score -= penalty
 
     return max(0, score)
