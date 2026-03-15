@@ -188,6 +188,9 @@ def _is_stale_pr(
             "author": pr.get("user", {}).get("login"),
             "repo": repo,
             "age_hours": round(age_hours, 1),
+            "age_days": round(age_hours / 24, 1),
+            "is_draft": pr.get("is_draft", False),
+            "is_approved": pr.get("is_approved", False),
             "url": f"https://github.com/{repo}/pull/{pr.get('number')}",
         }
     return None
