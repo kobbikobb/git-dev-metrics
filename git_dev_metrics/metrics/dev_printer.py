@@ -43,7 +43,7 @@ class ConsoleDevPrinter:
             health = calculate_health_score(m, all_dev_metrics)
             sorted_devs.append((dev, m, health))
 
-        sorted_devs.sort(key=lambda x: x[2])
+        sorted_devs.sort(key=lambda x: x[2], reverse=True)
 
         for dev, m, health in sorted_devs:
             color = _get_health_color(health)
@@ -86,7 +86,7 @@ class FileDevPrinter:
             health = calculate_health_score(m, all_dev_metrics)
             sorted_devs.append((dev, m, health))
 
-        sorted_devs.sort(key=lambda x: x[2])
+        sorted_devs.sort(key=lambda x: x[2], reverse=True)
 
         for dev, m, health in sorted_devs:
             emoji = "✅" if health >= 80 else "⚠️" if health >= 60 else "❌"
