@@ -135,7 +135,9 @@ class TestFetchReviews:
             status=200,
         )
 
-        result = fetch_reviews("fake-token", "facebook", "react", [1])
+        result = fetch_reviews(
+            "fake-token", "facebook", "react", [1], datetime(2024, 1, 1, tzinfo=UTC)
+        )
 
         assert len(result) == 1
         assert 1 in result
@@ -165,13 +167,17 @@ class TestFetchReviews:
             status=200,
         )
 
-        result = fetch_reviews("fake-token", "facebook", "react", [1])
+        result = fetch_reviews(
+            "fake-token", "facebook", "react", [1], datetime(2024, 1, 1, tzinfo=UTC)
+        )
 
         assert 1 in result
         assert len(result[1]) == 0
 
     @responses.activate
     def test_should_return_empty_for_empty_pr_list(self):
-        result = fetch_reviews("fake-token", "facebook", "react", [])
+        result = fetch_reviews(
+            "fake-token", "facebook", "react", [], datetime(2024, 1, 1, tzinfo=UTC)
+        )
 
         assert result == {}
