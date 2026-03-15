@@ -120,15 +120,6 @@ OPEN_PRS_QUERY = gql.gql(
                     author {
                         login
                     }
-                    reviewRequests(first: 10) {
-                        nodes {
-                            requestedReviewer {
-                                ... on User {
-                                    login
-                                }
-                            }
-                        }
-                    }
                     reviews(first: 100) {
                         nodes {
                             state
