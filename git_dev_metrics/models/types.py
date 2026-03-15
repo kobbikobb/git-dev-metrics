@@ -42,8 +42,3 @@ class OpenPullRequest(TypedDict):
     created_at: str | None
     merged_at: str | None
     user: GitHubUser
-
-
-class GitHubOrganization(TypedDict):
-    login: str
-    name: str | None
