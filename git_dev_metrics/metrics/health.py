@@ -4,7 +4,7 @@ BENCHMARKS: dict[str, dict[str, int]] = {
     "cycle_time": {"excellent": 24, "good": 48, "ok": 96, "cap": 168},  # hours
     "pr_size": {"excellent": 200, "good": 500, "ok": 1000, "cap": 10000},  # lines
     "pickup_time": {"excellent": 2, "good": 8, "ok": 24},  # hours
-    "prs_per_week": {"excellent": 4, "good": 3, "ok": 2},  # count
+    "prs_per_week": {"excellent": 4, "good": 3, "ok": 2, "bad": 1},  # count
 }
 
 MIN_PRS_THRESHOLD = 3  # Minimum PRs for scoring
@@ -33,6 +33,8 @@ def _calc_prs_per_week_penalty(current: float) -> int:
         return 10
     if current >= thresholds["ok"]:
         return 20
+    if current >= thresholds["bad"]:
+        return 30
     return 35
 
 
