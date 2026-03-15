@@ -41,6 +41,8 @@ def _fetch_stale_prs(token: str, selected: list[str]) -> list[dict]:
             stale_prs.extend(get_stale_prs(open_prs, full_repo))
         except GitHubError as e:
             logger.warning("Could not fetch stale PRs for %s: %s", full_repo, e)
+
+    stale_prs.sort(key=lambda x: x["age_hours"], reverse=True)
     return stale_prs
 
 
