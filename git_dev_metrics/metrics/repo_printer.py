@@ -1,7 +1,10 @@
 from pathlib import Path
 
+from .calculator import calculate_health_score
+
 REPO_COLUMNS = [
     "Repo",
+    "Health",
     "Pickup Time (h)",
     "Review Time (h)",
     "Cycle Time (h)",
@@ -10,6 +13,15 @@ REPO_COLUMNS = [
     "PRs/Week",
     "Reviews Given",
 ]
+
+
+def _get_health_color(score: int) -> str:
+    """Return color for health score."""
+    if score >= 80:
+        return "green"
+    if score >= 60:
+        return "yellow"
+    return "red"
 
 
 class ConsoleRepoPrinter:
@@ -24,11 +36,20 @@ class ConsoleRepoPrinter:
         for col in REPO_COLUMNS:
             table.add_column(col)
 
-        for repo_name, m in sorted(
-            metrics["repo_metrics"].items(), key=lambda x: x[1]["pr_count"], reverse=True
-        ):
+        all_repo_metrics = list(metrics["repo_metrics"].values())
+
+        sorted_repos = []
+        for repo_name, m in metrics["repo_metrics"].items():
+            health = calculate_health_score(m, all_repo_metrics)
+            sorted_repos.append((repo_name, m, health))
+
+        sorted_repos.sort(key=lambda x: x[2])
+
+        for repo_name, m, health in sorted_repos:
+            color = _get_health_color(health)
             table.add_row(
                 repo_name,
+                f"[{color}]{health}[/{color}]",
                 f"{m['pickup_time']:.2f}",
                 f"{m['review_time']:.2f}",
                 f"{m['cycle_time']:.2f}",
@@ -50,23 +71,32 @@ class FileRepoPrinter:
 
     def print_combined_metrics(self, metrics: dict, period: str) -> None:
         header = (
-            "| Repo | Pickup Time (h) | Review Time (h) | Cycle Time (h) | "
+            "| Repo | Health | Pickup Time (h) | Review Time (h) | Cycle Time (h) | "
             "PR Size | Total PRs | PRs/Week | Reviews Given |"
         )
         separator = (
-            "|------|------------------|-----------------|----------------|"
+            "|------|--------|------------------|-----------------|----------------|"
             "---------|-----------|-----------|---------------|"
         )
         lines = [f"# Repo Metrics (last {period})", "", header, separator]
 
-        for repo_name, m in sorted(
-            metrics["repo_metrics"].items(), key=lambda x: x[1]["pr_count"], reverse=True
-        ):
-            lines.append(
-                f"| {repo_name} | {m['pickup_time']:.2f} | {m['review_time']:.2f} | "
-                f"{m['cycle_time']:.2f} | {m['pr_size']:.1f} | {m['pr_count']:.0f} | "
-                f"{m['prs_per_week']:.2f} | {m['reviews_given']:.0f} |"
+        all_repo_metrics = list(metrics["repo_metrics"].values())
+
+        sorted_repos = []
+        for repo_name, m in metrics["repo_metrics"].items():
+            health = calculate_health_score(m, all_repo_metrics)
+            sorted_repos.append((repo_name, m, health))
+
+        sorted_repos.sort(key=lambda x: x[2])
+
+        for repo_name, m, health in sorted_repos:
+            emoji = "✅" if health >= 80 else "⚠️" if health >= 60 else "❌"
+            row = (
+                f"| {repo_name} | {emoji}{health} | {m['pickup_time']:.2f} | "
+                f"{m['review_time']:.2f} | {m['cycle_time']:.2f} | {m['pr_size']:.1f} | "
+                f"{m['pr_count']:.0f} | {m['prs_per_week']:.2f} | {m['reviews_given']:.0f} |"
             )
+            lines.append(row)
 
         lines.append("")
         self._write(lines)

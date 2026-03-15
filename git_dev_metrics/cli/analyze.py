@@ -11,8 +11,15 @@ logger = logging.getLogger(__name__)
 def analyze(
     output: Path | None = typer.Option(None, help="Output file path"),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Show full error tracebacks"),
+    log_level: str = typer.Option(
+        "WARNING", "--log-level", help="Logging level (DEBUG, INFO, WARNING, ERROR)"
+    ),
 ) -> None:
     """Analyze GitHub repository development metrics."""
+    logging.basicConfig(
+        level=getattr(logging, log_level.upper(), logging.WARNING),
+        format="%(levelname)s: %(message)s",
+    )
     try:
         run_analyze(output=output)
     except AnalysisError as e:

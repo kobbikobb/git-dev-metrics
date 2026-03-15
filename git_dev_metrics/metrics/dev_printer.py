@@ -1,7 +1,10 @@
 from pathlib import Path
 
+from .calculator import calculate_health_score
+
 DEV_COLUMNS = [
     "Dev",
+    "Health",
     "Pickup Time (h)",
     "Review Time (h)",
     "Cycle Time (h)",
@@ -10,6 +13,15 @@ DEV_COLUMNS = [
     "PRs/Week",
     "Reviews Given",
 ]
+
+
+def _get_health_color(score: int) -> str:
+    """Return color for health score."""
+    if score >= 80:
+        return "green"
+    if score >= 60:
+        return "yellow"
+    return "red"
 
 
 class ConsoleDevPrinter:
@@ -24,11 +36,20 @@ class ConsoleDevPrinter:
         for col in DEV_COLUMNS:
             table.add_column(col)
 
-        for dev, m in sorted(
-            metrics["dev_metrics"].items(), key=lambda x: x[1]["pr_count"], reverse=True
-        ):
+        all_dev_metrics = list(metrics["dev_metrics"].values())
+
+        sorted_devs = []
+        for dev, m in metrics["dev_metrics"].items():
+            health = calculate_health_score(m, all_dev_metrics)
+            sorted_devs.append((dev, m, health))
+
+        sorted_devs.sort(key=lambda x: x[2])
+
+        for dev, m, health in sorted_devs:
+            color = _get_health_color(health)
             table.add_row(
                 dev,
+                f"[{color}]{health}[/{color}]",
                 f"{m['pickup_time']:.2f}",
                 f"{m['review_time']:.2f}",
                 f"{m['cycle_time']:.2f}",
@@ -49,23 +70,32 @@ class FileDevPrinter:
 
     def print_combined_metrics(self, metrics: dict, period: str) -> None:
         header = (
-            "| Dev | Pickup Time (h) | Review Time (h) | Cycle Time (h) | "
+            "| Dev | Health | Pickup Time (h) | Review Time (h) | Cycle Time (h) | "
             "PR Size | Total PRs | PRs/Week | Reviews Given |"
         )
         separator = (
-            "|-----|------------------|-----------------|----------------|"
+            "|------|--------|------------------|-----------------|----------------|"
             "---------|-----------|-----------|---------------|"
         )
         lines = ["", "# Developer Metrics (combined)", "", header, separator]
 
-        for dev, m in sorted(
-            metrics["dev_metrics"].items(), key=lambda x: x[1]["pr_count"], reverse=True
-        ):
-            lines.append(
-                f"| {dev} | {m['pickup_time']:.2f} | {m['review_time']:.2f} | "
-                f"{m['cycle_time']:.2f} | {m['pr_size']:.1f} | {m['pr_count']:.0f} | "
-                f"{m['prs_per_week']:.2f} | {m['reviews_given']:.0f} |"
+        all_dev_metrics = list(metrics["dev_metrics"].values())
+
+        sorted_devs = []
+        for dev, m in metrics["dev_metrics"].items():
+            health = calculate_health_score(m, all_dev_metrics)
+            sorted_devs.append((dev, m, health))
+
+        sorted_devs.sort(key=lambda x: x[2])
+
+        for dev, m, health in sorted_devs:
+            emoji = "✅" if health >= 80 else "⚠️" if health >= 60 else "❌"
+            row = (
+                f"| {dev} | {emoji}{health} | {m['pickup_time']:.2f} | "
+                f"{m['review_time']:.2f} | {m['cycle_time']:.2f} | {m['pr_size']:.1f} | "
+                f"{m['pr_count']:.0f} | {m['prs_per_week']:.2f} | {m['reviews_given']:.0f} |"
             )
+            lines.append(row)
 
         lines.append("")
         self._write(lines)

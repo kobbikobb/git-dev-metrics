@@ -12,7 +12,6 @@ from .exceptions import (
 from .queries import (
     fetch_open_prs,
     fetch_org_repositories,
-    fetch_organizations,
     fetch_pull_requests,
     fetch_repo_metrics,
     fetch_repositories,
@@ -27,7 +26,6 @@ __all__ = [
     "GitHubNotFoundError",
     "get_github_token",
     "fetch_repositories",
-    "fetch_organizations",
     "fetch_org_repositories",
     "fetch_pull_requests",
     "fetch_reviews",

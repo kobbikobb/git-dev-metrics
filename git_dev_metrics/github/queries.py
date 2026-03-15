@@ -1,11 +1,10 @@
 from datetime import datetime
 
-from ..models import GitHubOrganization, OpenPullRequest, PullRequest, Repository, Review
+from ..models import OpenPullRequest, PullRequest, Repository, Review
 from .graphql_client import execute_paginated_query, get_client
 from .graphql_queries import (
     OPEN_PRS_QUERY,
     ORG_REPOSITORIES_QUERY,
-    ORGANIZATIONS_QUERY,
     REPO_METRICS_QUERY,
     REPOSITORIES_QUERY,
 )
@@ -78,26 +77,6 @@ def fetch_repositories(token: str) -> list[Repository]:
     return [_map_repository(repo) for repo in repos if repo.get("nameWithOwner")]
 
 
-def fetch_organizations(token: str) -> list[GitHubOrganization]:
-    """Fetch all organizations the user belongs to."""
-    client = get_client(token)
-    orgs = execute_paginated_query(
-        client, ORGANIZATIONS_QUERY, {"first": PAGE_SIZE}, "viewer.organizations"
-    )
-
-    result: list[GitHubOrganization] = []
-    for org in orgs:
-        login = org.get("login")
-        if login:
-            result.append(
-                {
-                    "login": login,
-                    "name": org.get("name"),
-                }
-            )
-    return result
-
-
 def fetch_org_repositories(token: str, org: str) -> list[Repository]:
     """Fetch all repositories for a specific organization."""
     client = get_client(token)
@@ -138,7 +117,7 @@ def fetch_pull_requests(token: str, org: str, repo: str, since: datetime) -> lis
 
 
 def fetch_reviews(
-    token: str, org: str, repo: str, pr_numbers: list[int]
+    token: str, org: str, repo: str, pr_numbers: list[int], since: datetime
 ) -> dict[int, list[Review]]:
     """Fetch all reviews for the given PRs."""
     if not pr_numbers:
@@ -189,11 +168,20 @@ def fetch_repo_metrics(
 ) -> tuple[list[PullRequest], dict[int, list[Review]]]:
     """Fetch PRs and reviews in a single query."""
     client = get_client(token)
+
+    def stop_at_old_pr(node: dict) -> bool:
+        merged_at = node.get("mergedAt")
+        if not merged_at:
+            return False
+        pr_merged = datetime.fromisoformat(merged_at.replace("Z", "+00:00"))
+        return pr_merged < since
+
     prs = execute_paginated_query(
         client,
         REPO_METRICS_QUERY,
         {"owner": org, "name": repo, "first": PAGE_SIZE},
         "repository.pullRequests",
+        stop_if=stop_at_old_pr,
     )
 
     return _filter_and_map_pr(prs, since)
