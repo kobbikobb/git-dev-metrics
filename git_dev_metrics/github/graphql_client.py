@@ -17,8 +17,6 @@ console = Console()
 
 SPINNER_FRAMES = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
 
-logger = logging.getLogger(__name__)
-
 GITHUB_GRAPHQL_URL = "https://api.github.com/graphql"
 
 DEFAULT_PAGE_SIZE = 50
