@@ -43,7 +43,7 @@ class ConsoleRepoPrinter:
             health = calculate_health_score(m, all_repo_metrics)
             sorted_repos.append((repo_name, m, health))
 
-        sorted_repos.sort(key=lambda x: x[2])
+        sorted_repos.sort(key=lambda x: x[2], reverse=True)
 
         for repo_name, m, health in sorted_repos:
             color = _get_health_color(health)
@@ -87,7 +87,7 @@ class FileRepoPrinter:
             health = calculate_health_score(m, all_repo_metrics)
             sorted_repos.append((repo_name, m, health))
 
-        sorted_repos.sort(key=lambda x: x[2])
+        sorted_repos.sort(key=lambda x: x[2], reverse=True)
 
         for repo_name, m, health in sorted_repos:
             emoji = "✅" if health >= 80 else "⚠️" if health >= 60 else "❌"
