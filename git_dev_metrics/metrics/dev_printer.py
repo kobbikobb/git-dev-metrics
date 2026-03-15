@@ -38,10 +38,14 @@ class ConsoleDevPrinter:
 
         all_dev_metrics = list(metrics["dev_metrics"].values())
 
-        for dev, m in sorted(
-            metrics["dev_metrics"].items(), key=lambda x: x[1]["pr_count"], reverse=True
-        ):
+        sorted_devs = []
+        for dev, m in metrics["dev_metrics"].items():
             health = calculate_health_score(m, all_dev_metrics)
+            sorted_devs.append((dev, m, health))
+
+        sorted_devs.sort(key=lambda x: x[2])
+
+        for dev, m, health in sorted_devs:
             color = _get_health_color(health)
             table.add_row(
                 dev,
@@ -77,10 +81,14 @@ class FileDevPrinter:
 
         all_dev_metrics = list(metrics["dev_metrics"].values())
 
-        for dev, m in sorted(
-            metrics["dev_metrics"].items(), key=lambda x: x[1]["pr_count"], reverse=True
-        ):
+        sorted_devs = []
+        for dev, m in metrics["dev_metrics"].items():
             health = calculate_health_score(m, all_dev_metrics)
+            sorted_devs.append((dev, m, health))
+
+        sorted_devs.sort(key=lambda x: x[2])
+
+        for dev, m, health in sorted_devs:
             emoji = "✅" if health >= 80 else "⚠️" if health >= 60 else "❌"
             row = (
                 f"| {dev} | {emoji}{health} | {m['pickup_time']:.2f} | "
