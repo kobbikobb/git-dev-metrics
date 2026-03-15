@@ -15,8 +15,17 @@ DEV_COLUMNS = [
 ]
 
 
+def _format_health(score: int) -> str:
+    """Format health score for display."""
+    if score < 0:
+        return "—"
+    return str(score)
+
+
 def _get_health_color(score: int) -> str:
     """Return color for health score."""
+    if score < 0:
+        return "dim"
     if score >= 80:
         return "green"
     if score >= 60:
@@ -49,7 +58,7 @@ class ConsoleDevPrinter:
             color = _get_health_color(health)
             table.add_row(
                 dev,
-                f"[{color}]{health}[/{color}]",
+                f"[{color}]{_format_health(health)}[/{color}]",
                 f"{m['pickup_time']:.2f}",
                 f"{m['review_time']:.2f}",
                 f"{m['cycle_time']:.2f}",
@@ -89,9 +98,20 @@ class FileDevPrinter:
         sorted_devs.sort(key=lambda x: x[2], reverse=True)
 
         for dev, m, health in sorted_devs:
-            emoji = "✅" if health >= 80 else "⚠️" if health >= 60 else "❌"
+            if health < 0:
+                emoji = "⚪"
+                health_str = "—"
+            elif health >= 80:
+                emoji = "✅"
+                health_str = str(health)
+            elif health >= 60:
+                emoji = "⚠️"
+                health_str = str(health)
+            else:
+                emoji = "❌"
+                health_str = str(health)
             row = (
-                f"| {dev} | {emoji}{health} | {m['pickup_time']:.2f} | "
+                f"| {dev} | {emoji}{health_str} | {m['pickup_time']:.2f} | "
                 f"{m['review_time']:.2f} | {m['cycle_time']:.2f} | {m['pr_size']:.1f} | "
                 f"{m['pr_count']:.0f} | {m['prs_per_week']:.2f} | {m['reviews_given']:.0f} |"
             )
