@@ -198,12 +198,6 @@ def fetch_open_prs(token: str, org: str, repo: str) -> list[OpenPullRequest]:
         title = pr.get("title")
         if number is None or title is None:
             continue
-        review_requests = pr.get("reviewRequests", {}).get("nodes", [])
-        reviewers = [
-            r.get("requestedReviewer", {}).get("login", "")
-            for r in review_requests
-            if r.get("requestedReviewer")
-        ]
         reviews = pr.get("reviews", {}).get("nodes", [])
         is_approved = any(r.get("state") == "APPROVED" for r in reviews)
         result.append(
@@ -215,7 +209,6 @@ def fetch_open_prs(token: str, org: str, repo: str) -> list[OpenPullRequest]:
                 "user": {"login": _author_login(pr.get("author"))},
                 "is_draft": pr.get("isDraft", False),
                 "is_approved": is_approved,
-                "review_requests": reviewers,
             }
         )
     return result

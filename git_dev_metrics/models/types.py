@@ -44,4 +44,3 @@ class OpenPullRequest(TypedDict):
     user: GitHubUser
     is_draft: bool
     is_approved: bool
-    review_requests: list[str]
