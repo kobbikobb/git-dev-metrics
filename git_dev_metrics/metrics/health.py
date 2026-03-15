@@ -4,7 +4,7 @@ BENCHMARKS: dict[str, dict[str, int]] = {
     "cycle_time": {"excellent": 24, "good": 48, "ok": 96, "cap": 168},  # hours
     "pr_size": {"excellent": 200, "good": 500, "ok": 1000, "cap": 10000},  # lines
     "pickup_time": {"excellent": 2, "good": 8, "ok": 24},  # hours
-    "prs_per_week": {"excellent": 4},  # count
+    "prs_per_week": {"excellent": 4, "good": 3, "ok": 2},  # count
 }
 
 MIN_PRS_THRESHOLD = 3  # Minimum PRs for scoring
@@ -25,10 +25,15 @@ def _get_thresholds(metric: str) -> dict[str, int | float]:
 
 
 def _calc_prs_per_week_penalty(current: float) -> int:
-    """Calculate penalty for prs_per_week."""
-    if current >= BENCHMARKS["prs_per_week"]["excellent"]:
+    """Calculate penalty for prs_per_week (higher is better)."""
+    thresholds = BENCHMARKS["prs_per_week"]
+    if current >= thresholds["excellent"]:
         return 0
-    return 15
+    if current >= thresholds["good"]:
+        return 10
+    if current >= thresholds["ok"]:
+        return 20
+    return 35
 
 
 def _calc_time_penalty(current: float, thresholds: dict[str, float]) -> int:
@@ -58,6 +63,9 @@ def calc_benchmark_penalty(current: float, metric: str, use_log: bool = False) -
 
     if metric == "prs_per_week":
         return _calc_prs_per_week_penalty(current)
+
+    if metric == "pickup_time":
+        return _calc_time_penalty(current, bench)
 
     return _calc_time_penalty(current, bench)
 
