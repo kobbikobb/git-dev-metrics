@@ -210,46 +210,51 @@ def _percentile(values: list[float], p: float) -> float:
     return sorted_values[idx]
 
 
-def calculate_health_score(metrics: dict, all_metrics: list[dict]) -> int:
-    """Calculate health score (0-100) based on percentile rankings.
+BENCHMARKS = {
+    "cycle_time": {"excellent": 4, "good": 24, "ok": 72},  # hours
+    "pr_size": {"excellent": 100, "good": 400, "ok": 800},  # lines
+    "prs_per_week": {"excellent": 3, "good": 5, "ok": 1},  # count (higher is better up to 5)
+}
 
-    Returns 100 for healthy (at or below 50th percentile), lower for outliers.
+
+def _calc_benchmark_penalty(current: float, metric: str) -> int:
+    """Calculate penalty based on industry benchmarks."""
+    if metric not in BENCHMARKS or current <= 0:
+        return 0
+
+    bench = BENCHMARKS[metric]
+
+    if metric == "prs_per_week":
+        if current >= bench["excellent"]:
+            return 0
+        if current >= bench["good"]:
+            return 10
+        return 25
+    else:
+        if current <= bench["excellent"]:
+            return 0
+        if current <= bench["good"]:
+            return 10
+        if current <= bench["ok"]:
+            return 20
+        return 35
+
+
+def calculate_health_score(metrics: dict, all_metrics: list[dict]) -> int:
+    """Calculate health score (0-100) based on industry benchmarks.
+
+    Uses industry benchmarks for key metrics, with percentile as tiebreaker.
     """
     if not all_metrics:
         return 100
 
     score = 100
 
-    lower_is_worse = ["cycle_time", "pr_size"]
-    higher_is_better = ["pr_count", "reviews_given"]
+    score -= _calc_benchmark_penalty(metrics.get("cycle_time", 0), "cycle_time")
+    score -= _calc_benchmark_penalty(metrics.get("pr_size", 0), "pr_size")
+    score -= _calc_benchmark_penalty(metrics.get("prs_per_week", 0), "prs_per_week")
 
-    for key in lower_is_worse + higher_is_better:
-        raw_values = [m.get(key, 0) for m in all_metrics if m.get(key)]
-        values: list[float] = [float(v) for v in raw_values if v is not None and float(v) > 0]
-        if not values:
-            continue
-
-        current = float(metrics.get(key, 0) or 0)
-
-        p50 = _percentile(values, 50)
-        p75 = _percentile(values, 75)
-        p90 = _percentile(values, 90)
-        p10 = _percentile(values, 10)
-        p25 = _percentile(values, 25)
-
-        if key in lower_is_worse:
-            if current >= p90:
-                score -= 25
-            elif current >= p75:
-                score -= 15
-            elif current > p50 and p50 > 0:
-                score -= 5
-        else:
-            if current > 0 and current <= p10:
-                score -= 25
-            elif current <= p25:
-                score -= 15
-            elif current <= p50:
-                score -= 5
+    if metrics.get("reviews_given", 0) < metrics.get("pr_count", 0) * 0.5:
+        score -= 15
 
     return max(0, score)
