@@ -1,8 +1,6 @@
 import questionary
 from questionary import Style
 
-from ..models import GitHubOrganization
-
 PERIOD_OPTIONS = [
     ("Last 7 days", "7d"),
     ("Last 14 days", "14d"),
@@ -33,19 +31,8 @@ def prompt_period_selection(default: str | None = None) -> str:
     return selected or default or "30d"
 
 
-def prompt_org_selection(orgs: list[GitHubOrganization], default: str | None = None) -> str:
-    """Prompt user to select an organization."""
-    if not orgs:
-        raise questionary.ValidationError(message="No organizations found for this token")
-
-    choices = [
-        questionary.Choice(
-            title=org.get("name", org["login"]) or org["login"],
-            value=org["login"],
-        )
-        for org in orgs
-    ]
-
+def prompt_org_name(default: str | None = None) -> str:
+    """Prompt user to enter an organization name."""
     custom_style = Style(
         [
             ("highlighted", "fg:#00b4d8 bold"),
@@ -53,15 +40,14 @@ def prompt_org_selection(orgs: list[GitHubOrganization], default: str | None = N
         ]
     )
 
-    selected = questionary.select(
-        "Select organization:",
-        choices=choices,
-        default=default,
+    selected = questionary.text(
+        "Enter organization name:",
+        default=default or "",
         style=custom_style,
     ).ask()
 
     if not selected:
-        selected = orgs[0]["login"]
+        raise questionary.ValidationError(message="Organization name is required")
 
     return selected
 

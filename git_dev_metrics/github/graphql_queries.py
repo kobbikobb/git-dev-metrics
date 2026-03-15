@@ -1,24 +1,5 @@
 import gql
 
-ORGANIZATIONS_QUERY = gql.gql(
-    """
-    query FetchOrganizations($first: Int!, $after: String) {
-        viewer {
-            organizations(first: $first, after: $after, orderBy: {field: LOGIN, direction: ASC}) {
-                nodes {
-                    login
-                    name
-                }
-                pageInfo {
-                    hasNextPage
-                    endCursor
-                }
-            }
-        }
-    }
-    """
-)
-
 REPOSITORIES_QUERY = gql.gql(
     """
     query FetchRepositories($first: Int!, $after: String) {

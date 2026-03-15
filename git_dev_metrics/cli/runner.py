@@ -4,8 +4,6 @@ from pathlib import Path
 from ..github import (
     GitHubError,
     fetch_org_repositories,
-    fetch_organizations,
-    fetch_repositories,
     get_github_token,
     load_last_org,
     load_last_period,
@@ -15,7 +13,11 @@ from ..github import (
 from ..metrics import get_combined_metrics
 from ..utils import parse_time_period
 from .output import print_metrics, print_stale_prs, resolve_output_path
-from .prompts import prompt_org_selection, prompt_period_selection, prompt_repo_selection
+from .prompts import (
+    prompt_org_name,
+    prompt_period_selection,
+    prompt_repo_selection,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -57,18 +59,15 @@ def run_analyze(
     token = get_github_token()
 
     last_period = load_last_period()
+    last_org = load_last_org()
+
+    selected_org = prompt_org_name(last_org)
+    save_last_org(selected_org)
+
     period = prompt_period_selection(last_period)
     save_last_period(period)
 
-    organizations = fetch_organizations(token)
-
-    if organizations:
-        last_org = load_last_org()
-        selected_org = prompt_org_selection(organizations, last_org)
-        save_last_org(selected_org)
-        repos = fetch_org_repositories(token, selected_org)
-    else:
-        repos = fetch_repositories(token)
+    repos = fetch_org_repositories(token, selected_org)
 
     since = parse_time_period(period)
     repos = _filter_repos_by_period(repos, since)

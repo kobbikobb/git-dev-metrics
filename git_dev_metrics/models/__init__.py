@@ -1,7 +1,6 @@
 """Models"""
 
 from .types import (
-    GitHubOrganization,
     GitHubUser,
     OpenPullRequest,
     PullRequest,
@@ -13,7 +12,6 @@ from .types import (
 __all__ = [
     "Repository",
     "GitHubUser",
-    "GitHubOrganization",
     "PullRequestInfo",
     "PullRequest",
     "OpenPullRequest",
