@@ -7,6 +7,7 @@ from .graphql_queries import (
     ORG_REPOSITORIES_QUERY,
     REPO_METRICS_QUERY,
     REPOSITORIES_QUERY,
+    USER_REPOSITORIES_QUERY,
 )
 
 PAGE_SIZE = 100
@@ -78,16 +79,38 @@ def fetch_repositories(token: str) -> list[Repository]:
 
 
 def fetch_org_repositories(token: str, org: str) -> list[Repository]:
-    """Fetch all repositories for a specific organization."""
+    """Fetch all repositories for a specific organization or user."""
     client = get_client(token)
-    repos = execute_paginated_query(
-        client,
-        ORG_REPOSITORIES_QUERY,
-        {"login": org, "first": PAGE_SIZE},
-        "organization.repositories",
-    )
+
+    # Try organization first, then fall back to user
+    repos = _try_fetch_repos(client, org)
+    if repos is None:
+        repos = _try_fetch_repos(client, org, use_org_query=False)
+
+    if repos is None:
+        from .exceptions import GitHubNotFoundError
+
+        raise GitHubNotFoundError(f"Could not find an organization or user with the login '{org}'")
 
     return [_map_repository(repo) for repo in repos if repo.get("nameWithOwner")]
+
+
+def _try_fetch_repos(client, login: str, use_org_query: bool = True) -> list[dict] | None:
+    """Try to fetch repositories using org or user query. Returns None on failure."""
+    from .exceptions import GitHubNotFoundError
+
+    query = ORG_REPOSITORIES_QUERY if use_org_query else USER_REPOSITORIES_QUERY
+    path = "organization.repositories" if use_org_query else "user.repositories"
+
+    try:
+        return execute_paginated_query(
+            client,
+            query,
+            {"login": login, "first": PAGE_SIZE},
+            path,
+        )
+    except GitHubNotFoundError:
+        return None
 
 
 def fetch_pull_requests(token: str, org: str, repo: str, since: datetime) -> list[PullRequest]:

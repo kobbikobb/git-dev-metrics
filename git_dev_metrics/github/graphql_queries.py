@@ -48,6 +48,30 @@ ORG_REPOSITORIES_QUERY = gql.gql(
     """
 )
 
+USER_REPOSITORIES_QUERY = gql.gql(
+    """
+    query FetchUserRepositories($login: String!, $first: Int!, $after: String) {
+        user(login: $login) {
+            repositories(
+                first: $first
+                after: $after
+                orderBy: {field: PUSHED_AT, direction: DESC}
+            ) {
+                nodes {
+                    nameWithOwner
+                    isPrivate
+                    pushedAt
+                }
+                pageInfo {
+                    hasNextPage
+                    endCursor
+                }
+            }
+        }
+    }
+    """
+)
+
 REPO_METRICS_QUERY = gql.gql(
     """
     query FetchRepoMetrics(
