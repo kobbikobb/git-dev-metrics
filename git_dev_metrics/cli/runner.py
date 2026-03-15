@@ -51,6 +51,9 @@ def _filter_repos_by_period(repos: list, since) -> list:
 
 def run_analyze(
     output: Path | None,
+    org: str | None = None,
+    repo: str | None = None,
+    period: str | None = None,
 ) -> None:
     """
     Orchestrate the full analyze flow.
@@ -61,10 +64,10 @@ def run_analyze(
     last_period = load_last_period()
     last_org = load_last_org()
 
-    selected_org = prompt_org_name(last_org)
+    selected_org = org or prompt_org_name(last_org)
     save_last_org(selected_org)
 
-    period = prompt_period_selection(last_period)
+    period = period or prompt_period_selection(last_period or "30d")
     save_last_period(period)
 
     repos = fetch_org_repositories(token, selected_org)
@@ -73,7 +76,13 @@ def run_analyze(
     repos = _filter_repos_by_period(repos, since)
 
     repo_options = {repo["full_name"]: "Private" if repo["private"] else "Public" for repo in repos}
-    selected = prompt_repo_selection(repo_options)
+
+    if repo:
+        selected = (
+            [f"{selected_org}/{repo}"] if repo in repo_options else [f"{selected_org}/{repo}"]
+        )
+    else:
+        selected = prompt_repo_selection(repo_options)
 
     try:
         metrics = get_combined_metrics(token, selected, period)

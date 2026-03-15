@@ -122,7 +122,7 @@ def execute_paginated_query(
     query: GraphQLRequest,
     variables: dict[str, Any],
     path: str,
-    page_size: int = DEFAULT_PAGE_SIZE,
+    page_size: int | None = None,
     stop_if: Callable[[dict[str, Any]], bool] | None = None,
 ) -> list[dict[str, Any]]:
     """Execute a paginated GraphQL query and return all results."""
@@ -131,7 +131,9 @@ def execute_paginated_query(
     repo_id = f"{owner}/{name}" if owner and name else path
 
     all_nodes = []
-    variables_copy = {**variables, "first": page_size}
+    variables_copy = {**variables}
+    if page_size is not None:
+        variables_copy["first"] = page_size
     cursor = None
     page_num = 0
 

@@ -9,6 +9,9 @@ logger = logging.getLogger(__name__)
 
 
 def analyze(
+    org: str | None = typer.Option(None, "--org", help="GitHub organization or user"),
+    repo: str | None = typer.Option(None, "--repo", help="GitHub repository name"),
+    period: str | None = typer.Option(None, "--period", help="Time period (e.g., 30d, 7d, 90d)"),
     output: Path | None = typer.Option(None, help="Output file path"),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Show full error tracebacks"),
     log_level: str = typer.Option(
@@ -21,7 +24,7 @@ def analyze(
         format="%(levelname)s: %(message)s",
     )
     try:
-        run_analyze(output=output)
+        run_analyze(output=output, org=org, repo=repo, period=period)
     except AnalysisError as e:
         logger.error("Analysis failed: %s", e)
         if verbose:
