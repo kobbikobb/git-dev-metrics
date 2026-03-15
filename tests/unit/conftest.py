@@ -18,5 +18,6 @@ def any_pr(**overrides: Any) -> PullRequest:
         "deletions": 50,
         "changed_files": 5,
         "first_commit_at": None,
+        "body": None,
     }
     return {**defaults, **overrides}  # type: ignore[return-value]

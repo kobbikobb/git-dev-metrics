@@ -4,6 +4,7 @@ from datetime import datetime
 from ..github import fetch_repo_metrics, fetch_repositories
 from ..utils import parse_time_period
 from .calculator import (
+    calculate_ai_percentage,
     calculate_cycle_time,
     calculate_pickup_time,
     calculate_pr_size,
@@ -40,6 +41,7 @@ def _build_dev_metrics(devs: dict, reviews: dict, period_days: int, reviews_give
             "review_time": calculate_review_time(dev_prs, reviews),
             "prs_per_week": calculate_prs_per_week(dev_prs, period_days),
             "reviews_given": reviews_given.get(dev, 0),
+            "ai_percentage": calculate_ai_percentage(dev_prs),
         }
         for dev, dev_prs in devs.items()
     }
@@ -63,6 +65,7 @@ def get_pull_request_metrics(token: str, org: str, repo: str, event_period: str 
         "review_time": calculate_review_time(prs, reviews),
         "prs_per_week": calculate_prs_per_week(prs, period_days),
         "reviews_given": sum(reviews_given.values()),
+        "ai_percentage": calculate_ai_percentage(prs),
         "dev_metrics": dev_metrics,
     }
 
@@ -79,6 +82,7 @@ def _build_metrics(prs: list, reviews: dict, period_days: int) -> dict:
         "review_time": calculate_review_time(prs, reviews),
         "prs_per_week": calculate_prs_per_week(prs, period_days),
         "reviews_given": sum(reviews_given.values()),
+        "ai_percentage": calculate_ai_percentage(prs),
     }
 
 
