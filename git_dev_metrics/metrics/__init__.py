@@ -11,6 +11,7 @@ from .calculator import (
     median,
 )
 from .dev_printer import ConsoleDevPrinter, FileDevPrinter
+from .health import calculate_health_score
 from .printer import CompositePrinter, Printer, get_default_output_path
 from .repo_printer import ConsoleRepoPrinter, FileRepoPrinter
 
@@ -24,6 +25,7 @@ __all__ = [
     "calculate_review_time",
     "calculate_prs_per_week",
     "calculate_throughput",
+    "calculate_health_score",
     "median",
     "get_default_output_path",
     "Printer",
