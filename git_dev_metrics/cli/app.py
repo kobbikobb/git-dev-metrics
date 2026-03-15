@@ -10,7 +10,7 @@ app = typer.Typer()
 def main(ctx: typer.Context) -> None:
     """Git development metrics CLI."""
     if ctx.invoked_subcommand is None:
-        analyze(output=None, verbose=False)
+        analyze(output=None, verbose=False, log_level="WARNING")
 
 
 app.command()(analyze)
