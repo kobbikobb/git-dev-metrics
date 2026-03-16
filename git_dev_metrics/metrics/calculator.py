@@ -6,12 +6,21 @@ from datetime import datetime
 from ..constants import KNOWN_BOT_LOGINS
 from ..models import OpenPullRequest, PullRequest
 
+AI_TRAILER_PATTERNS = [
+    r"Co-Authored-By:",
+    r"co-authored-by:",
+    r"Generated\s+with\s+Claude\s+Code",
+    r"Coding-Agent:",
+    r"AI-assistant:",
+    r"🤖\s*Generated",
+]
+
 
 def is_ai_coauthored(pr_body: str | None) -> bool:
-    """Check if PR body contains Co-Authored-By header (indicates AI assistance)."""
+    """Check if PR body contains AI assistance markers."""
     if not pr_body:
         return False
-    return bool(re.search(r"Co-Authored-By:", pr_body, re.IGNORECASE))
+    return any(re.search(pattern, pr_body, re.IGNORECASE) for pattern in AI_TRAILER_PATTERNS)
 
 
 def calculate_ai_percentage(prs: list[PullRequest]) -> float:

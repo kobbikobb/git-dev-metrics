@@ -90,7 +90,10 @@ def _get_page_info(result: dict[str, Any], path: str) -> dict[str, Any]:
     """Extract page info from a GraphQL result following the given path."""
     page_info: Any = result
     for key in path.split("."):
-        page_info = page_info.get(key, {})
+        if isinstance(page_info, dict):
+            page_info = page_info.get(key, {})
+            if isinstance(page_info, dict) and "pageInfo" in page_info:
+                page_info = page_info.get("pageInfo", {})
     return page_info if isinstance(page_info, dict) else {}
 
 
@@ -123,15 +126,28 @@ def execute_paginated_query(
     page_size: int | None = None,
     stop_if: Callable[[dict[str, Any]], bool] | None = None,
 ) -> list[dict[str, Any]]:
-    """Execute a paginated GraphQL query and return all results."""
+    """Execute a paginated GraphQL query and return all results.
+
+    Args:
+        client: GraphQL client
+        query: GraphQL query
+        variables: Query variables (can include 'first' for page size)
+        path: Dot-separated path to nodes in response (e.g., 'repository.pullRequests')
+        page_size: Override the 'first' parameter in variables (useful for testing)
+        stop_if: Optional callback to stop pagination early
+
+    Returns:
+        List of all nodes fetched across all pages
+    """
     owner = variables.get("owner", "")
     name = variables.get("name", "")
     repo_id = f"{owner}/{name}" if owner and name else path
 
     all_nodes = []
     variables_copy = {**variables}
-    if page_size is not None:
-        variables_copy["first"] = page_size
+    requested_first = variables_copy.get("first", 100)
+    effective_page_size = page_size if page_size is not None else requested_first
+    variables_copy["first"] = effective_page_size
     cursor = None
     page_num = 0
 
@@ -154,6 +170,7 @@ def execute_paginated_query(
 
             for node in nodes:
                 if stop_if and stop_if(node):
+                    all_nodes.append(node)
                     console.print(f"[green]✓[/green] {repo_id}: {len(all_nodes)} PRs")
                     return all_nodes
                 all_nodes.append(node)

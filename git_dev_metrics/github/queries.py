@@ -7,9 +7,16 @@ from .graphql_queries import (
     ORG_REPOSITORIES_QUERY,
     REPO_METRICS_QUERY,
     REPOSITORIES_QUERY,
+    SEARCH_MERGED_PRS_QUERY,
 )
 
 PAGE_SIZE = 100
+
+
+def _build_merged_prs_query(org: str, repo: str, since: datetime) -> str:
+    """Build GitHub search query for PRs merged after a date."""
+    since_str = since.strftime("%Y-%m-%d")
+    return f"repo:{org}/{repo} is:pr merged:>={since_str}"
 
 
 def _author_login(author: dict | None) -> str:
@@ -92,29 +99,17 @@ def fetch_org_repositories(token: str, org: str) -> list[Repository]:
 
 
 def fetch_pull_requests(token: str, org: str, repo: str, since: datetime) -> list[PullRequest]:
-    """Fetch merged pull requests since a given date."""
+    """Fetch merged pull requests since a given date using search API."""
     client = get_client(token)
+    search_query = _build_merged_prs_query(org, repo, since)
     prs = execute_paginated_query(
         client,
-        REPO_METRICS_QUERY,
-        {"owner": org, "name": repo, "first": PAGE_SIZE},
-        "repository.pullRequests",
+        SEARCH_MERGED_PRS_QUERY,
+        {"query": search_query, "first": PAGE_SIZE},
+        "search",
     )
 
-    result = []
-    for pr in prs:
-        mapped = _map_pull_request(pr)
-        merged_at = mapped["merged_at"]
-        if merged_at is None:
-            continue
-        # Since we order by UPDATED_AT (not MERGED_AT), we can't break early -
-        # a recently updated PR could have been merged long ago. Filter instead.
-        if merged_at < since:  # type: ignore[operator]
-            continue
-
-        result.append(mapped)
-
-    return result
+    return [_map_pull_request(pr) for pr in prs if pr.get("mergedAt")]
 
 
 def fetch_reviews(
@@ -167,17 +162,14 @@ def _filter_and_map_pr(prs: list[dict], since: datetime) -> tuple[list, dict]:
 def fetch_repo_metrics(
     token: str, org: str, repo: str, since: datetime
 ) -> tuple[list[PullRequest], dict[int, list[Review]]]:
-    """Fetch PRs and reviews in a single query."""
+    """Fetch PRs and reviews in a single query using search API."""
     client = get_client(token)
-
-    # Note: We can't use stop_if optimization here because PRs are ordered by
-    # UPDATED_AT, not MERGED_AT. A recently updated PR could have been merged
-    # long ago, causing us to miss newer merged PRs on later pages.
+    search_query = _build_merged_prs_query(org, repo, since)
     prs = execute_paginated_query(
         client,
-        REPO_METRICS_QUERY,
-        {"owner": org, "name": repo, "first": PAGE_SIZE},
-        "repository.pullRequests",
+        SEARCH_MERGED_PRS_QUERY,
+        {"query": search_query, "first": PAGE_SIZE},
+        "search",
     )
 
     return _filter_and_map_pr(prs, since)
