@@ -126,19 +126,7 @@ def execute_paginated_query(
     page_size: int | None = None,
     stop_if: Callable[[dict[str, Any]], bool] | None = None,
 ) -> list[dict[str, Any]]:
-    """Execute a paginated GraphQL query and return all results.
-
-    Args:
-        client: GraphQL client
-        query: GraphQL query
-        variables: Query variables (can include 'first' for page size)
-        path: Dot-separated path to nodes in response (e.g., 'repository.pullRequests')
-        page_size: Override the 'first' parameter in variables (useful for testing)
-        stop_if: Optional callback to stop pagination early
-
-    Returns:
-        List of all nodes fetched across all pages
-    """
+    """Execute a paginated GraphQL query and return all results."""
     owner = variables.get("owner", "")
     name = variables.get("name", "")
     repo_id = f"{owner}/{name}" if owner and name else path

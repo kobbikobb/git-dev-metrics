@@ -81,8 +81,7 @@ def run_analyze(
     last_period = load_last_period()
     last_org = load_last_org()
 
-    # Ask org first if not provided via CLI (empty org = personal repos)
-    # Skip if --repo provided without --org (use viewer.repositories)
+    # Handle org: CLI arg > prompt > personal repos
     if org is None and repo is not None:
         selected_org = None
     elif org is not None:
@@ -93,11 +92,10 @@ def run_analyze(
     if selected_org is not None:
         save_last_org(selected_org)
 
-    # Then ask period
     period = period if period is not None else prompt_period_selection(last_period or "30d")
     save_last_period(period)
 
-    # Fetch repos: if org is None/empty, use viewer.repositories (personal repos)
+    # Personal repos via viewer.repositories if no org
     if not selected_org:
         all_repos = fetch_repositories(token)
         repos = [r for r in all_repos if r["full_name"].endswith(f"/{repo}")] if repo else all_repos
