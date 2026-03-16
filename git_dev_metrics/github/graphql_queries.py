@@ -136,3 +136,47 @@ OPEN_PRS_QUERY = gql.gql(
     }
     """
 )
+
+SEARCH_MERGED_PRS_QUERY = gql.gql(
+    """
+    query SearchMergedPRs($query: String!, $first: Int!, $after: String) {
+        search(query: $query, type: ISSUE, first: $first, after: $after) {
+            nodes {
+                ... on PullRequest {
+                    number
+                    title
+                    createdAt
+                    mergedAt
+                    additions
+                    deletions
+                    changedFiles
+                    author {
+                        login
+                    }
+                    body
+                    commits(first: 1) {
+                        nodes {
+                            commit {
+                                committedDate
+                            }
+                        }
+                    }
+                    reviews(first: 10) {
+                        nodes {
+                            author {
+                                login
+                            }
+                            state
+                            submittedAt
+                        }
+                    }
+                }
+            }
+            pageInfo {
+                hasNextPage
+                endCursor
+            }
+        }
+    }
+    """
+)
