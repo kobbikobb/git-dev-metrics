@@ -52,6 +52,20 @@ def _filter_repos_by_period(repos: list, since) -> list:
     return [repo for repo in repos if repo.get("last_pushed") and repo["last_pushed"] >= since]
 
 
+def _get_selected_repos(repos: list[dict], selected_org: str | None, repo: str | None) -> list[str]:
+    """Determine which repos to analyze based on org and repo flags."""
+    repo_options = {r["full_name"]: "Private" if r["private"] else "Public" for r in repos}
+
+    if not selected_org:
+        return [r["full_name"] for r in repos] if repo else prompt_repo_selection(repo_options)
+
+    if repo:
+        full_name = f"{selected_org}/{repo}"
+        return [full_name] if full_name in repo_options else [full_name]
+
+    return prompt_repo_selection(repo_options)
+
+
 def run_analyze(
     output: Path | None,
     org: str | None = None,
@@ -86,30 +100,14 @@ def run_analyze(
     # Fetch repos: if org is None/empty, use viewer.repositories (personal repos)
     if not selected_org:
         all_repos = fetch_repositories(token)
-        if repo:
-            repos = [r for r in all_repos if r["full_name"].endswith(f"/{repo}")]
-            selected = [r["full_name"] for r in repos] if repos else []
-        else:
-            since = parse_time_period(period)
-            repos = _filter_repos_by_period(all_repos, since)
-            repo_options = {r["full_name"]: "Private" if r["private"] else "Public" for r in repos}
-            selected = prompt_repo_selection(repo_options)
+        repos = [r for r in all_repos if r["full_name"].endswith(f"/{repo}")] if repo else all_repos
     else:
         repos = fetch_org_repositories(token, selected_org)
 
-        since = parse_time_period(period)
-        repos = _filter_repos_by_period(repos, since)
-
-        repo_options = {r["full_name"]: "Private" if r["private"] else "Public" for r in repos}
-
-        if repo:
-            full_name = f"{selected_org}/{repo}"
-            selected = [full_name] if full_name in repo_options else [full_name]
-        else:
-            selected = prompt_repo_selection(repo_options)
-
     since = parse_time_period(period)
     repos = _filter_repos_by_period(repos, since)
+
+    selected = _get_selected_repos(repos, selected_org, repo)
 
     try:
         metrics = get_combined_metrics(token, selected, period)
