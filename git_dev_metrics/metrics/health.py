@@ -104,6 +104,10 @@ def calculate_health_score(
     - +10 for most reviews_given
     - +10 for lowest cycle_time (fastest)
     """
+    pr_count = metrics.get("pr_count", 0)
+    if pr_count == 0:
+        return 0
+
     score = 100
 
     score -= calc_benchmark_penalty(metrics.get("cycle_time", 0), "cycle_time")
@@ -111,16 +115,14 @@ def calculate_health_score(
     score -= calc_benchmark_penalty(metrics.get("pickup_time", 0), "pickup_time")
     score -= calc_benchmark_penalty(metrics.get("prs_per_week", 0), "prs_per_week")
 
-    pr_count = metrics.get("pr_count", 0)
     reviews_given = metrics.get("reviews_given", 0)
-    if pr_count > 0:
-        if reviews_given >= pr_count * 2:
-            score += 10
-        elif reviews_given >= pr_count:
-            score += 5
+    if reviews_given >= pr_count * 2:
+        score += 10
+    elif reviews_given >= pr_count:
+        score += 5
 
-        if reviews_given < pr_count * 0.5:
-            score -= 15
+    if reviews_given < pr_count * 0.5:
+        score -= 15
 
     if all_metrics:
         score = _apply_relative_bonuses(metrics, all_metrics, score)

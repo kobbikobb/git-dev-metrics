@@ -150,7 +150,7 @@ class TestCalculateHealthScore:
     def test_should_handle_missing_metrics(self):
         metrics = {}
         result = calculate_health_score(metrics)
-        assert result == 100
+        assert result == 0
 
     def test_should_handle_zero_pr_count_no_review_penalty(self):
         metrics = {
@@ -161,14 +161,14 @@ class TestCalculateHealthScore:
             "reviews_given": 0,
         }
         result = calculate_health_score(metrics)
-        assert result == 100
+        assert result == 0
 
     def test_should_add_relative_bonus_for_highest_prs_per_week(self):
         all_metrics = [
-            {"prs_per_week": 2, "reviews_given": 5, "cycle_time": 10},
-            {"prs_per_week": 6, "reviews_given": 3, "cycle_time": 20},
+            {"prs_per_week": 2, "reviews_given": 5, "cycle_time": 10, "pr_count": 2},
+            {"prs_per_week": 6, "reviews_given": 3, "cycle_time": 20, "pr_count": 6},
         ]
-        metrics = {"prs_per_week": 6, "reviews_given": 3, "cycle_time": 20}
+        metrics = {"prs_per_week": 6, "reviews_given": 3, "cycle_time": 20, "pr_count": 6}
         result = calculate_health_score(metrics, all_metrics)
         assert result == 100
 
@@ -183,9 +183,9 @@ class TestCalculateHealthScore:
 
     def test_should_add_relative_bonus_for_fastest_cycle_time(self):
         all_metrics = [
-            {"prs_per_week": 5, "reviews_given": 5, "cycle_time": 10},
-            {"prs_per_week": 3, "reviews_given": 3, "cycle_time": 5},
+            {"prs_per_week": 5, "reviews_given": 5, "cycle_time": 10, "pr_count": 5},
+            {"prs_per_week": 3, "reviews_given": 3, "cycle_time": 5, "pr_count": 3},
         ]
-        metrics = {"prs_per_week": 3, "reviews_given": 3, "cycle_time": 5}
+        metrics = {"prs_per_week": 3, "reviews_given": 3, "cycle_time": 5, "pr_count": 3}
         result = calculate_health_score(metrics, all_metrics)
         assert result == 100
