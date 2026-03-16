@@ -4,6 +4,7 @@ from pathlib import Path
 from ..github import (
     GitHubError,
     fetch_org_repositories,
+    fetch_repositories,
     get_github_token,
     load_last_org,
     load_last_period,
@@ -66,24 +67,36 @@ def run_analyze(
     last_period = load_last_period()
     last_org = load_last_org()
 
-    selected_org = org if org is not None else prompt_org_name(last_org)
-    save_last_org(selected_org)
-
     period = period if period is not None else prompt_period_selection(last_period or "30d")
     save_last_period(period)
 
-    repos = fetch_org_repositories(token, selected_org)
+    # If --repo provided without --org, use viewer.repositories (personal repos)
+    # Skip org prompt in this case
+    if org is None and repo is not None:
+        all_repos = fetch_repositories(token)
+        repos = [r for r in all_repos if r["full_name"].endswith(f"/{repo}")]
+        # Use full_name from matched repo, not constructed
+        selected = [r["full_name"] for r in repos] if repos else []
+    else:
+        selected_org = org if org is not None else prompt_org_name(last_org)
+        save_last_org(selected_org)
+        repos = fetch_org_repositories(token, selected_org)
+
+        since = parse_time_period(period)
+        repos = _filter_repos_by_period(repos, since)
+
+        repo_options = {
+            repo["full_name"]: "Private" if repo["private"] else "Public" for repo in repos
+        }
+
+        if repo is not None:
+            full_name = f"{selected_org}/{repo}"
+            selected = [full_name] if full_name in repo_options else [full_name]
+        else:
+            selected = prompt_repo_selection(repo_options)
 
     since = parse_time_period(period)
     repos = _filter_repos_by_period(repos, since)
-
-    repo_options = {repo["full_name"]: "Private" if repo["private"] else "Public" for repo in repos}
-
-    if repo is not None:
-        full_name = f"{selected_org}/{repo}"
-        selected = [full_name] if full_name in repo_options else [full_name]
-    else:
-        selected = prompt_repo_selection(repo_options)
 
     try:
         metrics = get_combined_metrics(token, selected, period)
