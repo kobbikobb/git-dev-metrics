@@ -67,29 +67,42 @@ def run_analyze(
     last_period = load_last_period()
     last_org = load_last_org()
 
+    # Ask org first if not provided via CLI (empty org = personal repos)
+    # Skip if --repo provided without --org (use viewer.repositories)
+    if org is None and repo is not None:
+        selected_org = None
+    elif org is not None:
+        selected_org = org
+    else:
+        selected_org = prompt_org_name(last_org)
+
+    if selected_org is not None:
+        save_last_org(selected_org)
+
+    # Then ask period
     period = period if period is not None else prompt_period_selection(last_period or "30d")
     save_last_period(period)
 
-    # If --repo provided without --org, use viewer.repositories (personal repos)
-    # Skip org prompt in this case
-    if org is None and repo is not None:
+    # Fetch repos: if org is None/empty, use viewer.repositories (personal repos)
+    if not selected_org:
         all_repos = fetch_repositories(token)
-        repos = [r for r in all_repos if r["full_name"].endswith(f"/{repo}")]
-        # Use full_name from matched repo, not constructed
-        selected = [r["full_name"] for r in repos] if repos else []
+        if repo:
+            repos = [r for r in all_repos if r["full_name"].endswith(f"/{repo}")]
+            selected = [r["full_name"] for r in repos] if repos else []
+        else:
+            since = parse_time_period(period)
+            repos = _filter_repos_by_period(all_repos, since)
+            repo_options = {r["full_name"]: "Private" if r["private"] else "Public" for r in repos}
+            selected = prompt_repo_selection(repo_options)
     else:
-        selected_org = org if org is not None else prompt_org_name(last_org)
-        save_last_org(selected_org)
         repos = fetch_org_repositories(token, selected_org)
 
         since = parse_time_period(period)
         repos = _filter_repos_by_period(repos, since)
 
-        repo_options = {
-            repo["full_name"]: "Private" if repo["private"] else "Public" for repo in repos
-        }
+        repo_options = {r["full_name"]: "Private" if r["private"] else "Public" for r in repos}
 
-        if repo is not None:
+        if repo:
             full_name = f"{selected_org}/{repo}"
             selected = [full_name] if full_name in repo_options else [full_name]
         else:

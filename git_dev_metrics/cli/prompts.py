@@ -31,8 +31,8 @@ def prompt_period_selection(default: str | None = None) -> str:
     return selected or default or "30d"
 
 
-def prompt_org_name(default: str | None = None) -> str:
-    """Prompt user to enter an organization name."""
+def prompt_org_name(default: str | None = None) -> str | None:
+    """Prompt user to enter an organization name. Returns None for empty/orgless."""
     custom_style = Style(
         [
             ("highlighted", "fg:#00b4d8 bold"),
@@ -41,15 +41,12 @@ def prompt_org_name(default: str | None = None) -> str:
     )
 
     selected = questionary.text(
-        "Enter organization name:",
+        "Enter organization name (leave empty for personal repos):",
         default=default or "",
         style=custom_style,
     ).ask()
 
-    if not selected:
-        raise questionary.ValidationError(message="Organization name is required")
-
-    return selected
+    return selected if selected else None
 
 
 def prompt_repo_selection(repos: dict[str, str]) -> list[str]:
