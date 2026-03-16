@@ -10,7 +10,7 @@ from .graphql_queries import (
     SEARCH_MERGED_PRS_QUERY,
 )
 
-PAGE_SIZE = 100
+PAGE_SIZE = 50
 
 
 def _build_merged_prs_query(org: str, repo: str, since: datetime) -> str:

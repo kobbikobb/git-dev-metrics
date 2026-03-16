@@ -75,7 +75,7 @@ REPO_METRICS_QUERY = gql.gql(
                         login
                     }
                     body
-                    commits(first: 1) {
+                    commits(first: 1, orderBy: {field: COMMITTED_DATE, direction: ASC}) {
                         nodes {
                             commit {
                                 committedDate
@@ -154,7 +154,7 @@ SEARCH_MERGED_PRS_QUERY = gql.gql(
                         login
                     }
                     body
-                    commits(first: 1) {
+                    commits(first: 1, orderBy: {field: COMMITTED_DATE, direction: ASC}) {
                         nodes {
                             commit {
                                 committedDate
