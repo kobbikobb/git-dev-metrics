@@ -10,7 +10,7 @@ from .graphql_queries import (
     SEARCH_MERGED_PRS_QUERY,
 )
 
-PAGE_SIZE = 100
+PAGE_SIZE = 50
 
 
 def _build_merged_prs_query(org: str, repo: str, since: datetime) -> str:
@@ -48,7 +48,7 @@ def _map_pull_request(pr: dict) -> PullRequest:
     commits = pr.get("commits", {}).get("nodes", [])
     first_commit_date = None
     if commits:
-        commit_data = commits[0].get("commit", {})
+        commit_data = commits[-1].get("commit", {})
         committed_at = commit_data.get("committedDate")
         first_commit_date = _parse_datetime(committed_at)
 
