@@ -9,10 +9,15 @@ from ..models import OpenPullRequest, PullRequest
 AI_TRAILER_PATTERNS = [
     r"Co-Authored-By:",
     r"co-authored-by:",
-    r"Generated\s+with\s+Claude\s+Code",
+    r"Generated\s+(by|with|with\s+)?[\w\s]*AI",
+    r"Claude\s+Code",
     r"Coding-Agent:",
     r"AI-assistant:",
     r"🤖\s*Generated",
+    r"Aider:",
+    r"Cursor:",
+    r"GitHub\s+Copilot:",
+    r"Devin:",
 ]
 
 
@@ -80,7 +85,7 @@ def calculate_pr_size(prs: list[PullRequest]) -> int:
     if not prs:
         return 0
 
-    pr_sizes = [float(pr.get("additions", 0) + pr.get("deletions", 0)) for pr in prs]
+    pr_sizes = [float(abs(pr.get("additions", 0)) + abs(pr.get("deletions", 0))) for pr in prs]
     return round(median(pr_sizes))
 
 
@@ -159,6 +164,19 @@ def group_prs_by_devs(prs: list[PullRequest]) -> dict[str, list[PullRequest]]:
         if dev not in KNOWN_BOT_LOGINS:
             devs[dev].append(pr)
     return devs
+
+
+def group_prs_by_labels(prs: list[PullRequest]) -> dict[str, list[PullRequest]]:
+    """Group PRs by label. A PR appears in each of its label groups."""
+    labels: dict[str, list[PullRequest]] = defaultdict(list)
+    for pr in prs:
+        pr_labels = pr.get("labels", [])
+        if not pr_labels:
+            labels["(no label)"].append(pr)
+        else:
+            for label in pr_labels:
+                labels[label].append(pr)
+    return labels
 
 
 def calculate_reviews_given(reviews: dict, devs: dict[str, list[PullRequest]]) -> dict[str, int]:

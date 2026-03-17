@@ -125,11 +125,13 @@ def execute_paginated_query(
     path: str,
     page_size: int | None = None,
     stop_if: Callable[[dict[str, Any]], bool] | None = None,
+    repo_id: str | None = None,
 ) -> list[dict[str, Any]]:
     """Execute a paginated GraphQL query and return all results."""
-    owner = variables.get("owner", "")
-    name = variables.get("name", "")
-    repo_id = f"{owner}/{name}" if owner and name else path
+    if repo_id is None:
+        owner = variables.get("owner", "")
+        name = variables.get("name", "")
+        repo_id = f"{owner}/{name}" if owner and name else path
 
     all_nodes = []
     variables_copy = {**variables}
@@ -142,7 +144,7 @@ def execute_paginated_query(
     spinner_idx = 0
 
     with Live(console=console, transient=True, refresh_per_second=10) as live:
-        live.update(f"[bold blue]{SPINNER_FRAMES[0]}[/bold blue] Fetching {repo_id}...")
+        live.update(f"[bold blue]{SPINNER_FRAMES[0]}[/bold blue] {repo_id}...")
 
         while True:
             start = time.perf_counter()
@@ -153,7 +155,7 @@ def execute_paginated_query(
             spinner_idx = (spinner_idx + 1) % len(SPINNER_FRAMES)
             live.update(
                 f"[bold blue]{SPINNER_FRAMES[spinner_idx]}[/bold blue] "
-                f"Fetching {repo_id}... page {page_num} ({len(all_nodes)} items, {elapsed:.1f}s)"
+                f"{repo_id} p{page_num} ({len(all_nodes)} total, {elapsed:.1f}s)"
             )
 
             for node in nodes:

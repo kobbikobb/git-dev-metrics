@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from ..dev_printer import ConsoleDevPrinter, FileDevPrinter
+from ..label_printer import ConsoleLabelPrinter, FileLabelPrinter
 from ..repo_printer import ConsoleRepoPrinter, FileRepoPrinter
 from .base import Printer
 from .stale_printer import ConsoleStalePRPrinter, FileStalePRPrinter
@@ -13,10 +14,13 @@ class ConsolePrinter(Printer):
     def __init__(self) -> None:
         self._repo_printer = ConsoleRepoPrinter()
         self._dev_printer = ConsoleDevPrinter()
+        self._label_printer = ConsoleLabelPrinter()
 
     def print_combined_metrics(self, metrics: dict, period: str) -> None:
         self._repo_printer.print_combined_metrics(metrics, period)
         self._dev_printer.print_combined_metrics(metrics, period)
+        if "label_metrics" in metrics and metrics["label_metrics"]:
+            self._label_printer.print_combined_metrics(metrics, period)
 
 
 class FilePrinter(Printer):
@@ -26,10 +30,13 @@ class FilePrinter(Printer):
         path = output_path or get_default_output_path()
         self._repo_printer = FileRepoPrinter(path)
         self._dev_printer = FileDevPrinter(path)
+        self._label_printer = FileLabelPrinter(path)
 
     def print_combined_metrics(self, metrics: dict, period: str) -> None:
         self._repo_printer.print_combined_metrics(metrics, period)
         self._dev_printer.print_combined_metrics(metrics, period)
+        if "label_metrics" in metrics and metrics["label_metrics"]:
+            self._label_printer.print_combined_metrics(metrics, period)
 
 
 class CompositePrinter(Printer):

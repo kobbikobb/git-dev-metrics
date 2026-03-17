@@ -13,6 +13,7 @@ from .calculator import (
     calculate_reviews_given,
     calculate_throughput,
     group_prs_by_devs,
+    group_prs_by_labels,
 )
 
 
@@ -86,6 +87,21 @@ def _build_metrics(prs: list, reviews: dict, period_days: int) -> dict:
     }
 
 
+def _build_label_metrics(labels: dict, reviews: dict, period_days: int) -> dict:
+    """Build label-level metrics dict."""
+    return {
+        label: {
+            "cycle_time": calculate_cycle_time(label_prs),
+            "pr_size": calculate_pr_size(label_prs),
+            "pr_count": calculate_throughput(label_prs),
+            "pickup_time": calculate_pickup_time(label_prs, reviews),
+            "review_time": calculate_review_time(label_prs, reviews),
+            "prs_per_week": calculate_prs_per_week(label_prs, period_days),
+        }
+        for label, label_prs in labels.items()
+    }
+
+
 def get_combined_metrics(token: str, selected_repos: list[str], event_period: str = "30d") -> dict:
     """Get combined metrics for multiple repositories."""
     since = parse_time_period(event_period)
@@ -107,9 +123,13 @@ def get_combined_metrics(token: str, selected_repos: list[str], event_period: st
     all_reviews_given = calculate_reviews_given(all_reviews, all_devs)
     combined_dev_metrics = _build_dev_metrics(all_devs, all_reviews, period_days, all_reviews_given)
 
+    all_labels = group_prs_by_labels(all_prs)
+    combined_label_metrics = _build_label_metrics(all_labels, all_reviews, period_days)
+
     return {
         "repo_metrics": repo_metrics,
         "dev_metrics": combined_dev_metrics,
+        "label_metrics": combined_label_metrics,
     }
 
 

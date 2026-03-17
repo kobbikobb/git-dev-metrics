@@ -145,6 +145,11 @@ class TestCalculatePrSize:
         result = calculate_pr_size(prs)
         assert result == 200
 
+    def test_should_use_absolute_values_for_deletions(self):
+        prs = [any_pr(additions=100, deletions=-50)]
+        result = calculate_pr_size(prs)
+        assert result == 150
+
 
 class TestCalculateThroughput:
     """Test cases for calculate_throughput function."""
@@ -339,6 +344,54 @@ class TestCalculateReviewsGiven:
         result = calculate_reviews_given(reviews, devs)
         assert result["alice"] == 0
         assert result["external-reviewer"] == 1
+
+
+class TestGroupPrsByLabels:
+    """Test cases for group_prs_by_labels function."""
+
+    def test_should_return_empty_dict_for_empty_list(self):
+        from git_dev_metrics.metrics.calculator import group_prs_by_labels
+
+        result = group_prs_by_labels([])
+        assert result == {}
+
+    def test_should_group_prs_by_label(self):
+        from git_dev_metrics.metrics.calculator import group_prs_by_labels
+
+        prs = [
+            any_pr(labels=["bug"]),
+            any_pr(labels=["feature"]),
+            any_pr(labels=["bug"]),
+        ]
+        result = group_prs_by_labels(prs)
+        assert len(result["bug"]) == 2
+        assert len(result["feature"]) == 1
+
+    def test_should_handle_pr_with_multiple_labels(self):
+        from git_dev_metrics.metrics.calculator import group_prs_by_labels
+
+        prs = [any_pr(labels=["bug", "urgent"])]
+        result = group_prs_by_labels(prs)
+        assert len(result["bug"]) == 1
+        assert len(result["urgent"]) == 1
+
+    def test_should_group_prs_without_labels_under_no_label(self):
+        from git_dev_metrics.metrics.calculator import group_prs_by_labels
+
+        prs = [
+            any_pr(labels=[]),
+            any_pr(labels=["bug"]),
+        ]
+        result = group_prs_by_labels(prs)
+        assert len(result["(no label)"]) == 1
+        assert len(result["bug"]) == 1
+
+    def test_should_default_to_empty_list_for_missing_labels_field(self):
+        from git_dev_metrics.metrics.calculator import group_prs_by_labels
+
+        prs = [any_pr(labels=[])]
+        result = group_prs_by_labels(prs)
+        assert "(no label)" in result
 
     def test_should_default_to_30_for_invalid(self):
         assert _parse_period_days("invalid") == 30
