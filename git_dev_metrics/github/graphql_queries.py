@@ -154,6 +154,11 @@ SEARCH_MERGED_PRS_QUERY = gql.gql(
                         login
                     }
                     body
+                    labels(first: 10) {
+                        nodes {
+                            name
+                        }
+                    }
                     commits(last: 100) {
                         nodes {
                             commit {

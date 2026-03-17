@@ -12,6 +12,7 @@ from .calculator import (
 )
 from .dev_printer import ConsoleDevPrinter, FileDevPrinter
 from .health import calculate_health_score
+from .label_printer import ConsoleLabelPrinter, FileLabelPrinter
 from .printer import CompositePrinter, Printer, get_default_output_path
 from .repo_printer import ConsoleRepoPrinter, FileRepoPrinter
 
@@ -34,4 +35,6 @@ __all__ = [
     "FileRepoPrinter",
     "ConsoleDevPrinter",
     "FileDevPrinter",
+    "ConsoleLabelPrinter",
+    "FileLabelPrinter",
 ]

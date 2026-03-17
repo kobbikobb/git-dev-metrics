@@ -10,7 +10,7 @@ from .graphql_queries import (
     SEARCH_MERGED_PRS_QUERY,
 )
 
-PAGE_SIZE = 50
+PAGE_SIZE = 100
 
 
 def _build_merged_prs_query(org: str, repo: str, since: datetime) -> str:
@@ -63,6 +63,7 @@ def _map_pull_request(pr: dict) -> PullRequest:
         "user": {"login": _author_login(pr.get("author"))},
         "first_commit_at": first_commit_date,
         "body": pr.get("body"),
+        "labels": [label.get("name") for label in pr.get("labels", {}).get("nodes", [])],
     }
 
 
@@ -107,6 +108,7 @@ def fetch_pull_requests(token: str, org: str, repo: str, since: datetime) -> lis
         SEARCH_MERGED_PRS_QUERY,
         {"query": search_query, "first": PAGE_SIZE},
         "search",
+        repo_id=f"{org}/{repo}",
     )
 
     return [_map_pull_request(pr) for pr in prs if pr.get("mergedAt")]
@@ -170,6 +172,7 @@ def fetch_repo_metrics(
         SEARCH_MERGED_PRS_QUERY,
         {"query": search_query, "first": PAGE_SIZE},
         "search",
+        repo_id=f"{org}/{repo}",
     )
 
     return _filter_and_map_pr(prs, since)
@@ -183,6 +186,7 @@ def fetch_open_prs(token: str, org: str, repo: str) -> list[OpenPullRequest]:
         OPEN_PRS_QUERY,
         {"owner": org, "name": repo, "first": PAGE_SIZE},
         "repository.pullRequests",
+        repo_id=f"{org}/{repo}",
     )
 
     result: list[OpenPullRequest] = []
