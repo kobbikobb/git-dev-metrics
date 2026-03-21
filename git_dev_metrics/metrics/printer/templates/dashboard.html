@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dev Metrics Dashboard</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --card: #1a1d27;
+    --border: #2a2d3a;
+    --text: #e1e4ed;
+    --muted: #8b8fa3;
+    --accent: #6366f1;
+    --green: #22c55e;
+    --yellow: #eab308;
+    --red: #ef4444;
+    --orange: #f97316;
+    --blue: #3b82f6;
+    --cyan: #06b6d4;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 2rem;
+  }
+
+  .header {
+    text-align: center;
+    margin-bottom: 2.5rem;
+  }
+
+  .header h1 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin-bottom: 0.25rem;
+  }
+
+  .header p {
+    color: var(--muted);
+    font-size: 0.875rem;
+  }
+
+  .summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+    max-width: 1400px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .summary-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+  }
+
+  .summary-card .label {
+    font-size: 0.75rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.5rem;
+  }
+
+  .summary-card .value {
+    font-size: 1.75rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .summary-card .sub {
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin-top: 0.25rem;
+  }
+
+  .table-wrapper {
+    max-width: 1400px;
+    margin: 0 auto 2rem;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .table-header {
+    padding: 1.25rem 1.5rem 1rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .table-header h2 {
+    font-size: 1rem;
+    font-weight: 600;
+  }
+
+  .sort-hint {
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  th {
+    text-align: left;
+    padding: 0.75rem 1rem;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    font-weight: 500;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+  }
+
+  th:hover { color: var(--text); }
+  th.sorted { color: var(--accent); }
+  th .arrow { margin-left: 4px; font-size: 0.6rem; }
+
+  td {
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+    border-bottom: 1px solid var(--border);
+    font-variant-numeric: tabular-nums;
+  }
+
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(99, 102, 241, 0.04); }
+
+  .dev-name {
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--muted);
+    flex-shrink: 0;
+  }
+
+  .health-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 2px 10px 2px 6px;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.8rem;
+  }
+
+  .health-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+  }
+
+  .health-100 { background: rgba(34,197,94,0.12); color: var(--green); }
+  .health-100 .health-dot { background: var(--green); }
+  .health-90 { background: rgba(34,197,94,0.08); color: #86efac; }
+  .health-90 .health-dot { background: #86efac; }
+  .health-85 { background: rgba(234,179,8,0.1); color: var(--yellow); }
+  .health-85 .health-dot { background: var(--yellow); }
+  .health-0 { background: rgba(239,68,68,0.1); color: var(--red); }
+  .health-0 .health-dot { background: var(--red); }
+
+  .ai-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+
+  .ai-high { background: rgba(139,92,246,0.15); color: #a78bfa; }
+  .ai-med { background: rgba(139,92,246,0.08); color: #c4b5fd; }
+  .ai-low { background: rgba(99,102,241,0.06); color: var(--muted); }
+
+  .time-cell {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .time-bar {
+    height: 6px;
+    border-radius: 3px;
+    min-width: 2px;
+    transition: width 0.3s;
+  }
+
+  .time-value { min-width: 50px; }
+
+  .charts {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 1.5rem;
+    max-width: 1400px;
+    margin: 0 auto 2rem;
+  }
+
+  .chart-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+  }
+
+  .chart-card h3 {
+    font-size: 0.875rem;
+    font-weight: 600;
+    margin-bottom: 1.25rem;
+  }
+
+  .bar-chart {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .bar-row {
+    display: grid;
+    grid-template-columns: 100px 1fr 50px;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.8rem;
+  }
+
+  .bar-label {
+    text-align: right;
+    color: var(--muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .bar-track {
+    height: 20px;
+    background: rgba(99,102,241,0.08);
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.5s ease;
+  }
+
+  .bar-val {
+    font-variant-numeric: tabular-nums;
+    font-weight: 500;
+    font-size: 0.75rem;
+  }
+
+  .scatter-container {
+    position: relative;
+    height: 260px;
+    border-left: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    margin: 0 10px 20px 40px;
+  }
+
+  .scatter-dot {
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    transform: translate(-50%, 50%);
+    cursor: pointer;
+    transition: transform 0.2s;
+  }
+
+  .scatter-dot:hover {
+    transform: translate(-50%, 50%) scale(1.5);
+    z-index: 10;
+  }
+
+  .scatter-dot .tooltip {
+    display: none;
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #2a2d3a;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    white-space: nowrap;
+    margin-bottom: 6px;
+  }
+
+  .scatter-dot:hover .tooltip { display: block; }
+
+  .axis-label {
+    position: absolute;
+    font-size: 0.65rem;
+    color: var(--muted);
+  }
+
+  .x-label { bottom: -18px; transform: translateX(-50%); }
+  .y-label { left: -36px; transform: translateY(50%); }
+
+  @media (max-width: 768px) {
+    body { padding: 1rem; }
+    .charts { grid-template-columns: 1fr; }
+    table { font-size: 0.8rem; }
+    td, th { padding: 0.5rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Developer Metrics Dashboard</h1>
+  <p>Team performance overview &middot; Last {{ period }}</p>
+</div>
+
+<div class="summary">
+  <div class="summary-card">
+    <div class="label">Team Health</div>
+    <div class="value">{{ summary.team_health }}</div>
+    <div class="sub">Average score</div>
+  </div>
+  <div class="summary-card">
+    <div class="label">Total PRs</div>
+    <div class="value">{{ summary.total_prs }}</div>
+    <div class="sub">Across all devs</div>
+  </div>
+  <div class="summary-card">
+    <div class="label">Avg Cycle Time</div>
+    <div class="value">{{ summary.avg_cycle }}h</div>
+    <div class="sub">Excl. inactive</div>
+  </div>
+  <div class="summary-card">
+    <div class="label">Avg Pickup Time</div>
+    <div class="value">{{ summary.avg_pickup }}h</div>
+    <div class="sub">Excl. inactive</div>
+  </div>
+  <div class="summary-card">
+    <div class="label">Reviews Given</div>
+    <div class="value">{{ summary.total_reviews }}</div>
+    <div class="sub">Total team reviews</div>
+  </div>
+  <div class="summary-card">
+    <div class="label">AI Adoption</div>
+    <div class="value">{{ summary.ai_adoption }}%</div>
+    <div class="sub">Average AI usage</div>
+  </div>
+</div>
+
+<div class="table-wrapper">
+  <div class="table-header">
+    <h2>Individual Metrics</h2>
+    <span class="sort-hint">Click column headers to sort</span>
+  </div>
+  <table>
+    <thead id="thead"></thead>
+    <tbody id="tbody"></tbody>
+  </table>
+</div>
+
+<div class="charts">
+  <div class="chart-card">
+    <h3>Cycle Time by Developer (hours)</h3>
+    <div class="bar-chart" id="cycleChart"></div>
+  </div>
+  <div class="chart-card">
+    <h3>PR Volume &amp; Size</h3>
+    <div class="bar-chart" id="prChart"></div>
+  </div>
+  <div class="chart-card">
+    <h3>Review Engagement</h3>
+    <div class="bar-chart" id="reviewChart"></div>
+  </div>
+  <div class="chart-card">
+    <h3>AI-Assisted PRs</h3>
+    <div class="bar-chart" id="aiChart"></div>
+  </div>
+</div>
+
+<script>
+const devs = [
+{%- for dev in devs %}
+  { name:"{{ dev.name }}", health:{{ dev.health }}, pickup:{{ "%.2f"|format(dev.pickup) }}, review:{{ "%.2f"|format(dev.review) }}, cycle:{{ "%.2f"|format(dev.cycle) }}, size:{{ dev.size }}, prs:{{ dev.prs }}, prsWeek:{{ "%.1f"|format(dev.prs_week) }}, reviews:{{ dev.reviews }}, ai:{{ dev.ai }} }{% if not loop.last %},
+{% endif %}{% endfor %}
+];
+
+const active = devs.filter(d => d.health > 0);
+const totalPRs = devs.reduce((s,d) => s + d.prs, 0);
+const avgCycle = (active.reduce((s,d) => s + d.cycle, 0) / active.length).toFixed(1);
+const avgPickup = (active.reduce((s,d) => s + d.pickup, 0) / active.length).toFixed(1);
+const totalReviews = devs.reduce((s,d) => s + d.reviews, 0);
+const avgHealth = Math.round(devs.reduce((s,d) => s + d.health, 0) / devs.length);
+const avgAI = Math.round(devs.reduce((s,d) => s + d.ai, 0) / devs.length);
+
+function timeBar(v, max, color) {
+  if (v > 100) return `<div class="time-cell"><span class="time-value" style="color:var(--red)">${v.toFixed(1)}</span></div>`;
+  const pct = Math.min((v / max) * 100, 100);
+  return `<div class="time-cell"><div class="time-bar" style="width:${pct}%;background:${color}"></div><span class="time-value">${v.toFixed(2)}</span></div>`;
+}
+
+const columns = [
+  { key:"name", label:"Developer", fmt: v => v },
+  { key:"health", label:"Health", fmt: v => {
+    const cls = v >= 100 ? "health-100" : v >= 90 ? "health-90" : v >= 85 ? "health-85" : "health-0";
+    return `<span class="health-badge ${cls}"><span class="health-dot"></span>${v}</span>`;
+  }},
+  { key:"pickup", label:"Pickup (h)", fmt: (v,d) => timeBar(v, 20, "#6366f1") },
+  { key:"review", label:"Review (h)", fmt: (v,d) => timeBar(v, 15, "#3b82f6") },
+  { key:"cycle", label:"Cycle (h)", fmt: (v,d) => timeBar(v, 25, "#06b6d4") },
+  { key:"size", label:"PR Size", fmt: v => v.toLocaleString() },
+  { key:"prs", label:"Total PRs", fmt: v => v },
+  { key:"prsWeek", label:"PRs/Week", fmt: v => v.toFixed(1) },
+  { key:"reviews", label:"Reviews", fmt: v => v },
+  { key:"ai", label:"AI %", fmt: v => {
+    const cls = v >= 60 ? "ai-high" : v > 0 ? "ai-med" : "ai-low";
+    return `<span class="ai-badge ${cls}">${v}%</span>`;
+  }},
+];
+
+let sortKey = "health";
+let sortAsc = false;
+
+function renderTable() {
+  const sorted = [...devs].sort((a,b) => {
+    const av = a[sortKey], bv = b[sortKey];
+    if (typeof av === "string") return sortAsc ? av.localeCompare(bv) : bv.localeCompare(av);
+    return sortAsc ? av - bv : bv - av;
+  });
+
+  document.getElementById("thead").innerHTML = "<tr>" + columns.map(c =>
+    `<th class="${sortKey === c.key ? 'sorted' : ''}" data-key="${c.key}">
+      ${c.label}<span class="arrow">${sortKey === c.key ? (sortAsc ? '▲' : '▼') : ''}</span>
+    </th>`
+  ).join("") + "</tr>";
+
+  document.getElementById("tbody").innerHTML = sorted.map(d =>
+    "<tr>" + columns.map(c => {
+      if (c.key === "name") {
+        const initials = d.name.slice(0,2).toUpperCase();
+        return `<td><div class="dev-name"><span class="avatar">${initials}</span>${d.name}</div></td>`;
+      }
+      return `<td>${c.fmt(d[c.key], d)}</td>`;
+    }).join("") + "</tr>"
+  ).join("");
+
+  document.querySelectorAll("th").forEach(th => {
+    th.addEventListener("click", () => {
+      const key = th.dataset.key;
+      if (sortKey === key) sortAsc = !sortAsc;
+      else { sortKey = key; sortAsc = key === "name"; }
+      renderTable();
+    });
+  });
+}
+
+renderTable();
+
+function barChart(containerId, data, color, maxOverride) {
+  const max = maxOverride || Math.max(...data.map(d => d.value));
+  const container = document.getElementById(containerId);
+  container.innerHTML = data.map(d => {
+    const pct = max > 0 ? (d.value / max * 100) : 0;
+    return `<div class="bar-row">
+      <span class="bar-label">${d.label}</span>
+      <div class="bar-track"><div class="bar-fill" style="width:${Math.min(pct,100)}%;background:${color}"></div></div>
+      <span class="bar-val">${d.display || d.value}</span>
+    </div>`;
+  }).join("");
+}
+
+const cycleData = [...devs]
+  .filter(d => d.health > 0)
+  .sort((a,b) => b.cycle - a.cycle)
+  .map(d => ({ label: d.name, value: d.cycle, display: d.cycle.toFixed(1) + "h" }));
+barChart("cycleChart", cycleData, "#06b6d4");
+
+const prData = [...devs]
+  .sort((a,b) => b.prs - a.prs)
+  .map(d => ({ label: d.name, value: d.prs, display: `${d.prs} PRs (avg ${d.size} lines)` }));
+barChart("prChart", prData, "#6366f1");
+
+const reviewData = [...devs]
+  .sort((a,b) => b.reviews - a.reviews)
+  .map(d => ({ label: d.name, value: d.reviews, display: d.reviews.toString() }));
+barChart("reviewChart", reviewData, "#f59e0b");
+
+const aiData = [...devs]
+  .filter(d => d.ai > 0)
+  .sort((a,b) => b.ai - a.ai)
+  .map(d => ({ label: d.name, value: d.ai, display: d.ai + "%" }));
+barChart("aiChart", aiData, "#a78bfa", 100);
+</script>
+
+</body>
+</html>
