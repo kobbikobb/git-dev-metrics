@@ -4,6 +4,7 @@ from ..dev_printer import ConsoleDevPrinter, FileDevPrinter
 from ..label_printer import ConsoleLabelPrinter, FileLabelPrinter
 from ..repo_printer import ConsoleRepoPrinter, FileRepoPrinter
 from .base import Printer
+from .html_printer import FileHtmlPrinter
 from .stale_printer import ConsoleStalePRPrinter, FileStalePRPrinter
 from .utils import get_default_output_path
 
@@ -45,12 +46,14 @@ class CompositePrinter(Printer):
     def __init__(self, output_path: Path | None = None) -> None:
         self._console_printer = ConsolePrinter()
         self._file_printer = FilePrinter(output_path)
+        self._html_printer = FileHtmlPrinter(output_path or get_default_output_path())
         self._console_stale_printer = ConsoleStalePRPrinter()
         self._file_stale_printer = FileStalePRPrinter(output_path or get_default_output_path())
 
     def print_combined_metrics(self, metrics: dict, period: str) -> None:
         self._console_printer.print_combined_metrics(metrics, period)
         self._file_printer.print_combined_metrics(metrics, period)
+        self._html_printer.print_combined_metrics(metrics, period)
 
     def print_stale_prs(self, stale_prs: list[dict]) -> None:
         self._console_stale_printer.print_stale_prs(stale_prs)
