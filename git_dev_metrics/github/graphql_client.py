@@ -19,7 +19,6 @@ SPINNER_FRAMES = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇",
 
 GITHUB_GRAPHQL_URL = "https://api.github.com/graphql"
 
-DEFAULT_PAGE_SIZE = 50
 DEFAULT_TIMEOUT = 60
 
 
