@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import cast
 
 from ..models import OpenPullRequest, PullRequest, Repository, Review
 from .graphql_client import execute_paginated_query, get_client
@@ -36,11 +37,14 @@ def _parse_datetime(dt_str: str | None) -> datetime | None:
 
 def _map_repository(repo: dict) -> Repository:
     """Map GraphQL repository response to internal model."""
-    return {
-        "full_name": repo.get("nameWithOwner"),  # type: ignore[return-value]
-        "private": repo.get("isPrivate", False),
-        "last_pushed": _parse_datetime(repo.get("pushedAt")),
-    }
+    return cast(
+        Repository,
+        {
+            "full_name": repo.get("nameWithOwner"),
+            "private": repo.get("isPrivate", False),
+            "last_pushed": _parse_datetime(repo.get("pushedAt")),
+        },
+    )
 
 
 def _map_pull_request(pr: dict) -> PullRequest:
@@ -52,28 +56,34 @@ def _map_pull_request(pr: dict) -> PullRequest:
         committed_at = commit_data.get("committedDate")
         first_commit_date = _parse_datetime(committed_at)
 
-    return {  # type: ignore[return-value]
-        "number": pr.get("number"),
-        "title": pr.get("title"),
-        "created_at": _parse_datetime(pr.get("createdAt")),
-        "merged_at": _parse_datetime(pr.get("mergedAt")),
-        "additions": pr.get("additions", 0),
-        "deletions": pr.get("deletions", 0),
-        "changed_files": pr.get("changedFiles", 0),
-        "user": {"login": _author_login(pr.get("author"))},
-        "first_commit_at": first_commit_date,
-        "body": pr.get("body"),
-        "labels": [label.get("name") for label in pr.get("labels", {}).get("nodes", [])],
-    }
+    return cast(
+        PullRequest,
+        {
+            "number": pr.get("number"),
+            "title": pr.get("title"),
+            "created_at": _parse_datetime(pr.get("createdAt")),
+            "merged_at": _parse_datetime(pr.get("mergedAt")),
+            "additions": pr.get("additions", 0),
+            "deletions": pr.get("deletions", 0),
+            "changed_files": pr.get("changedFiles", 0),
+            "user": {"login": _author_login(pr.get("author"))},
+            "first_commit_at": first_commit_date,
+            "body": pr.get("body"),
+            "labels": [label.get("name") for label in pr.get("labels", {}).get("nodes", [])],
+        },
+    )
 
 
 def _map_review(review: dict) -> Review:
     """Map GraphQL review response to internal model."""
-    return {  # type: ignore[return-value]
-        "user": {"login": _author_login(review.get("author"))},
-        "state": review.get("state"),
-        "submitted_at": _parse_datetime(review.get("submittedAt")),
-    }
+    return cast(
+        Review,
+        {
+            "user": {"login": _author_login(review.get("author"))},
+            "state": review.get("state"),
+            "submitted_at": _parse_datetime(review.get("submittedAt")),
+        },
+    )
 
 
 def fetch_repositories(token: str) -> list[Repository]:
@@ -198,14 +208,17 @@ def fetch_open_prs(token: str, org: str, repo: str) -> list[OpenPullRequest]:
         reviews = pr.get("reviews", {}).get("nodes", [])
         is_approved = any(r.get("state") == "APPROVED" for r in reviews)
         result.append(
-            {
-                "number": number,
-                "title": title,
-                "created_at": pr.get("createdAt"),
-                "merged_at": None,
-                "user": {"login": _author_login(pr.get("author"))},
-                "is_draft": pr.get("isDraft", False),
-                "is_approved": is_approved,
-            }
+            cast(
+                OpenPullRequest,
+                {
+                    "number": number,
+                    "title": title,
+                    "created_at": pr.get("createdAt"),
+                    "merged_at": None,
+                    "user": {"login": _author_login(pr.get("author"))},
+                    "is_draft": pr.get("isDraft", False),
+                    "is_approved": is_approved,
+                },
+            )
         )
     return result
