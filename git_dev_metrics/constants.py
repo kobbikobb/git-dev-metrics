@@ -8,8 +8,3 @@ KNOWN_BOT_LOGINS: set[str] = {
     "pipx[bot]",
     "poetry[bot]",
 }
-
-
-def is_bot(login: str) -> bool:
-    """Check if a user is a known bot."""
-    return login in KNOWN_BOT_LOGINS
