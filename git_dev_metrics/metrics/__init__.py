@@ -1,6 +1,6 @@
 """Metrics"""
 
-from .analyzer import get_combined_metrics, get_pull_request_metrics, get_recent_repositories
+from .analyzer import get_combined_metrics, get_pull_request_metrics
 from .calculator import (
     calculate_cycle_time,
     calculate_pickup_time,
@@ -19,7 +19,6 @@ from .repo_printer import ConsoleRepoPrinter, FileRepoPrinter
 __all__ = [
     "get_pull_request_metrics",
     "get_combined_metrics",
-    "get_recent_repositories",
     "calculate_cycle_time",
     "calculate_pr_size",
     "calculate_pickup_time",

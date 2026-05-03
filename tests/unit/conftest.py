@@ -1,6 +1,11 @@
 from typing import Any
 
+import freezegun
+
 from git_dev_metrics.models import PullRequest
+
+# default ignore list contains "gi" prefix which incorrectly skips git_dev_metrics modules
+freezegun.configure(default_ignore_list=[])
 
 
 def any_pr(**overrides: Any) -> PullRequest:

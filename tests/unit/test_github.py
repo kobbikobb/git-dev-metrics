@@ -10,9 +10,9 @@ from git_dev_metrics.github import (
     fetch_repositories,
     fetch_reviews,
 )
-from git_dev_metrics.github.graphql_client import execute_paginated_query
+from git_dev_metrics.github.graphql_client import execute_paginated_query, get_client
 from git_dev_metrics.github.graphql_queries import REPO_METRICS_QUERY
-from git_dev_metrics.github.graphql_client import get_client
+from git_dev_metrics.utils import TimePeriod
 
 
 class TestFetchRepositories:
@@ -80,9 +80,11 @@ class TestFetchRepositories:
             },
             status=200,
         )
-        since = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
+        period = TimePeriod(
+            since=datetime(2024, 1, 1, tzinfo=UTC), until=datetime(2024, 2, 1, tzinfo=UTC)
+        )
 
-        result = fetch_pull_requests("fake-token", "facebook", "react", since)
+        result = fetch_pull_requests("fake-token", "facebook", "react", period)
 
         assert len(result) == 1
 
@@ -99,9 +101,11 @@ class TestFetchRepositories:
             },
             status=200,
         )
-        since = datetime(2024, 3, 1, 0, 0, 0, tzinfo=UTC)
+        period = TimePeriod(
+            since=datetime(2024, 3, 1, tzinfo=UTC), until=datetime(2024, 4, 1, tzinfo=UTC)
+        )
 
-        result = fetch_pull_requests("fake-token", "facebook", "react", since)
+        result = fetch_pull_requests("fake-token", "facebook", "react", period)
 
         assert len(result) == 0
 
@@ -139,7 +143,13 @@ class TestFetchReviews:
         )
 
         result = fetch_reviews(
-            "fake-token", "facebook", "react", [1], datetime(2024, 1, 1, tzinfo=UTC)
+            "fake-token",
+            "facebook",
+            "react",
+            [1],
+            TimePeriod(
+                since=datetime(2024, 1, 1, tzinfo=UTC), until=datetime(2024, 2, 1, tzinfo=UTC)
+            ),
         )
 
         assert len(result) == 1
@@ -171,7 +181,13 @@ class TestFetchReviews:
         )
 
         result = fetch_reviews(
-            "fake-token", "facebook", "react", [1], datetime(2024, 1, 1, tzinfo=UTC)
+            "fake-token",
+            "facebook",
+            "react",
+            [1],
+            TimePeriod(
+                since=datetime(2024, 1, 1, tzinfo=UTC), until=datetime(2024, 2, 1, tzinfo=UTC)
+            ),
         )
 
         assert 1 in result
@@ -180,7 +196,13 @@ class TestFetchReviews:
     @responses.activate
     def test_should_return_empty_for_empty_pr_list(self):
         result = fetch_reviews(
-            "fake-token", "facebook", "react", [], datetime(2024, 1, 1, tzinfo=UTC)
+            "fake-token",
+            "facebook",
+            "react",
+            [],
+            TimePeriod(
+                since=datetime(2024, 1, 1, tzinfo=UTC), until=datetime(2024, 2, 1, tzinfo=UTC)
+            ),
         )
 
         assert result == {}

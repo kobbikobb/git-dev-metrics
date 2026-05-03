@@ -12,7 +12,7 @@ from ..github import (
     save_last_period,
 )
 from ..metrics import get_combined_metrics
-from ..utils import parse_time_period
+from ..utils import TimePeriod, parse_time_period
 from .output import print_metrics, print_stale_prs, resolve_output_path
 from .prompts import (
     prompt_org_name,
@@ -47,9 +47,13 @@ def _fetch_stale_prs(token: str, selected: list[str]) -> list[dict]:
     return stale_prs
 
 
-def _filter_repos_by_period(repos: list, since) -> list:
-    """Filter repos to only those with recent pushes."""
-    return [repo for repo in repos if repo.get("last_pushed") and repo["last_pushed"] >= since]
+def _filter_repos_by_period(repos: list, period: TimePeriod) -> list:
+    """Filter repos to those pushed within the period."""
+    return [
+        repo
+        for repo in repos
+        if repo.get("last_pushed") and period.since <= repo["last_pushed"] < period.until
+    ]
 
 
 def _get_selected_repos(repos: list[dict], selected_org: str | None, repo: str | None) -> list[str]:
@@ -102,8 +106,7 @@ def run_analyze(
     else:
         repos = fetch_org_repositories(token, selected_org)
 
-    since = parse_time_period(period)
-    repos = _filter_repos_by_period(repos, since)
+    repos = _filter_repos_by_period(repos, parse_time_period(period))
 
     selected = _get_selected_repos(repos, selected_org, repo)
 
