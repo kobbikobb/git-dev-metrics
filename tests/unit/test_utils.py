@@ -16,54 +16,70 @@ class TestParseTimePeriod:
 
     def test_should_return_one_day_ago_for_1d_period(self):
         event_period = "1d"
-        expected = datetime.now(UTC) - timedelta(days=1)
+        expected_start = datetime.now(UTC) - timedelta(days=1)
+        expected_end = datetime.now(UTC)
 
-        result = parse_time_period(event_period)
+        start, end = parse_time_period(event_period)
 
-        assert is_same_date(result, expected)
+        assert is_same_date(start, expected_start)
+        assert is_same_date(end, expected_end)
 
     def test_should_return_seven_days_ago_for_7d_period(self):
         event_period = "7d"
-        expected = datetime.now(UTC) - timedelta(days=7)
+        expected_start = datetime.now(UTC) - timedelta(days=7)
+        expected_end = datetime.now(UTC)
 
-        result = parse_time_period(event_period)
+        start, end = parse_time_period(event_period)
 
-        assert is_same_date(result, expected)
+        assert is_same_date(start, expected_start)
+        assert is_same_date(end, expected_end)
 
     def test_should_return_thirty_days_ago_for_30d_period(self):
         event_period = "30d"
-        expected = datetime.now(UTC) - timedelta(days=30)
+        expected_start = datetime.now(UTC) - timedelta(days=30)
+        expected_end = datetime.now(UTC)
 
-        result = parse_time_period(event_period)
+        start, end = parse_time_period(event_period)
 
-        assert is_same_date(result, expected)
+        assert is_same_date(start, expected_start)
+        assert is_same_date(end, expected_end)
 
     def test_should_return_ninety_days_ago_for_90d_period(self):
         event_period = "90d"
-        expected = datetime.now(UTC) - timedelta(days=90)
+        expected_start = datetime.now(UTC) - timedelta(days=90)
+        expected_end = datetime.now(UTC)
 
-        result = parse_time_period(event_period)
+        start, end = parse_time_period(event_period)
 
-        assert is_same_date(result, expected)
+        assert is_same_date(start, expected_start)
+        assert is_same_date(end, expected_end)
 
     def test_should_return_thirty_days_ago_for_invalid_period(self):
         event_period = "invalid"
-        expected = datetime.now(UTC) - timedelta(days=30)
+        expected_start = datetime.now(UTC) - timedelta(days=30)
+        expected_end = datetime.now(UTC)
 
-        result = parse_time_period(event_period)
+        start, end = parse_time_period(event_period)
 
-        assert is_same_date(result, expected)
+        assert is_same_date(start, expected_start)
+        assert is_same_date(end, expected_end)
 
-    def test_should_return_first_day_of_last_calendar_month_for_1m(self):
+    def test_should_return_last_calendar_month_range_for_1m(self):
         event_period = "1m"
         today = datetime.now(UTC)
         first_of_current = today.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
         last_day_prev_month = first_of_current - timedelta(days=1)
-        expected = last_day_prev_month.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        expected_start = last_day_prev_month.replace(
+            day=1, hour=0, minute=0, second=0, microsecond=0
+        )
+        expected_end = last_day_prev_month.replace(
+            hour=23, minute=59, second=59, microsecond=999999
+        )
 
-        result = parse_time_period(event_period)
+        start, end = parse_time_period(event_period)
 
-        assert is_same_date(result, expected)
+        assert is_same_date(start, expected_start)
+        assert is_same_date(end, expected_end)
 
 
 class TestGetPeriodDisplayName:

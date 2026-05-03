@@ -1,4 +1,3 @@
-import re
 from datetime import datetime
 
 from ..github import fetch_repo_metrics, fetch_repositories
@@ -15,20 +14,6 @@ from .calculator import (
     group_prs_by_devs,
     group_prs_by_labels,
 )
-
-
-def _parse_period_days(event_period: str) -> int:
-    """Extract number of days from period string like '30d', '2w', '1m'."""
-    match = re.match(r"(\d+)(d|w|m)", event_period)
-    if not match:
-        return 30
-    value, unit = match.groups()
-    days = int(value)
-    if unit == "w":
-        days *= 7
-    elif unit == "m":
-        days *= 30
-    return days
 
 
 def _build_dev_metrics(devs: dict, reviews: dict, period_days: int, reviews_given: dict) -> dict:
@@ -50,9 +35,9 @@ def _build_dev_metrics(devs: dict, reviews: dict, period_days: int, reviews_give
 
 def get_pull_request_metrics(token: str, org: str, repo: str, event_period: str = "30d") -> dict:
     """Get development metrics for a repository over a specified time period."""
-    since = parse_time_period(event_period)
-    period_days = _parse_period_days(event_period)
-    prs, reviews = fetch_repo_metrics(token, org, repo, since)
+    start, end = parse_time_period(event_period)
+    period_days = (end - start).days
+    prs, reviews = fetch_repo_metrics(token, org, repo, start, end)
 
     devs = group_prs_by_devs(prs)
     reviews_given = calculate_reviews_given(reviews, devs)
@@ -104,8 +89,8 @@ def _build_label_metrics(labels: dict, reviews: dict, period_days: int) -> dict:
 
 def get_combined_metrics(token: str, selected_repos: list[str], event_period: str = "30d") -> dict:
     """Get combined metrics for multiple repositories."""
-    since = parse_time_period(event_period)
-    period_days = _parse_period_days(event_period)
+    start, end = parse_time_period(event_period)
+    period_days = (end - start).days
 
     all_prs: list = []
     all_reviews: dict = {}
@@ -113,7 +98,7 @@ def get_combined_metrics(token: str, selected_repos: list[str], event_period: st
 
     for full_name in selected_repos:
         org, name = full_name.split("/", 1)
-        prs, reviews = fetch_repo_metrics(token, org, name, since)
+        prs, reviews = fetch_repo_metrics(token, org, name, start, end)
 
         all_prs.extend(prs)
         all_reviews.update(reviews)

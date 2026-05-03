@@ -11,7 +11,6 @@ from git_dev_metrics.metrics import (
     calculate_throughput,
     median,
 )
-from git_dev_metrics.metrics.analyzer import _parse_period_days
 from git_dev_metrics.models import OpenPullRequest
 
 from .conftest import any_pr
@@ -273,19 +272,6 @@ class TestCalculatePrsPerWeek:
         assert result == 1.0
 
 
-class TestParsePeriodDays:
-    """Test cases for _parse_period_days function."""
-
-    def test_should_parse_days(self):
-        assert _parse_period_days("30d") == 30
-
-    def test_should_parse_weeks(self):
-        assert _parse_period_days("2w") == 14
-
-    def test_should_parse_months(self):
-        assert _parse_period_days("1m") == 30
-
-
 class TestCalculateReviewsGiven:
     """Test cases for calculate_reviews_given function."""
 
@@ -392,9 +378,6 @@ class TestGroupPrsByLabels:
         prs = [any_pr(labels=[])]
         result = group_prs_by_labels(prs)
         assert "(no label)" in result
-
-    def test_should_default_to_30_for_invalid(self):
-        assert _parse_period_days("invalid") == 30
 
 
 class TestGetStalePrs:

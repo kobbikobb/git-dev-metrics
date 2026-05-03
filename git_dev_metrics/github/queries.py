@@ -13,10 +13,18 @@ from .graphql_queries import (
 PAGE_SIZE = 50
 
 
-def _build_merged_prs_query(org: str, repo: str, since: datetime) -> str:
-    """Build GitHub search query for PRs merged after a date."""
-    since_str = since.strftime("%Y-%m-%d")
-    return f"repo:{org}/{repo} is:pr merged:>={since_str}"
+def _build_merged_prs_query(
+    org: str,
+    repo: str,
+    start: datetime,
+    end: datetime | None = None,
+) -> str:
+    """Build GitHub search query for PRs merged in range."""
+    start_str = start.strftime("%Y-%m-%d")
+    if end:
+        end_str = end.strftime("%Y-%m-%d")
+        return f"repo:{org}/{repo} is:pr merged:{start_str}..{end_str}"
+    return f"repo:{org}/{repo} is:pr merged:>={start_str}"
 
 
 def _author_login(author: dict | None) -> str:
@@ -99,10 +107,16 @@ def fetch_org_repositories(token: str, org: str) -> list[Repository]:
     return [_map_repository(repo) for repo in repos if repo.get("nameWithOwner")]
 
 
-def fetch_pull_requests(token: str, org: str, repo: str, since: datetime) -> list[PullRequest]:
-    """Fetch merged pull requests since a given date using search API."""
+def fetch_pull_requests(
+    token: str,
+    org: str,
+    repo: str,
+    start: datetime,
+    end: datetime | None = None,
+) -> list[PullRequest]:
+    """Fetch merged pull requests in a date range using search API."""
     client = get_client(token)
-    search_query = _build_merged_prs_query(org, repo, since)
+    search_query = _build_merged_prs_query(org, repo, start, end)
     prs = execute_paginated_query(
         client,
         SEARCH_MERGED_PRS_QUERY,
@@ -115,7 +129,12 @@ def fetch_pull_requests(token: str, org: str, repo: str, since: datetime) -> lis
 
 
 def fetch_reviews(
-    token: str, org: str, repo: str, pr_numbers: list[int], since: datetime
+    token: str,
+    org: str,
+    repo: str,
+    pr_numbers: list[int],
+    start: datetime,
+    end: datetime | None = None,
 ) -> dict[int, list[Review]]:
     """Fetch all reviews for the given PRs."""
     if not pr_numbers:
@@ -142,15 +161,21 @@ def fetch_reviews(
     return reviews_by_pr
 
 
-def _filter_and_map_pr(prs: list[dict], since: datetime) -> tuple[list, dict]:
-    """Filter PRs by date and map to internal format."""
+def _filter_and_map_pr(
+    prs: list[dict],
+    start: datetime,
+    end: datetime | None = None,
+) -> tuple[list, dict]:
+    """Filter PRs by date range and map to internal format."""
     mapped_prs = []
     reviews_by_pr = {}
 
     for pr in prs:
         mapped = _map_pull_request(pr)
         merged_at = mapped["merged_at"]
-        if merged_at is None or merged_at < since:  # type: ignore[reportOperatorIssue]
+        if merged_at is None or merged_at < start:  # type: ignore[reportOperatorIssue]
+            continue
+        if end and merged_at > end:
             continue
 
         pr_number = mapped["number"]
@@ -162,11 +187,15 @@ def _filter_and_map_pr(prs: list[dict], since: datetime) -> tuple[list, dict]:
 
 
 def fetch_repo_metrics(
-    token: str, org: str, repo: str, since: datetime
+    token: str,
+    org: str,
+    repo: str,
+    start: datetime,
+    end: datetime | None = None,
 ) -> tuple[list[PullRequest], dict[int, list[Review]]]:
-    """Fetch PRs and reviews in a single query using search API."""
+    """Fetch PRs and reviews in a date range using search API."""
     client = get_client(token)
-    search_query = _build_merged_prs_query(org, repo, since)
+    search_query = _build_merged_prs_query(org, repo, start, end)
     prs = execute_paginated_query(
         client,
         SEARCH_MERGED_PRS_QUERY,
@@ -175,7 +204,7 @@ def fetch_repo_metrics(
         repo_id=f"{org}/{repo}",
     )
 
-    return _filter_and_map_pr(prs, since)
+    return _filter_and_map_pr(prs, start, end)
 
 
 def fetch_open_prs(token: str, org: str, repo: str) -> list[OpenPullRequest]:
