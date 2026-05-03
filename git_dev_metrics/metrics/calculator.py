@@ -75,7 +75,8 @@ def calculate_cycle_time(prs: list[PullRequest]) -> float:
             start_time = first_commit
 
         hours = (merged - start_time).total_seconds() / 3600
-        cycle_times.append(hours)
+        if hours >= 0:
+            cycle_times.append(hours)
 
     return round(median(cycle_times), 2)
 
@@ -115,7 +116,8 @@ def calculate_pickup_time(prs: list[PullRequest], reviews: dict) -> float:
 
         if first_approval:
             hours = (first_approval - created).total_seconds() / 3600
-            pickup_times.append(hours)
+            if hours >= 0:
+                pickup_times.append(hours)
 
     if not pickup_times:
         return 0.0
@@ -141,7 +143,8 @@ def calculate_review_time(prs: list[PullRequest], reviews: dict) -> float:
 
         if merged and first_approval:
             hours = (merged - first_approval).total_seconds() / 3600
-            review_times.append(hours)
+            if hours >= 0:
+                review_times.append(hours)
 
     if not review_times:
         return 0.0
