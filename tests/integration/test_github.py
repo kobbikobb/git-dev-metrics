@@ -4,6 +4,7 @@ from git_dev_metrics.github import (
     fetch_pull_requests,
     fetch_repositories,
 )
+from git_dev_metrics.utils import TimePeriod
 
 
 def test_fetch_repositories(
@@ -24,14 +25,16 @@ def test_fetch_pull_requests(
     github_token: str,
     my_vcr,
 ) -> None:
-    since = datetime(2024, 1, 1, tzinfo=UTC)
+    period = TimePeriod(
+        since=datetime(2024, 1, 1, tzinfo=UTC), until=datetime(2024, 2, 1, tzinfo=UTC)
+    )
 
     with my_vcr.use_cassette("fetch_pull_requests.yaml"):
         prs = fetch_pull_requests(
             github_token,
             org="your-org",
             repo="your-repo",
-            since=since,
+            period=period,
         )
 
     assert isinstance(prs, list)

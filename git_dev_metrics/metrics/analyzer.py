@@ -1,7 +1,6 @@
 import re
-from datetime import datetime
 
-from ..github import fetch_repo_metrics, fetch_repositories
+from ..github import fetch_repo_metrics
 from ..utils import parse_time_period
 from .calculator import (
     calculate_ai_percentage,
@@ -50,9 +49,9 @@ def _build_dev_metrics(devs: dict, reviews: dict, period_days: int, reviews_give
 
 def get_pull_request_metrics(token: str, org: str, repo: str, event_period: str = "30d") -> dict:
     """Get development metrics for a repository over a specified time period."""
-    since = parse_time_period(event_period)
+    period = parse_time_period(event_period)
     period_days = _parse_period_days(event_period)
-    prs, reviews = fetch_repo_metrics(token, org, repo, since)
+    prs, reviews = fetch_repo_metrics(token, org, repo, period)
 
     devs = group_prs_by_devs(prs)
     reviews_given = calculate_reviews_given(reviews, devs)
@@ -104,7 +103,7 @@ def _build_label_metrics(labels: dict, reviews: dict, period_days: int) -> dict:
 
 def get_combined_metrics(token: str, selected_repos: list[str], event_period: str = "30d") -> dict:
     """Get combined metrics for multiple repositories."""
-    since = parse_time_period(event_period)
+    period = parse_time_period(event_period)
     period_days = _parse_period_days(event_period)
 
     all_prs: list = []
@@ -113,7 +112,7 @@ def get_combined_metrics(token: str, selected_repos: list[str], event_period: st
 
     for full_name in selected_repos:
         org, name = full_name.split("/", 1)
-        prs, reviews = fetch_repo_metrics(token, org, name, since)
+        prs, reviews = fetch_repo_metrics(token, org, name, period)
 
         all_prs.extend(prs)
         all_reviews.update(reviews)
@@ -131,17 +130,3 @@ def get_combined_metrics(token: str, selected_repos: list[str], event_period: st
         "dev_metrics": combined_dev_metrics,
         "label_metrics": combined_label_metrics,
     }
-
-
-def get_recent_repositories(token: str) -> dict:
-    """Get all repositories accessible with the given GitHub token."""
-    repos = fetch_repositories(token)
-
-    recent_repos = [
-        r
-        for r in repos
-        if r["last_pushed"] is not None and r["last_pushed"] >= parse_time_period("180d")
-    ]
-    recent_repos.sort(key=lambda r: r["last_pushed"] or datetime.min, reverse=True)
-
-    return {repo["full_name"]: "Private" if repo["private"] else "Public" for repo in recent_repos}

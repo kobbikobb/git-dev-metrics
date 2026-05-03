@@ -2,54 +2,85 @@
 
 from datetime import UTC, datetime, timedelta
 
-from git_dev_metrics.utils import parse_time_period
+import pytest
+from freezegun import freeze_time
 
-# freezgun was considered, brings in more complexity then it's worth
+from git_dev_metrics.utils import TimePeriod, get_last_month, parse_time_period
 
 
-def is_same_date(date1: datetime, date2: datetime):
-    return abs((date1 - date2).total_seconds()) < 1
+class TestTimePeriod:
+    def test_should_construct_when_since_before_until(self):
+        since = datetime(2024, 1, 1, tzinfo=UTC)
+        until = datetime(2024, 2, 1, tzinfo=UTC)
+
+        period = TimePeriod(since=since, until=until)
+
+        assert period.since == since
+        assert period.until == until
+
+    def test_should_raise_when_since_after_until(self):
+        since = datetime(2024, 2, 1, tzinfo=UTC)
+        until = datetime(2024, 1, 1, tzinfo=UTC)
+
+        with pytest.raises(ValueError, match="since must be before until"):
+            TimePeriod(since=since, until=until)
 
 
 class TestParseTimePeriod:
-    """Test cases for parse_time_period function."""
+    @freeze_time("2024-06-15 12:00:00")
+    def test_should_return_one_day_period_for_1d(self):
+        result = parse_time_period("1d")
 
-    def test_should_return_one_day_ago_for_1d_period(self):
-        event_period = "1d"
-        expected = datetime.now(UTC) - timedelta(days=1)
+        assert result.until == datetime(2024, 6, 15, 12, 0, 0, tzinfo=UTC)
+        assert result.since == datetime(2024, 6, 15, 12, 0, 0, tzinfo=UTC) - timedelta(days=1)
 
-        result = parse_time_period(event_period)
+    @freeze_time("2024-06-15 12:00:00")
+    def test_should_return_seven_day_period_for_7d(self):
+        result = parse_time_period("7d")
 
-        assert is_same_date(result, expected)
+        assert result.until - result.since == timedelta(days=7)
 
-    def test_should_return_seven_days_ago_for_7d_period(self):
-        event_period = "7d"
-        expected = datetime.now(UTC) - timedelta(days=7)
+    @freeze_time("2024-06-15 12:00:00")
+    def test_should_return_thirty_day_period_for_30d(self):
+        result = parse_time_period("30d")
 
-        result = parse_time_period(event_period)
+        assert result.until - result.since == timedelta(days=30)
 
-        assert is_same_date(result, expected)
+    @freeze_time("2024-06-15 12:00:00")
+    def test_should_return_ninety_day_period_for_90d(self):
+        result = parse_time_period("90d")
 
-    def test_should_return_thirty_days_ago_for_30d_period(self):
-        event_period = "30d"
-        expected = datetime.now(UTC) - timedelta(days=30)
+        assert result.until - result.since == timedelta(days=90)
 
-        result = parse_time_period(event_period)
+    @freeze_time("2024-06-15 12:00:00")
+    def test_should_return_one_eighty_day_period_for_180d(self):
+        result = parse_time_period("180d")
 
-        assert is_same_date(result, expected)
+        assert result.until - result.since == timedelta(days=180)
 
-    def test_should_return_ninety_days_ago_for_90d_period(self):
-        event_period = "90d"
-        expected = datetime.now(UTC) - timedelta(days=90)
+    def test_should_raise_for_invalid_period(self):
+        with pytest.raises(ValueError, match="Unsupported period"):
+            parse_time_period("invalid")
 
-        result = parse_time_period(event_period)
 
-        assert is_same_date(result, expected)
+class TestGetLastMonth:
+    @freeze_time("2024-06-15 12:00:00")
+    def test_should_return_last_month_range_mid_month(self):
+        result = get_last_month()
 
-    def test_should_return_thirty_days_ago_for_invalid_period(self):
-        event_period = "invalid"
-        expected = datetime.now(UTC) - timedelta(days=30)
+        assert result.since == datetime(2024, 5, 1, tzinfo=UTC)
+        assert result.until == datetime(2024, 6, 1, tzinfo=UTC)
 
-        result = parse_time_period(event_period)
+    @freeze_time("2024-01-15 12:00:00")
+    def test_should_cross_year_boundary(self):
+        result = get_last_month()
 
-        assert is_same_date(result, expected)
+        assert result.since == datetime(2023, 12, 1, tzinfo=UTC)
+        assert result.until == datetime(2024, 1, 1, tzinfo=UTC)
+
+    @freeze_time("2024-03-01 00:00:00")
+    def test_should_handle_first_of_month(self):
+        result = get_last_month()
+
+        assert result.since == datetime(2024, 2, 1, tzinfo=UTC)
+        assert result.until == datetime(2024, 3, 1, tzinfo=UTC)

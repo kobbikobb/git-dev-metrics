@@ -424,8 +424,7 @@ class TestGetStalePrs:
                 },
             ],
         )
-        clock = lambda: now
-        result = get_stale_prs(prs, "myrepo", clock)
+        result = get_stale_prs(prs, "myrepo", lambda: now)
         assert result == []
 
     def test_should_identify_stale_prs(self):
@@ -446,8 +445,7 @@ class TestGetStalePrs:
                 },
             ],
         )
-        clock = lambda: now
-        result = get_stale_prs(prs, "myrepo", clock)
+        result = get_stale_prs(prs, "myrepo", lambda: now)
         assert len(result) == 1
         assert result[0]["number"] == 1
         assert result[0]["author"] == "alice"
@@ -479,8 +477,7 @@ class TestGetStalePrs:
                 },
             ],
         )
-        clock = lambda: now
-        result = get_stale_prs(prs, "myrepo", clock)
+        result = get_stale_prs(prs, "myrepo", lambda: now)
         assert result[0]["number"] == 2  # Older first
         assert result[1]["number"] == 1
         assert result[0]["repo"] == "myrepo"

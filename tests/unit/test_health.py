@@ -1,6 +1,4 @@
-import pytest
-
-from git_dev_metrics.metrics.health import calculate_health_score, calc_benchmark_penalty
+from git_dev_metrics.metrics.health import calc_benchmark_penalty, calculate_health_score
 
 
 class TestCalcBenchmarkPenalty:
