@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 def analyze(
     org: str | None = typer.Option(None, "--org", help="GitHub organization or user"),
     repo: str | None = typer.Option(None, "--repo", help="GitHub repository name"),
-    period: str | None = typer.Option(None, "--period", help="Time period (e.g., 30d, 7d, 90d)"),
+    period: str | None = typer.Option(None, "--period", help="Time period (e.g., 30d, 1m, 90d)"),
     output: Path | None = typer.Option(None, help="Output file path"),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Show full error tracebacks"),
     log_level: str = typer.Option(

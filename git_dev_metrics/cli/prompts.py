@@ -5,6 +5,7 @@ PERIOD_OPTIONS = [
     ("Last 7 days", "7d"),
     ("Last 14 days", "14d"),
     ("Last 30 days", "30d"),
+    ("Last month", "1m"),
     ("Last 60 days", "60d"),
     ("Last 90 days", "90d"),
 ]

@@ -53,3 +53,11 @@ class TestParseTimePeriod:
         result = parse_time_period(event_period)
 
         assert is_same_date(result, expected)
+
+    def test_should_return_thirty_days_ago_for_1m_period(self):
+        event_period = "1m"
+        expected = datetime.now(UTC) - timedelta(days=30)
+
+        result = parse_time_period(event_period)
+
+        assert is_same_date(result, expected)

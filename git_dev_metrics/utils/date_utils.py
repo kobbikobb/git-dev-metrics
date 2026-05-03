@@ -1,8 +1,19 @@
+import re
 from datetime import UTC, datetime, timedelta
 
 
 def parse_time_period(event_period: str) -> datetime:
     """Parse time period string and return the start date."""
+    match = re.match(r"(\d+)(d|w|m)", event_period)
+    if match:
+        value, unit = match.groups()
+        days = int(value)
+        if unit == "w":
+            days *= 7
+        elif unit == "m":
+            days *= 30
+        return datetime.now(UTC) - timedelta(days=days)
+
     period_map = {
         "1d": timedelta(days=1),
         "7d": timedelta(days=7),
