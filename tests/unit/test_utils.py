@@ -2,7 +2,7 @@
 
 from datetime import UTC, datetime, timedelta
 
-from git_dev_metrics.utils import parse_time_period
+from git_dev_metrics.utils import get_period_display_name, parse_time_period
 
 # freezgun was considered, brings in more complexity then it's worth
 
@@ -54,10 +54,32 @@ class TestParseTimePeriod:
 
         assert is_same_date(result, expected)
 
-    def test_should_return_thirty_days_ago_for_1m_period(self):
+    def test_should_return_first_day_of_last_calendar_month_for_1m(self):
         event_period = "1m"
-        expected = datetime.now(UTC) - timedelta(days=30)
+        today = datetime.now(UTC)
+        first_of_current = today.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        last_day_prev_month = first_of_current - timedelta(days=1)
+        expected = last_day_prev_month.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
 
         result = parse_time_period(event_period)
 
         assert is_same_date(result, expected)
+
+
+class TestGetPeriodDisplayName:
+    """Test cases for get_period_display_name function."""
+
+    def test_should_return_month_name_for_1m(self):
+        today = datetime.now(UTC)
+        first_of_current = today.replace(day=1)
+        last_day_prev = first_of_current - timedelta(days=1)
+        expected = last_day_prev.strftime("%B %Y")
+
+        result = get_period_display_name("1m")
+
+        assert result == expected
+
+    def test_should_return_last_period_for_other_values(self):
+        assert get_period_display_name("30d") == "Last 30d"
+        assert get_period_display_name("7d") == "Last 7d"
+        assert get_period_display_name("90d") == "Last 90d"

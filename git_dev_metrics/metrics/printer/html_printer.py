@@ -2,6 +2,7 @@ from pathlib import Path
 
 from jinja2 import Environment, PackageLoader, select_autoescape
 
+from ...utils.date_utils import get_period_display_name
 from ..health import calculate_health_score
 from .base import Printer
 
@@ -102,7 +103,7 @@ class FileHtmlPrinter(Printer):
         devs = _build_devs_list(metrics)
         summary = _build_summary(devs, metrics)
 
-        html = template.render(devs=devs, summary=summary, period=period)
+        html = template.render(devs=devs, summary=summary, period=get_period_display_name(period))
 
         html_path = self._output_path.with_suffix(".html")
         html_path.parent.mkdir(parents=True, exist_ok=True)

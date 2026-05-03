@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from ..utils.date_utils import get_period_display_name
 from .health import calculate_health_score, format_health, get_health_color
 
 REPO_COLUMNS = [
@@ -24,7 +25,7 @@ class ConsoleRepoPrinter:
         from rich.table import Table
 
         console = Console()
-        table = Table(title=f"Repo Metrics (last {period})")
+        table = Table(title=f"Repo Metrics ({get_period_display_name(period)})")
         for col in REPO_COLUMNS:
             table.add_column(col)
 
@@ -71,7 +72,7 @@ class FileRepoPrinter:
             "|------|--------|------------------|-----------------|----------------|"
             "---------|-----------|-----------|---------------|-----|"
         )
-        lines = [f"# Repo Metrics (last {period})", "", header, separator]
+        lines = [f"# Repo Metrics ({get_period_display_name(period)})", "", header, separator]
 
         all_repo_metrics = list(metrics["repo_metrics"].values())
 
