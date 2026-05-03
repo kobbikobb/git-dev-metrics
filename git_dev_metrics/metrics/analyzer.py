@@ -145,3 +145,41 @@ def get_recent_repositories(token: str) -> dict:
     recent_repos.sort(key=lambda r: r["last_pushed"] or datetime.min, reverse=True)
 
     return {repo["full_name"]: "Private" if repo["private"] else "Public" for repo in recent_repos}
+
+
+def build_summary_stats(metrics: dict) -> dict:
+    """Build summary statistics for CLI/markdown output.
+
+    Returns dict with team_health, total_prs, avg_pr_size, avg_cycle,
+    avg_pickup, total_reviews, ai_adoption.
+    """
+    dev_metrics = metrics.get("dev_metrics", {})
+    repo_metrics = metrics.get("repo_metrics", {})
+
+    all_dev_values = list(dev_metrics.values())
+    active = [d for d in all_dev_values if d.get("health", 0) > 0]
+
+    total_prs = int(sum(m.get("pr_count", 0) for m in repo_metrics.values()))
+    total_reviews = int(sum(m.get("reviews_given", 0) for m in repo_metrics.values()))
+
+    return {
+        "team_health": round(sum(d.get("health", 0) for d in all_dev_values) / len(all_dev_values))
+        if all_dev_values
+        else 0,
+        "total_prs": total_prs,
+        "avg_pr_size": round(sum(d.get("pr_size", 0) for d in active) / len(active), 1)
+        if active
+        else 0,
+        "avg_cycle": round(sum(d.get("cycle_time", 0) for d in active) / len(active), 1)
+        if active
+        else 0,
+        "avg_pickup": round(sum(d.get("pickup_time", 0) for d in active) / len(active), 1)
+        if active
+        else 0,
+        "total_reviews": total_reviews,
+        "ai_adoption": round(
+            sum(m.get("ai_percentage", 0) for m in repo_metrics.values()) / len(repo_metrics)
+        )
+        if repo_metrics
+        else 0,
+    }

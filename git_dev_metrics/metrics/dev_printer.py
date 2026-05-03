@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from ..metrics.analyzer import build_summary_stats
 from .health import calculate_health_score, format_health, get_health_color
 
 DEV_COLUMNS = [
@@ -24,6 +25,16 @@ class ConsoleDevPrinter:
         from rich.table import Table
 
         console = Console()
+
+        stats = build_summary_stats(metrics)
+        console.print(f"\n[bold]Team Health:[/bold] {stats['team_health']}")
+        console.print(f"[bold]Total PRs:[/bold] {stats['total_prs']} across all devs")
+        console.print(f"[bold]Avg PR Size:[/bold] {stats['avg_pr_size']} lines")
+        console.print(f"[bold]Avg Cycle Time:[/bold] {stats['avg_cycle']}h (excl. inactive)")
+        console.print(f"[bold]Avg Pickup Time:[/bold] {stats['avg_pickup']}h (excl. inactive)")
+        console.print(f"[bold]Reviews Given:[/bold] {stats['total_reviews']} total team reviews")
+        console.print(f"[bold]AI Adoption:[/bold] {stats['ai_adoption']}% average")
+
         table = Table(title="Developer Metrics (combined)")
         for col in DEV_COLUMNS:
             table.add_column(col)

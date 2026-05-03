@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from ..metrics.analyzer import build_summary_stats
 from ..utils.date_utils import get_period_display_name
 from .health import calculate_health_score, format_health, get_health_color
 
@@ -25,6 +26,16 @@ class ConsoleRepoPrinter:
         from rich.table import Table
 
         console = Console()
+
+        stats = build_summary_stats(metrics)
+        console.print(f"\n[bold]Team Health:[/bold] {stats['team_health']}")
+        console.print(f"[bold]Total PRs:[/bold] {stats['total_prs']} across all repos")
+        console.print(f"[bold]Avg PR Size:[/bold] {stats['avg_pr_size']} lines")
+        console.print(f"[bold]Avg Cycle Time:[/bold] {stats['avg_cycle']}h (excl. inactive)")
+        console.print(f"[bold]Avg Pickup Time:[/bold] {stats['avg_pickup']}h (excl. inactive)")
+        console.print(f"[bold]Reviews Given:[/bold] {stats['total_reviews']} total team reviews")
+        console.print(f"[bold]AI Adoption:[/bold] {stats['ai_adoption']}% average")
+
         table = Table(title=f"Repo Metrics ({get_period_display_name(period)})")
         for col in REPO_COLUMNS:
             table.add_column(col)
@@ -64,6 +75,22 @@ class FileRepoPrinter:
         self.output_path = output_path
 
     def print_combined_metrics(self, metrics: dict, period: str) -> None:
+        stats = build_summary_stats(metrics)
+        lines = [
+            f"# Repo Metrics ({get_period_display_name(period)})",
+            "",
+            "## Summary",
+            "",
+            f"**Team Health:** {stats['team_health']} average score",
+            f"**Total PRs:** {stats['total_prs']} across all repos",
+            f"**Avg PR Size:** {stats['avg_pr_size']} lines",
+            f"**Avg Cycle Time:** {stats['avg_cycle']}h (excl. inactive)",
+            f"**Avg Pickup Time:** {stats['avg_pickup']}h (excl. inactive)",
+            f"**Reviews Given:** {stats['total_reviews']} total team reviews",
+            f"**AI Adoption:** {stats['ai_adoption']}% average",
+            "",
+        ]
+
         header = (
             "| Repo | Health | Pickup Time (h) | Review Time (h) | Cycle Time (h) | "
             "PR Size | Total PRs | PRs/Week | Reviews Given | AI |"
@@ -72,7 +99,7 @@ class FileRepoPrinter:
             "|------|--------|------------------|-----------------|----------------|"
             "---------|-----------|-----------|---------------|-----|"
         )
-        lines = [f"# Repo Metrics ({get_period_display_name(period)})", "", header, separator]
+        lines.extend([header, separator])
 
         all_repo_metrics = list(metrics["repo_metrics"].values())
 
