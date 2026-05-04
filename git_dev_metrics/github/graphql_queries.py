@@ -79,6 +79,7 @@ REPO_METRICS_QUERY = gql.gql(
                         nodes {
                             commit {
                                 committedDate
+                                message
                             }
                         }
                     }
@@ -163,6 +164,7 @@ SEARCH_MERGED_PRS_QUERY = gql.gql(
                         nodes {
                             commit {
                                 committedDate
+                                message
                             }
                         }
                     }

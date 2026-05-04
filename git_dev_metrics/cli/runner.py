@@ -50,11 +50,9 @@ def _fetch_stale_prs(token: str, selected: list[str]) -> list[dict]:
 
 
 def _filter_repos_by_period(repos: list, period: TimePeriod) -> list:
-    """Filter repos to those pushed within the period."""
+    """Filter repos to those with any push activity since the period started."""
     return [
-        repo
-        for repo in repos
-        if repo.get("last_pushed") and period.since <= repo["last_pushed"] < period.until
+        repo for repo in repos if repo.get("last_pushed") and repo["last_pushed"] >= period.since
     ]
 
 

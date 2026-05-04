@@ -515,46 +515,69 @@ class TestGetStalePrs:
 class TestIsAiCoauthored:
     """Test cases for is_ai_coauthored function."""
 
-    def test_should_return_false_for_none(self):
+    def test_should_return_false_for_none_body(self):
         from git_dev_metrics.metrics.calculator import is_ai_coauthored
 
-        result = is_ai_coauthored(None)
+        result = is_ai_coauthored(any_pr(body=None))
         assert result is False
 
-    def test_should_return_false_for_empty_string(self):
+    def test_should_return_false_for_empty_body(self):
         from git_dev_metrics.metrics.calculator import is_ai_coauthored
 
-        result = is_ai_coauthored("")
+        result = is_ai_coauthored(any_pr(body=""))
         assert result is False
 
-    def test_should_return_false_for_no_coauthored_by(self):
+    def test_should_return_false_for_no_trailer(self):
         from git_dev_metrics.metrics.calculator import is_ai_coauthored
 
-        result = is_ai_coauthored("This is a regular PR description")
+        result = is_ai_coauthored(any_pr(body="This is a regular PR description"))
         assert result is False
-
-    def test_should_return_true_for_coauthored_by(self):
-        from git_dev_metrics.metrics.calculator import is_ai_coauthored
-
-        result = is_ai_coauthored("Co-Authored-By: GitHub <noreply@github.com>")
-        assert result is True
 
     def test_should_return_true_for_coauthored_by_in_body(self):
         from git_dev_metrics.metrics.calculator import is_ai_coauthored
 
-        body = """
-        This PR was created with help from an AI assistant.
-
-        Co-Authored-By: Copilot <copilot@github.com>
-        """
-        result = is_ai_coauthored(body)
+        result = is_ai_coauthored(any_pr(body="Co-Authored-By: GitHub <noreply@github.com>"))
         assert result is True
 
     def test_should_be_case_insensitive(self):
         from git_dev_metrics.metrics.calculator import is_ai_coauthored
 
-        result = is_ai_coauthored("co-authored-by: someone@example.com")
+        result = is_ai_coauthored(any_pr(body="co-authored-by: someone@example.com"))
         assert result is True
+
+    def test_should_return_true_when_trailer_only_in_commit_message(self):
+        from git_dev_metrics.metrics.calculator import is_ai_coauthored
+
+        pr = any_pr(
+            body=None,
+            commit_messages=["Fix bug\n\nCo-Authored-By: Claude <noreply@anthropic.com>"],
+        )
+        result = is_ai_coauthored(pr)
+        assert result is True
+
+    def test_should_return_true_when_trailer_in_one_of_many_commits(self):
+        from git_dev_metrics.metrics.calculator import is_ai_coauthored
+
+        pr = any_pr(
+            body="Regular PR",
+            commit_messages=[
+                "Refactor module",
+                "Add tests",
+                "Polish\n\n🤖 Generated with Claude Code",
+            ],
+        )
+        result = is_ai_coauthored(pr)
+        assert result is True
+
+    def test_should_return_false_when_no_trailer_in_body_or_commits(self):
+        from git_dev_metrics.metrics.calculator import is_ai_coauthored
+
+        pr = any_pr(
+            body="Regular PR",
+            commit_messages=["Refactor module", "Add tests"],
+        )
+        result = is_ai_coauthored(pr)
+        assert result is False
 
 
 class TestCalculateAiPercentage:
@@ -609,3 +632,13 @@ class TestCalculateAiPercentage:
         ]
         result = calculate_ai_percentage(prs)
         assert result == 33.3
+
+    def test_should_count_pr_with_trailer_only_in_commit_message(self):
+        from git_dev_metrics.metrics.calculator import calculate_ai_percentage
+
+        prs = [
+            any_pr(body="Regular PR", commit_messages=["Co-Authored-By: Claude"]),
+            any_pr(body="Regular PR", commit_messages=["Refactor"]),
+        ]
+        result = calculate_ai_percentage(prs)
+        assert result == 50.0

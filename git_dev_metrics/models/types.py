@@ -30,6 +30,7 @@ class PullRequest(PullRequestInfo):
     first_commit_at: datetime | None
     body: str | None
     labels: list[str]
+    commit_messages: list[str]
 
 
 class Review(TypedDict):

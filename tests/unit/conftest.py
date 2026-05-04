@@ -25,5 +25,6 @@ def any_pr(**overrides: Any) -> PullRequest:
         "first_commit_at": None,
         "body": None,
         "labels": [],
+        "commit_messages": [],
     }
     return {**defaults, **overrides}  # type: ignore[return-value]
