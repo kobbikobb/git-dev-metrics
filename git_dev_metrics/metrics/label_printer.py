@@ -28,12 +28,15 @@ def _sort_by_health(metrics: dict) -> list[tuple]:
 class ConsoleLabelPrinter:
     """Print label metrics to console using Rich."""
 
-    def print_combined_metrics(self, metrics: dict, period: str) -> None:
+    def print_combined_metrics(
+        self, metrics: dict, period: str, date_range: str | None = None
+    ) -> None:
         from rich.console import Console
         from rich.table import Table
 
         console = Console()
-        table = Table(title="Label Metrics (combined)")
+        title = f"Label Metrics ({date_range})" if date_range else "Label Metrics (combined)"
+        table = Table(title=title)
         for col in LABEL_COLUMNS:
             table.add_column(col)
 
@@ -59,7 +62,9 @@ class FileLabelPrinter:
     def __init__(self, output_path: Path):
         self.output_path = output_path
 
-    def print_combined_metrics(self, metrics: dict, period: str) -> None:
+    def print_combined_metrics(
+        self, metrics: dict, period: str, date_range: str | None = None
+    ) -> None:
         header = (
             "| Label | Health | Pickup Time (h) | Review Time (h) | Cycle Time (h) | "
             "PR Size | Total PRs | PRs/Week |"
@@ -68,7 +73,8 @@ class FileLabelPrinter:
             "|------|--------|------------------|-----------------|----------------|"
             "---------|-----------|-----------|"
         )
-        lines = ["", "# Label Metrics (combined)", "", header, separator]
+        title = f"# Label Metrics ({date_range})" if date_range else "# Label Metrics (combined)"
+        lines = ["", title, "", header, separator]
 
         for label, m, health in _sort_by_health(metrics["label_metrics"]):
             if health >= 80:

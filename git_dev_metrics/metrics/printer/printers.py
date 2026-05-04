@@ -17,7 +17,7 @@ class ConsolePrinter(Printer):
         self._dev_printer = ConsoleDevPrinter()
         self._label_printer = ConsoleLabelPrinter()
 
-    def print_combined_metrics(self, metrics: dict, period: str) -> None:
+    def print_combined_metrics(self, metrics: dict, period: str, date_range: str) -> None:
         from rich.console import Console
         from rich.panel import Panel
 
@@ -32,16 +32,16 @@ class ConsolePrinter(Printer):
             f"Avg Pickup: {summary['avg_pickup']}h  |  "
             f"Reviews: {summary['total_reviews']}  |  "
             f"AI: {summary['ai_adoption']}%",
-            title=f"Summary (last {period})",
+            title=f"Summary ({date_range})",
             expand=False,
         )
         console.print(panel)
         console.print()
 
-        self._repo_printer.print_combined_metrics(metrics, period)
-        self._dev_printer.print_combined_metrics(metrics, period)
+        self._repo_printer.print_combined_metrics(metrics, period, date_range)
+        self._dev_printer.print_combined_metrics(metrics, period, date_range)
         if "label_metrics" in metrics and metrics["label_metrics"]:
-            self._label_printer.print_combined_metrics(metrics, period)
+            self._label_printer.print_combined_metrics(metrics, period, date_range)
 
 
 class FilePrinter(Printer):
@@ -53,10 +53,10 @@ class FilePrinter(Printer):
         self._dev_printer = FileDevPrinter(path)
         self._label_printer = FileLabelPrinter(path)
 
-    def print_combined_metrics(self, metrics: dict, period: str) -> None:
+    def print_combined_metrics(self, metrics: dict, period: str, date_range: str) -> None:
         summary = build_summary(metrics)
         lines = [
-            f"# Summary (last {period})",
+            f"# Summary ({date_range})",
             "",
             f"- **Team Health:** {summary['team_health']}",
             f"- **Total PRs:** {summary['total_prs']}",
@@ -68,10 +68,10 @@ class FilePrinter(Printer):
             "",
         ]
         self._write(lines)
-        self._repo_printer.print_combined_metrics(metrics, period)
-        self._dev_printer.print_combined_metrics(metrics, period)
+        self._repo_printer.print_combined_metrics(metrics, period, date_range)
+        self._dev_printer.print_combined_metrics(metrics, period, date_range)
         if "label_metrics" in metrics and metrics["label_metrics"]:
-            self._label_printer.print_combined_metrics(metrics, period)
+            self._label_printer.print_combined_metrics(metrics, period, date_range)
 
     def _write(self, lines: list[str]) -> None:
 
@@ -91,19 +91,24 @@ class CompositePrinter(Printer):
         self._console_stale_printer = ConsoleStalePRPrinter()
         self._file_stale_printer = FileStalePRPrinter(output_path or get_default_output_path())
 
-    def print_combined_metrics(self, metrics: dict, period: str) -> None:
-        self._console_printer.print_combined_metrics(metrics, period)
-        self._file_printer.print_combined_metrics(metrics, period)
-        self._html_printer.print_combined_metrics(metrics, period)
+    def print_combined_metrics(self, metrics: dict, period: str, date_range: str) -> None:
+        self._console_printer.print_combined_metrics(metrics, period, date_range)
+        self._file_printer.print_combined_metrics(metrics, period, date_range)
+        self._html_printer.print_combined_metrics(metrics, period, date_range)
 
     def print_stale_prs(self, stale_prs: list[dict]) -> None:
         self._console_stale_printer.print_stale_prs(stale_prs)
         self._file_stale_printer.print_stale_prs(stale_prs)
 
 
-def print_combined_metrics(metrics: dict, period: str, output_path: Path | None = None) -> None:
+def print_combined_metrics(
+    metrics: dict,
+    period: str,
+    output_path: Path | None = None,
+    date_range: str | None = None,
+) -> None:
     """Print metrics to console and file."""
-    CompositePrinter(output_path).print_combined_metrics(metrics, period)
+    CompositePrinter(output_path).print_combined_metrics(metrics, period, date_range or period)
 
 
 def print_stale_prs(stale_prs: list[dict], output_path: Path | None = None) -> None:
