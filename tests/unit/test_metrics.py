@@ -780,3 +780,38 @@ class TestCalculateAiPercentage:
         ]
         result = calculate_ai_percentage(prs)
         assert result == 50.0
+
+
+class TestBuildSummary:
+    """Test cases for build_summary AI/lines weighting."""
+
+    def test_should_weight_ai_adoption_by_pr_count(self):
+        from git_dev_metrics.metrics.printer.html_printer import build_summary
+
+        metrics = {
+            "dev_metrics": {},
+            "repo_metrics": {
+                "big": {"pr_count": 100, "ai_percentage": 80, "avg_lines_per_pr": 100},
+                "small": {"pr_count": 1, "ai_percentage": 0, "avg_lines_per_pr": 0},
+            },
+        }
+        result = build_summary(metrics)
+
+        assert result["ai_adoption"] == 79
+        assert result["avg_lines_per_pr"] == 99.0
+
+    def test_should_ignore_zero_pr_repos_in_weighting(self):
+        from git_dev_metrics.metrics.printer.html_printer import build_summary
+
+        metrics = {
+            "dev_metrics": {},
+            "repo_metrics": {
+                "active": {"pr_count": 10, "ai_percentage": 50, "avg_lines_per_pr": 200},
+                "empty1": {"pr_count": 0, "ai_percentage": 0, "avg_lines_per_pr": 0},
+                "empty2": {"pr_count": 0, "ai_percentage": 0, "avg_lines_per_pr": 0},
+            },
+        }
+        result = build_summary(metrics)
+
+        assert result["ai_adoption"] == 50
+        assert result["avg_lines_per_pr"] == 200.0
