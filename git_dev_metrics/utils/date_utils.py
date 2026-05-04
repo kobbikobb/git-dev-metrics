@@ -25,6 +25,8 @@ def get_last_month() -> TimePeriod:
 
 def parse_time_period(event_period: str) -> TimePeriod:
     """Parse time period string and return a TimePeriod."""
+    if event_period == "last_month":
+        return get_last_month()
     period_map = {
         "1d": timedelta(days=1),
         "7d": timedelta(days=7),
@@ -37,3 +39,11 @@ def parse_time_period(event_period: str) -> TimePeriod:
 
     now = datetime.now(UTC)
     return TimePeriod(since=now - period_map[event_period], until=now)
+
+
+def get_period_display_name(period: str) -> str:
+    """Convert period string to human-readable display name."""
+    if period == "last_month":
+        last_month = get_last_month()
+        return last_month.since.strftime("%B %Y")
+    return f"Last {period}"
