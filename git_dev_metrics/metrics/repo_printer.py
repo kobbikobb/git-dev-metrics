@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from .health import calculate_health_score, format_health, get_health_color
+from .health import calculate_health_score
 
 REPO_COLUMNS = [
     "Repo",
@@ -15,50 +15,6 @@ REPO_COLUMNS = [
     "Reviews Given",
     "AI",
 ]
-
-
-class ConsoleRepoPrinter:
-    """Print repo metrics to console using Rich."""
-
-    def print_combined_metrics(
-        self, metrics: dict, period: str, date_range: str | None = None
-    ) -> None:
-        from rich.console import Console
-        from rich.table import Table
-
-        console = Console()
-        title = f"Repo Metrics ({date_range})" if date_range else (f"Repo Metrics (last {period})")
-        table = Table(title=title)
-        for col in REPO_COLUMNS:
-            table.add_column(col)
-
-        all_repo_metrics = list(metrics["repo_metrics"].values())
-
-        sorted_repos = []
-        for repo_name, m in metrics["repo_metrics"].items():
-            health = calculate_health_score(m, all_repo_metrics)
-            sorted_repos.append((repo_name, m, health))
-
-        sorted_repos.sort(key=lambda x: x[2], reverse=True)
-
-        for repo_name, m, health in sorted_repos:
-            color = get_health_color(health)
-            table.add_row(
-                repo_name,
-                f"[{color}]{format_health(health)}[/{color}]",
-                f"{m['pickup_time']:.2f}",
-                f"{m['review_time']:.2f}",
-                f"{m['cycle_time']:.2f}",
-                f"{m['pr_size']:.1f}",
-                f"{m.get('avg_lines_per_pr', 0):.1f}",
-                f"{m['pr_count']:.0f}",
-                f"{m['prs_per_week']:.2f}",
-                f"{m['reviews_given']:.0f}",
-                f"{m['ai_percentage']:.0f}%",
-            )
-
-        console.print("\n")
-        console.print(table)
 
 
 class FileRepoPrinter:

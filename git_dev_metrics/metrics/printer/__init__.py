@@ -6,7 +6,7 @@ from .printers import (
     print_combined_metrics,
     print_stale_prs,
 )
-from .stale_printer import ConsoleStalePRPrinter, FileStalePRPrinter
+from .stale_printer import FileStalePRPrinter
 from .utils import get_default_output_path
 
 __all__ = [
@@ -16,7 +16,6 @@ __all__ = [
     "CompositePrinter",
     "print_combined_metrics",
     "print_stale_prs",
-    "ConsoleStalePRPrinter",
     "FileStalePRPrinter",
     "get_default_output_path",
 ]

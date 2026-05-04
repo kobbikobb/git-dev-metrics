@@ -1,11 +1,10 @@
 from pathlib import Path
 
 from ..dev_printer import ConsoleDevPrinter, FileDevPrinter
-from ..label_printer import ConsoleLabelPrinter, FileLabelPrinter
-from ..repo_printer import ConsoleRepoPrinter, FileRepoPrinter
+from ..repo_printer import FileRepoPrinter
 from .base import Printer
 from .html_printer import FileHtmlPrinter, build_summary
-from .stale_printer import ConsoleStalePRPrinter, FileStalePRPrinter
+from .stale_printer import FileStalePRPrinter
 from .utils import get_default_output_path
 
 
@@ -13,9 +12,7 @@ class ConsolePrinter(Printer):
     """Print metrics to console."""
 
     def __init__(self) -> None:
-        self._repo_printer = ConsoleRepoPrinter()
         self._dev_printer = ConsoleDevPrinter()
-        self._label_printer = ConsoleLabelPrinter()
 
     def print_combined_metrics(self, metrics: dict, period: str, date_range: str) -> None:
         from rich.console import Console
@@ -38,10 +35,7 @@ class ConsolePrinter(Printer):
         console.print(panel)
         console.print()
 
-        self._repo_printer.print_combined_metrics(metrics, period, date_range)
         self._dev_printer.print_combined_metrics(metrics, period, date_range)
-        if "label_metrics" in metrics and metrics["label_metrics"]:
-            self._label_printer.print_combined_metrics(metrics, period, date_range)
 
 
 class FilePrinter(Printer):
@@ -51,7 +45,6 @@ class FilePrinter(Printer):
         path = output_path or get_default_output_path()
         self._repo_printer = FileRepoPrinter(path)
         self._dev_printer = FileDevPrinter(path)
-        self._label_printer = FileLabelPrinter(path)
 
     def print_combined_metrics(self, metrics: dict, period: str, date_range: str) -> None:
         summary = build_summary(metrics)
@@ -70,8 +63,6 @@ class FilePrinter(Printer):
         self._write(lines)
         self._repo_printer.print_combined_metrics(metrics, period, date_range)
         self._dev_printer.print_combined_metrics(metrics, period, date_range)
-        if "label_metrics" in metrics and metrics["label_metrics"]:
-            self._label_printer.print_combined_metrics(metrics, period, date_range)
 
     def _write(self, lines: list[str]) -> None:
 
@@ -88,7 +79,6 @@ class CompositePrinter(Printer):
         self._console_printer = ConsolePrinter()
         self._file_printer = FilePrinter(output_path)
         self._html_printer = FileHtmlPrinter(output_path or get_default_output_path())
-        self._console_stale_printer = ConsoleStalePRPrinter()
         self._file_stale_printer = FileStalePRPrinter(output_path or get_default_output_path())
 
     def print_combined_metrics(self, metrics: dict, period: str, date_range: str) -> None:
@@ -97,7 +87,6 @@ class CompositePrinter(Printer):
         self._html_printer.print_combined_metrics(metrics, period, date_range)
 
     def print_stale_prs(self, stale_prs: list[dict]) -> None:
-        self._console_stale_printer.print_stale_prs(stale_prs)
         self._file_stale_printer.print_stale_prs(stale_prs)
 
 

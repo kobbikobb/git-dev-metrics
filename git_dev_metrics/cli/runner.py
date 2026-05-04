@@ -33,17 +33,21 @@ class AnalysisError(Exception):
 
 def _fetch_stale_prs(token: str, selected: list[str]) -> list[dict]:
     """Fetch stale PRs from all selected repositories."""
+    from rich.console import Console
+
     from ..github import fetch_open_prs as _fetch_open_prs
     from ..metrics.calculator import get_stale_prs
 
+    console = Console()
     stale_prs = []
-    for full_repo in selected:
-        org, repo_name = full_repo.split("/")
-        try:
-            open_prs = _fetch_open_prs(token, org, repo_name)
-            stale_prs.extend(get_stale_prs(open_prs, full_repo))
-        except GitHubError as e:
-            logger.warning("Could not fetch stale PRs for %s: %s", full_repo, e)
+    with console.status("[bold blue]Scanning open PRs for stale ones...[/bold blue]"):
+        for full_repo in selected:
+            org, repo_name = full_repo.split("/")
+            try:
+                open_prs = _fetch_open_prs(token, org, repo_name, quiet=True)
+                stale_prs.extend(get_stale_prs(open_prs, full_repo))
+            except GitHubError as e:
+                logger.warning("Could not fetch stale PRs for %s: %s", full_repo, e)
 
     stale_prs.sort(key=lambda x: x["age_hours"], reverse=True)
     return stale_prs

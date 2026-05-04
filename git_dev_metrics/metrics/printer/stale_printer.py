@@ -20,54 +20,7 @@ def _check_mark(value: bool) -> str:
     return "✓" if value else "✗"
 
 
-TITLE_CONSOLE_LENGTH = 30
 TITLE_FILE_LENGTH = 35
-
-
-class ConsoleStalePRPrinter:
-    """Print stale PRs to console using Rich."""
-
-    def print_stale_prs(self, stale_prs: list[dict]) -> None:
-        from rich.console import Console
-        from rich.table import Table
-
-        if not stale_prs:
-            return
-
-        console = Console()
-        total, avg_age = _calculate_summary(stale_prs)
-        display_prs = stale_prs[:MAX_STALE_PRS_DISPLAY]
-
-        console.print("\n")
-        if total > MAX_STALE_PRS_DISPLAY:
-            console.print(
-                f"[bold]Stale PRs: {total} (showing {MAX_STALE_PRS_DISPLAY}) | Avg Age: "
-                f"{avg_age:.1f} days[/bold]\n"
-            )
-        else:
-            console.print(f"[bold]Stale PRs: {total} | Avg Age: {avg_age:.1f} days[/bold]\n")
-
-        table = Table(title="Stale PRs (> 7 days)")
-        table.add_column("PR", style="cyan")
-        table.add_column("Title", style="white")
-        table.add_column("Repo", style="dim")
-        table.add_column("Author", style="magenta")
-        table.add_column("Draft", style="cyan", justify="center")
-        table.add_column("Approved", style="green", justify="center")
-        table.add_column("Age (d)", style="yellow", justify="right")
-
-        for pr in display_prs:
-            table.add_row(
-                f"[link={pr['url']}]#{pr['number']}[/link]",
-                _truncate(pr["title"], TITLE_CONSOLE_LENGTH),
-                pr.get("repo", ""),
-                pr["author"],
-                _check_mark(pr.get("is_draft", False)),
-                _check_mark(pr.get("is_approved", False)),
-                f"{pr['age_days']:.1f}",
-            )
-
-        console.print(table)
 
 
 class FileStalePRPrinter:

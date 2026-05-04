@@ -125,6 +125,7 @@ def execute_paginated_query(
     page_size: int | None = None,
     stop_if: Callable[[dict[str, Any]], bool] | None = None,
     repo_id: str | None = None,
+    quiet: bool = False,
 ) -> list[dict[str, Any]]:
     """Execute a paginated GraphQL query and return all results."""
     if repo_id is None:
@@ -138,25 +139,59 @@ def execute_paginated_query(
     effective_page_size = page_size if page_size is not None else requested_first
     variables_copy["first"] = effective_page_size
     cursor = None
+
+    if quiet:
+        return _paginate_quiet(client, query, variables_copy, path, stop_if, all_nodes, cursor)
+
+    return _paginate_with_progress(
+        client, query, variables_copy, path, stop_if, all_nodes, cursor, repo_id
+    )
+
+
+def _paginate_quiet(
+    client: Client,
+    query: GraphQLRequest,
+    variables_copy: dict[str, Any],
+    path: str,
+    stop_if: Callable[[dict[str, Any]], bool] | None,
+    all_nodes: list[dict[str, Any]],
+    cursor: str | None,
+) -> list[dict[str, Any]]:
+    while True:
+        nodes, cursor = _fetch_page(client, query, variables_copy, cursor, path)
+        for node in nodes:
+            if stop_if and stop_if(node):
+                all_nodes.append(node)
+                return all_nodes
+            all_nodes.append(node)
+        if not cursor:
+            return all_nodes
+
+
+def _paginate_with_progress(
+    client: Client,
+    query: GraphQLRequest,
+    variables_copy: dict[str, Any],
+    path: str,
+    stop_if: Callable[[dict[str, Any]], bool] | None,
+    all_nodes: list[dict[str, Any]],
+    cursor: str | None,
+    repo_id: str,
+) -> list[dict[str, Any]]:
     page_num = 0
-
     spinner_idx = 0
-
     with Live(console=console, transient=True, refresh_per_second=10) as live:
         live.update(f"[bold blue]{SPINNER_FRAMES[0]}[/bold blue] {repo_id}...")
-
         while True:
             start = time.perf_counter()
             nodes, cursor = _fetch_page(client, query, variables_copy, cursor, path)
             elapsed = time.perf_counter() - start
-
             page_num += 1
             spinner_idx = (spinner_idx + 1) % len(SPINNER_FRAMES)
             live.update(
                 f"[bold blue]{SPINNER_FRAMES[spinner_idx]}[/bold blue] "
                 f"{repo_id} p{page_num} ({len(all_nodes)} total, {elapsed:.1f}s)"
             )
-
             for node in nodes:
                 if stop_if and stop_if(node):
                     all_nodes.append(node)

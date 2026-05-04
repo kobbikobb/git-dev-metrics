@@ -165,19 +165,6 @@ def group_prs_by_devs(prs: list[PullRequest]) -> dict[str, list[PullRequest]]:
     return devs
 
 
-def group_prs_by_labels(prs: list[PullRequest]) -> dict[str, list[PullRequest]]:
-    """Group PRs by label. A PR appears in each of its label groups."""
-    labels: dict[str, list[PullRequest]] = defaultdict(list)
-    for pr in prs:
-        pr_labels = pr.get("labels", [])
-        if not pr_labels:
-            labels["(no label)"].append(pr)
-        else:
-            for label in pr_labels:
-                labels[label].append(pr)
-    return labels
-
-
 def calculate_reviews_given(prs: list[PullRequest]) -> dict[str, int]:
     """Count PRs reviewed by each developer. One per PR, excludes self-reviews and bots."""
     reviewer_counts: dict[str, int] = {}
