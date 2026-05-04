@@ -4,7 +4,7 @@ from ..dev_printer import ConsoleDevPrinter, FileDevPrinter
 from ..label_printer import ConsoleLabelPrinter, FileLabelPrinter
 from ..repo_printer import ConsoleRepoPrinter, FileRepoPrinter
 from .base import Printer
-from .html_printer import FileHtmlPrinter
+from .html_printer import FileHtmlPrinter, build_summary
 from .stale_printer import ConsoleStalePRPrinter, FileStalePRPrinter
 from .utils import get_default_output_path
 
@@ -18,6 +18,25 @@ class ConsolePrinter(Printer):
         self._label_printer = ConsoleLabelPrinter()
 
     def print_combined_metrics(self, metrics: dict, period: str) -> None:
+        from rich.console import Console
+        from rich.panel import Panel
+
+        console = Console()
+
+        summary = build_summary(metrics)
+        panel = Panel(
+            f"Team Health: {summary['team_health']}  |  "
+            f"Total PRs: {summary['total_prs']}  |  "
+            f"Avg Cycle: {summary['avg_cycle']}h  |  "
+            f"Avg Pickup: {summary['avg_pickup']}h  |  "
+            f"Reviews: {summary['total_reviews']}  |  "
+            f"AI: {summary['ai_adoption']}%",
+            title=f"Summary (last {period})",
+            expand=False,
+        )
+        console.print(panel)
+        console.print()
+
         self._repo_printer.print_combined_metrics(metrics, period)
         self._dev_printer.print_combined_metrics(metrics, period)
         if "label_metrics" in metrics and metrics["label_metrics"]:
@@ -34,10 +53,30 @@ class FilePrinter(Printer):
         self._label_printer = FileLabelPrinter(path)
 
     def print_combined_metrics(self, metrics: dict, period: str) -> None:
+        summary = build_summary(metrics)
+        lines = [
+            f"# Summary (last {period})",
+            "",
+            f"- **Team Health:** {summary['team_health']}",
+            f"- **Total PRs:** {summary['total_prs']}",
+            f"- **Avg Cycle Time:** {summary['avg_cycle']}h",
+            f"- **Avg Pickup Time:** {summary['avg_pickup']}h",
+            f"- **Total Reviews:** {summary['total_reviews']}",
+            f"- **AI Adoption:** {summary['ai_adoption']}%",
+            "",
+        ]
+        self._write(lines)
         self._repo_printer.print_combined_metrics(metrics, period)
         self._dev_printer.print_combined_metrics(metrics, period)
         if "label_metrics" in metrics and metrics["label_metrics"]:
             self._label_printer.print_combined_metrics(metrics, period)
+
+    def _write(self, lines: list[str]) -> None:
+
+        output_path = get_default_output_path()
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(output_path, "a") as f:
+            f.write("\n".join(lines))
 
 
 class CompositePrinter(Printer):
