@@ -57,7 +57,7 @@ def build_summary(metrics: dict) -> dict:
 
     Returns:
         Dict with team_health, total_prs, avg_cycle, avg_pickup,
-        total_reviews, ai_adoption.
+        total_reviews, ai_adoption, avg_lines_per_pr.
     """
     all_dev_metrics = list(metrics.get("dev_metrics", {}).values())
     active = [d for d in all_dev_metrics if d.get("health", 0) > 0]
@@ -77,6 +77,11 @@ def build_summary(metrics: dict) -> dict:
         "total_reviews": total_reviews,
         "ai_adoption": round(
             sum(m.get("ai_percentage", 0) for m in repo_metrics.values()) / len(repo_metrics)
+        )
+        if repo_metrics
+        else 0,
+        "avg_lines_per_pr": round(
+            sum(m.get("avg_lines_per_pr", 0) for m in repo_metrics.values()) / len(repo_metrics), 1
         )
         if repo_metrics
         else 0,

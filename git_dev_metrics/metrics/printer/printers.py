@@ -27,6 +27,7 @@ class ConsolePrinter(Printer):
         panel = Panel(
             f"Team Health: {summary['team_health']}  |  "
             f"Total PRs: {summary['total_prs']}  |  "
+            f"Avg Lines/PR: {summary['avg_lines_per_pr']}  |  "
             f"Avg Cycle: {summary['avg_cycle']}h  |  "
             f"Avg Pickup: {summary['avg_pickup']}h  |  "
             f"Reviews: {summary['total_reviews']}  |  "
@@ -59,6 +60,7 @@ class FilePrinter(Printer):
             "",
             f"- **Team Health:** {summary['team_health']}",
             f"- **Total PRs:** {summary['total_prs']}",
+            f"- **Avg Lines/PR:** {summary['avg_lines_per_pr']}",
             f"- **Avg Cycle Time:** {summary['avg_cycle']}h",
             f"- **Avg Pickup Time:** {summary['avg_pickup']}h",
             f"- **Total Reviews:** {summary['total_reviews']}",

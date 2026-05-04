@@ -4,6 +4,7 @@ from ..github import fetch_repo_metrics
 from ..utils import parse_time_period
 from .calculator import (
     calculate_ai_percentage,
+    calculate_avg_lines_per_pr,
     calculate_cycle_time,
     calculate_pickup_time,
     calculate_pr_size,
@@ -36,6 +37,7 @@ def _build_dev_metrics(devs: dict, reviews: dict, period_days: int, reviews_give
         dev: {
             "cycle_time": calculate_cycle_time(dev_prs),
             "pr_size": calculate_pr_size(dev_prs),
+            "avg_lines_per_pr": calculate_avg_lines_per_pr(dev_prs),
             "pr_count": calculate_throughput(dev_prs),
             "pickup_time": calculate_pickup_time(dev_prs, reviews),
             "review_time": calculate_review_time(dev_prs, reviews),
@@ -60,6 +62,7 @@ def get_pull_request_metrics(token: str, org: str, repo: str, event_period: str 
     return {
         "cycle_time": calculate_cycle_time(prs),
         "pr_size": calculate_pr_size(prs),
+        "avg_lines_per_pr": calculate_avg_lines_per_pr(prs),
         "pr_count": calculate_throughput(prs),
         "pickup_time": calculate_pickup_time(prs, reviews),
         "review_time": calculate_review_time(prs, reviews),
@@ -77,6 +80,7 @@ def _build_metrics(prs: list, reviews: dict, period_days: int) -> dict:
     return {
         "cycle_time": calculate_cycle_time(prs),
         "pr_size": calculate_pr_size(prs),
+        "avg_lines_per_pr": calculate_avg_lines_per_pr(prs),
         "pr_count": calculate_throughput(prs),
         "pickup_time": calculate_pickup_time(prs, reviews),
         "review_time": calculate_review_time(prs, reviews),

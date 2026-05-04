@@ -2,6 +2,7 @@
 
 from .analyzer import get_combined_metrics, get_pull_request_metrics
 from .calculator import (
+    calculate_avg_lines_per_pr,
     calculate_cycle_time,
     calculate_pickup_time,
     calculate_pr_size,
@@ -19,6 +20,7 @@ from .repo_printer import ConsoleRepoPrinter, FileRepoPrinter
 __all__ = [
     "get_pull_request_metrics",
     "get_combined_metrics",
+    "calculate_avg_lines_per_pr",
     "calculate_cycle_time",
     "calculate_pr_size",
     "calculate_pickup_time",

@@ -9,6 +9,7 @@ REPO_COLUMNS = [
     "Review Time (h)",
     "Cycle Time (h)",
     "PR Size",
+    "Avg Lines/PR",
     "Total PRs",
     "PRs/Week",
     "Reviews Given",
@@ -46,6 +47,7 @@ class ConsoleRepoPrinter:
                 f"{m['review_time']:.2f}",
                 f"{m['cycle_time']:.2f}",
                 f"{m['pr_size']:.1f}",
+                f"{m.get('avg_lines_per_pr', 0):.1f}",
                 f"{m['pr_count']:.0f}",
                 f"{m['prs_per_week']:.2f}",
                 f"{m['reviews_given']:.0f}",
@@ -65,11 +67,11 @@ class FileRepoPrinter:
     def print_combined_metrics(self, metrics: dict, period: str) -> None:
         header = (
             "| Repo | Health | Pickup Time (h) | Review Time (h) | Cycle Time (h) | "
-            "PR Size | Total PRs | PRs/Week | Reviews Given | AI |"
+            "PR Size | Avg Lines/PR | Total PRs | PRs/Week | Reviews Given | AI |"
         )
         separator = (
             "|------|--------|------------------|-----------------|----------------|"
-            "---------|-----------|-----------|---------------|-----|"
+            "---------|--------------|-----------|-----------|---------------|-----|"
         )
         lines = [f"# Repo Metrics (last {period})", "", header, separator]
 
@@ -92,6 +94,7 @@ class FileRepoPrinter:
             row = (
                 f"| {repo_name} | {emoji}{health} | {m['pickup_time']:.2f} | "
                 f"{m['review_time']:.2f} | {m['cycle_time']:.2f} | {m['pr_size']:.1f} | "
+                f"{m.get('avg_lines_per_pr', 0):.1f} | "
                 f"{m['pr_count']:.0f} | {m['prs_per_week']:.2f} | {m['reviews_given']:.0f} | "
                 f"{m['ai_percentage']:.0f}% |"
             )

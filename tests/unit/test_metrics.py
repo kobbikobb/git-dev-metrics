@@ -3,6 +3,7 @@
 from typing import cast
 
 from git_dev_metrics.metrics import (
+    calculate_avg_lines_per_pr,
     calculate_cycle_time,
     calculate_pickup_time,
     calculate_pr_size,
@@ -149,6 +150,34 @@ class TestCalculatePrSize:
         prs = [any_pr(additions=100, deletions=-50)]
         result = calculate_pr_size(prs)
         assert result == 150
+
+
+class TestCalculateAvgLinesPerPr:
+    """Test cases for calculate_avg_lines_per_pr function."""
+
+    def test_should_return_zero_when_no_prs_provided(self):
+        prs = []
+        result = calculate_avg_lines_per_pr(prs)
+        assert result == 0.0
+
+    def test_should_return_correct_avg_for_single_pr(self):
+        prs = [any_pr(additions=100, deletions=50)]
+        result = calculate_avg_lines_per_pr(prs)
+        assert result == 150.0
+
+    def test_should_return_mean_not_median(self):
+        prs = [
+            any_pr(additions=100, deletions=0),
+            any_pr(additions=200, deletions=0),
+            any_pr(additions=300, deletions=0),
+        ]
+        result = calculate_avg_lines_per_pr(prs)
+        assert result == 200.0
+
+    def test_should_use_absolute_values_for_deletions(self):
+        prs = [any_pr(additions=100, deletions=-50)]
+        result = calculate_avg_lines_per_pr(prs)
+        assert result == 150.0
 
 
 class TestCalculateThroughput:
