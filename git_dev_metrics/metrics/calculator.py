@@ -89,6 +89,14 @@ def calculate_pr_size(prs: list[PullRequest]) -> int:
     return round(median(pr_sizes))
 
 
+def calculate_avg_lines_per_pr(prs: list[PullRequest]) -> float:
+    """Calculate average lines changed per PR."""
+    if not prs:
+        return 0.0
+    total = sum(abs(pr.get("additions", 0)) + abs(pr.get("deletions", 0)) for pr in prs)
+    return round(total / len(prs), 1)
+
+
 def calculate_throughput(prs: list[PullRequest]) -> int:
     """Calculate number of merged PRs."""
     return len(prs)
