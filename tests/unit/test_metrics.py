@@ -198,47 +198,55 @@ class TestCalculatePickupTime:
     """Test cases for calculate_pickup_time function."""
 
     def test_should_return_zero_when_no_prs_provided(self):
-        prs = []
-        result = calculate_pickup_time(prs, {})
+        result = calculate_pickup_time([])
         assert result == 0.0
 
     def test_should_return_zero_when_no_reviews(self):
         prs = [
-            any_pr(number=1, created_at="2024-01-01T00:00:00Z", merged_at="2024-01-02T00:00:00Z")
+            any_pr(
+                number=1,
+                created_at="2024-01-01T00:00:00Z",
+                merged_at="2024-01-02T00:00:00Z",
+                reviews=[],
+            )
         ]
-        result = calculate_pickup_time(prs, {1: []})
+        result = calculate_pickup_time(prs)
         assert result == 0.0
 
     def test_should_return_zero_when_no_approval(self):
         prs = [
-            any_pr(number=1, created_at="2024-01-01T00:00:00Z", merged_at="2024-01-02T00:00:00Z")
+            any_pr(
+                number=1,
+                created_at="2024-01-01T00:00:00Z",
+                merged_at="2024-01-02T00:00:00Z",
+                reviews=[
+                    {
+                        "user": {"login": "reviewer"},
+                        "state": "COMMENTED",
+                        "submitted_at": "2024-01-01T12:00:00Z",
+                    }
+                ],
+            )
         ]
-        reviews = {
-            1: [
-                {
-                    "user": {"login": "reviewer"},
-                    "state": "COMMENTED",
-                    "submitted_at": "2024-01-01T12:00:00Z",
-                }
-            ]
-        }
-        result = calculate_pickup_time(prs, reviews)
+        result = calculate_pickup_time(prs)
         assert result == 0.0
 
     def test_should_calculate_pickup_time(self):
         prs = [
-            any_pr(number=1, created_at="2024-01-01T00:00:00Z", merged_at="2024-01-02T00:00:00Z")
+            any_pr(
+                number=1,
+                created_at="2024-01-01T00:00:00Z",
+                merged_at="2024-01-02T00:00:00Z",
+                reviews=[
+                    {
+                        "user": {"login": "reviewer"},
+                        "state": "APPROVED",
+                        "submitted_at": "2024-01-01T12:00:00Z",
+                    }
+                ],
+            )
         ]
-        reviews = {
-            1: [
-                {
-                    "user": {"login": "reviewer"},
-                    "state": "APPROVED",
-                    "submitted_at": "2024-01-01T12:00:00Z",
-                }
-            ]
-        }
-        result = calculate_pickup_time(prs, reviews)
+        result = calculate_pickup_time(prs)
         assert result == 12.0
 
 
@@ -246,40 +254,43 @@ class TestCalculateReviewTime:
     """Test cases for calculate_review_time function."""
 
     def test_should_return_zero_when_no_prs_provided(self):
-        prs = []
-        result = calculate_review_time(prs, {})
+        result = calculate_review_time([])
         assert result == 0.0
 
     def test_should_return_zero_when_no_approval(self):
         prs = [
-            any_pr(number=1, created_at="2024-01-01T00:00:00Z", merged_at="2024-01-02T00:00:00Z")
+            any_pr(
+                number=1,
+                created_at="2024-01-01T00:00:00Z",
+                merged_at="2024-01-02T00:00:00Z",
+                reviews=[
+                    {
+                        "user": {"login": "reviewer"},
+                        "state": "COMMENTED",
+                        "submitted_at": "2024-01-01T12:00:00Z",
+                    }
+                ],
+            )
         ]
-        reviews = {
-            1: [
-                {
-                    "user": {"login": "reviewer"},
-                    "state": "COMMENTED",
-                    "submitted_at": "2024-01-01T12:00:00Z",
-                }
-            ]
-        }
-        result = calculate_review_time(prs, reviews)
+        result = calculate_review_time(prs)
         assert result == 0.0
 
     def test_should_calculate_review_time(self):
         prs = [
-            any_pr(number=1, created_at="2024-01-01T00:00:00Z", merged_at="2024-01-03T00:00:00Z")
+            any_pr(
+                number=1,
+                created_at="2024-01-01T00:00:00Z",
+                merged_at="2024-01-03T00:00:00Z",
+                reviews=[
+                    {
+                        "user": {"login": "reviewer"},
+                        "state": "APPROVED",
+                        "submitted_at": "2024-01-02T00:00:00Z",
+                    }
+                ],
+            )
         ]
-        reviews = {
-            1: [
-                {
-                    "user": {"login": "reviewer"},
-                    "state": "APPROVED",
-                    "submitted_at": "2024-01-02T00:00:00Z",
-                }
-            ]
-        }
-        result = calculate_review_time(prs, reviews)
+        result = calculate_review_time(prs)
         assert result == 24.0
 
 
@@ -318,141 +329,196 @@ class TestParsePeriodDays:
 class TestCalculateReviewsGiven:
     """Test cases for calculate_reviews_given function."""
 
-    def test_should_return_zero_for_no_reviews(self):
+    def test_should_return_empty_for_no_prs(self):
         from git_dev_metrics.metrics.calculator import calculate_reviews_given
 
-        devs = {"alice": [], "bob": []}
-        reviews = {1: [], 2: []}
-        result = calculate_reviews_given(reviews, devs)
-        assert result == {"alice": 0, "bob": 0}
+        result = calculate_reviews_given([])
+        assert result == {}
 
     def test_should_count_reviews_from_devs(self):
-        from git_dev_metrics.metrics.calculator import calculate_reviews_given, group_prs_by_devs
+        from git_dev_metrics.metrics.calculator import calculate_reviews_given
 
         prs = [
-            any_pr(id=1, number=1, user={"login": "alice"}),
-            any_pr(id=2, number=2, user={"login": "bob"}),
+            any_pr(
+                id=1,
+                number=1,
+                user={"login": "alice"},
+                reviews=[
+                    {
+                        "user": {"login": "bob"},
+                        "state": "APPROVED",
+                        "submitted_at": "2024-01-01T01:00:00Z",
+                    },
+                ],
+            ),
+            any_pr(
+                id=2,
+                number=2,
+                user={"login": "bob"},
+                reviews=[
+                    {
+                        "user": {"login": "alice"},
+                        "state": "APPROVED",
+                        "submitted_at": "2024-01-01T02:00:00Z",
+                    },
+                ],
+            ),
         ]
-        devs = group_prs_by_devs(prs)
-        reviews = {
-            1: [
-                {
-                    "user": {"login": "bob"},
-                    "state": "APPROVED",
-                    "submitted_at": "2024-01-01T01:00:00Z",
-                },
-            ],
-            2: [
-                {
-                    "user": {"login": "alice"},
-                    "state": "APPROVED",
-                    "submitted_at": "2024-01-01T02:00:00Z",
-                },
-            ],
-        }
-        result = calculate_reviews_given(reviews, devs)
+        result = calculate_reviews_given(prs)
         assert result["alice"] == 1
         assert result["bob"] == 1
 
-    def test_should_include_reviewers_not_in_devs(self):
-        from git_dev_metrics.metrics.calculator import calculate_reviews_given, group_prs_by_devs
+    def test_should_count_external_reviewers(self):
+        from git_dev_metrics.metrics.calculator import calculate_reviews_given
 
         prs = [
-            any_pr(id=1, number=1, user={"login": "alice"}),
+            any_pr(
+                id=1,
+                number=1,
+                user={"login": "alice"},
+                reviews=[
+                    {
+                        "user": {"login": "external-reviewer"},
+                        "state": "APPROVED",
+                        "submitted_at": "2024-01-01T01:00:00Z",
+                    },
+                ],
+            ),
         ]
-        devs = group_prs_by_devs(prs)
-        reviews = {
-            1: [
-                {
-                    "user": {"login": "external-reviewer"},
-                    "state": "APPROVED",
-                    "submitted_at": "2024-01-01T01:00:00Z",
-                },
-            ],
-        }
-        result = calculate_reviews_given(reviews, devs)
-        assert result["alice"] == 0
+        result = calculate_reviews_given(prs)
         assert result["external-reviewer"] == 1
 
     def test_should_count_each_pr_only_once_per_reviewer(self):
         # Arrange: bob submits 3 review events on alice's single PR
-        from git_dev_metrics.metrics.calculator import calculate_reviews_given, group_prs_by_devs
+        from git_dev_metrics.metrics.calculator import calculate_reviews_given
 
         prs = [
-            any_pr(id=1, number=1, user={"login": "alice"}),
+            any_pr(
+                id=1,
+                number=1,
+                user={"login": "alice"},
+                reviews=[
+                    {
+                        "user": {"login": "bob"},
+                        "state": "COMMENTED",
+                        "submitted_at": "2024-01-01T01:00:00Z",
+                    },
+                    {
+                        "user": {"login": "bob"},
+                        "state": "CHANGES_REQUESTED",
+                        "submitted_at": "2024-01-01T02:00:00Z",
+                    },
+                    {
+                        "user": {"login": "bob"},
+                        "state": "APPROVED",
+                        "submitted_at": "2024-01-01T03:00:00Z",
+                    },
+                ],
+            ),
         ]
-        devs = group_prs_by_devs(prs)
-        reviews = {
-            1: [
-                {
-                    "user": {"login": "bob"},
-                    "state": "COMMENTED",
-                    "submitted_at": "2024-01-01T01:00:00Z",
-                },
-                {
-                    "user": {"login": "bob"},
-                    "state": "CHANGES_REQUESTED",
-                    "submitted_at": "2024-01-01T02:00:00Z",
-                },
-                {
-                    "user": {"login": "bob"},
-                    "state": "APPROVED",
-                    "submitted_at": "2024-01-01T03:00:00Z",
-                },
-            ],
-        }
 
         # Act
-        result = calculate_reviews_given(reviews, devs)
+        result = calculate_reviews_given(prs)
 
         # Assert
         assert result["bob"] == 1
 
     def test_should_exclude_self_reviews(self):
         # Arrange: alice reviews her own PR
-        from git_dev_metrics.metrics.calculator import calculate_reviews_given, group_prs_by_devs
+        from git_dev_metrics.metrics.calculator import calculate_reviews_given
 
         prs = [
-            any_pr(id=1, number=1, user={"login": "alice"}),
+            any_pr(
+                id=1,
+                number=1,
+                user={"login": "alice"},
+                reviews=[
+                    {
+                        "user": {"login": "alice"},
+                        "state": "APPROVED",
+                        "submitted_at": "2024-01-01T01:00:00Z",
+                    },
+                ],
+            ),
         ]
-        devs = group_prs_by_devs(prs)
-        reviews = {
-            1: [
-                {
-                    "user": {"login": "alice"},
-                    "state": "APPROVED",
-                    "submitted_at": "2024-01-01T01:00:00Z",
-                },
-            ],
-        }
 
         # Act
-        result = calculate_reviews_given(reviews, devs)
+        result = calculate_reviews_given(prs)
 
         # Assert
-        assert result["alice"] == 0
+        assert "alice" not in result
 
     def test_should_exclude_bot_suffix_reviewers(self):
         # Arrange
-        from git_dev_metrics.metrics.calculator import calculate_reviews_given, group_prs_by_devs
+        from git_dev_metrics.metrics.calculator import calculate_reviews_given
 
-        prs = [any_pr(id=1, number=1, user={"login": "alice"})]
-        devs = group_prs_by_devs(prs)
-        reviews = {
-            1: [
-                {
-                    "user": {"login": "patches-bot"},
-                    "state": "APPROVED",
-                    "submitted_at": "2024-01-01T01:00:00Z",
-                },
-            ],
-        }
+        prs = [
+            any_pr(
+                id=1,
+                number=1,
+                user={"login": "alice"},
+                reviews=[
+                    {
+                        "user": {"login": "patches-bot"},
+                        "state": "APPROVED",
+                        "submitted_at": "2024-01-01T01:00:00Z",
+                    },
+                ],
+            )
+        ]
 
         # Act
-        result = calculate_reviews_given(reviews, devs)
+        result = calculate_reviews_given(prs)
 
         # Assert
         assert "patches-bot" not in result
+
+    def test_should_not_collide_across_repos_with_same_pr_number(self):
+        # Arrange: two PRs both numbered 1 from different repos with different reviews
+        from git_dev_metrics.metrics.calculator import (
+            calculate_pickup_time,
+            calculate_reviews_given,
+        )
+
+        prs = [
+            any_pr(
+                id=10,
+                number=1,
+                user={"login": "alice"},
+                created_at="2024-01-01T00:00:00Z",
+                merged_at="2024-01-02T00:00:00Z",
+                reviews=[
+                    {
+                        "user": {"login": "bob"},
+                        "state": "APPROVED",
+                        "submitted_at": "2024-01-01T02:00:00Z",
+                    }
+                ],
+            ),
+            any_pr(
+                id=20,
+                number=1,
+                user={"login": "carol"},
+                created_at="2024-02-01T00:00:00Z",
+                merged_at="2024-02-02T00:00:00Z",
+                reviews=[
+                    {
+                        "user": {"login": "dave"},
+                        "state": "APPROVED",
+                        "submitted_at": "2024-02-01T05:00:00Z",
+                    }
+                ],
+            ),
+        ]
+
+        # Act
+        reviews_given = calculate_reviews_given(prs)
+        pickup = calculate_pickup_time(prs)
+
+        # Assert: each reviewer counted once; pickup is per-PR (median of 2h and 5h = 3.5h)
+        assert reviews_given["bob"] == 1
+        assert reviews_given["dave"] == 1
+        assert pickup == 3.5
 
 
 class TestIsBotLogin:

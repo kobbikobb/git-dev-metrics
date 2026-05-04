@@ -17,6 +17,12 @@ class PullRequestInfo(TypedDict):
     merged_at: str
 
 
+class Review(TypedDict):
+    user: GitHubUser
+    state: str
+    submitted_at: str
+
+
 class PullRequest(PullRequestInfo):
     id: int
     number: int
@@ -31,12 +37,7 @@ class PullRequest(PullRequestInfo):
     body: str | None
     labels: list[str]
     commit_messages: list[str]
-
-
-class Review(TypedDict):
-    user: GitHubUser
-    state: str
-    submitted_at: str
+    reviews: list[Review]
 
 
 class OpenPullRequest(TypedDict):

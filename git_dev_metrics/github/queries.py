@@ -69,6 +69,7 @@ def _map_pull_request(pr: dict) -> PullRequest:
         "body": pr.get("body"),
         "labels": [label.get("name") for label in pr.get("labels", {}).get("nodes", [])],
         "commit_messages": commit_messages,
+        "reviews": [],
     }
 
 
@@ -147,10 +148,9 @@ def fetch_reviews(
     return reviews_by_pr
 
 
-def _filter_and_map_pr(prs: list[dict], period: TimePeriod) -> tuple[list, dict]:
-    """Filter PRs by TimePeriod and map to internal format."""
-    mapped_prs = []
-    reviews_by_pr = {}
+def _filter_and_map_pr(prs: list[dict], period: TimePeriod) -> list[PullRequest]:
+    """Filter PRs by TimePeriod and attach reviews to each PR."""
+    mapped_prs: list[PullRequest] = []
 
     for pr in prs:
         mapped = _map_pull_request(pr)
@@ -158,18 +158,15 @@ def _filter_and_map_pr(prs: list[dict], period: TimePeriod) -> tuple[list, dict]
         if merged_at is None or merged_at < period.since or merged_at >= period.until:  # type: ignore[reportOperatorIssue]
             continue
 
-        pr_number = mapped["number"]
+        review_nodes = pr.get("reviews", {}).get("nodes", [])
+        mapped["reviews"] = [_map_review(r) for r in review_nodes]
         mapped_prs.append(mapped)
-        reviews = pr.get("reviews", {}).get("nodes", [])
-        reviews_by_pr[pr_number] = [_map_review(r) for r in reviews]
 
-    return mapped_prs, reviews_by_pr
+    return mapped_prs
 
 
-def fetch_repo_metrics(
-    token: str, org: str, repo: str, period: TimePeriod
-) -> tuple[list[PullRequest], dict[int, list[Review]]]:
-    """Fetch PRs and reviews in a single query using search API."""
+def fetch_repo_metrics(token: str, org: str, repo: str, period: TimePeriod) -> list[PullRequest]:
+    """Fetch PRs (with attached reviews) in a single query using search API."""
     client = get_client(token)
     search_query = _build_merged_prs_query(org, repo, period)
     prs = execute_paginated_query(
