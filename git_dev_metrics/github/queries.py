@@ -54,6 +54,8 @@ def _map_pull_request(pr: dict) -> PullRequest:
         committed_at = commit_data.get("committedDate")
         first_commit_date = _parse_datetime(committed_at)
 
+    commit_messages = [msg for c in commits if (msg := (c.get("commit") or {}).get("message"))]
+
     return {  # type: ignore[return-value]
         "number": pr.get("number"),
         "title": pr.get("title"),
@@ -66,6 +68,7 @@ def _map_pull_request(pr: dict) -> PullRequest:
         "first_commit_at": first_commit_date,
         "body": pr.get("body"),
         "labels": [label.get("name") for label in pr.get("labels", {}).get("nodes", [])],
+        "commit_messages": commit_messages,
     }
 
 

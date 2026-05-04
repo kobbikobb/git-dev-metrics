@@ -60,13 +60,13 @@ def build_summary(metrics: dict) -> dict:
         total_reviews, ai_adoption, avg_lines_per_pr.
     """
     all_dev_metrics = list(metrics.get("dev_metrics", {}).values())
-    active = [d for d in all_dev_metrics if d.get("health", 0) > 0]
+    health_by_dev = [calculate_health_score(d, all_dev_metrics) for d in all_dev_metrics]
+    active = [d for d, h in zip(all_dev_metrics, health_by_dev, strict=True) if h > 0]
     repo_metrics = metrics.get("repo_metrics", {})
     total_prs = int(sum(m.get("pr_count", 0) for m in repo_metrics.values()))
     total_reviews = int(sum(m.get("reviews_given", 0) for m in repo_metrics.values()))
-    dev_health = sum(d.get("health", 0) for d in all_dev_metrics)
     return {
-        "team_health": round(dev_health / len(all_dev_metrics)) if all_dev_metrics else 0,
+        "team_health": round(sum(health_by_dev) / len(health_by_dev)) if health_by_dev else 0,
         "total_prs": total_prs,
         "avg_cycle": round(sum(d.get("cycle_time", 0) for d in active) / len(active), 1)
         if active
