@@ -13,6 +13,9 @@ PERIOD_OPTIONS = [
 
 def prompt_period_selection(default: str | None = None) -> str:
     """Prompt user to select the time period."""
+    valid_values = {value for _, value in PERIOD_OPTIONS}
+    default = default if default in valid_values else "30d"
+
     choices = [questionary.Choice(title=title, value=value) for title, value in PERIOD_OPTIONS]
 
     custom_style = Style(
@@ -25,11 +28,11 @@ def prompt_period_selection(default: str | None = None) -> str:
     selected = questionary.select(
         "Select time period:",
         choices=choices,
-        default=default or "30d",
+        default=default,
         style=custom_style,
     ).ask()
 
-    return selected or default or "30d"
+    return selected or default
 
 
 def prompt_org_name(default: str | None = None) -> str | None:
