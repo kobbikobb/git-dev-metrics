@@ -16,23 +16,34 @@ class ConsolePrinter(Printer):
 
     def print_combined_metrics(self, metrics: dict, period: str, date_range: str) -> None:
         from rich.console import Console
-        from rich.panel import Panel
+        from rich.table import Table
 
         console = Console()
 
         summary = build_summary(metrics)
-        panel = Panel(
-            f"Team Health: {summary['team_health']}  |  "
-            f"Total PRs: {summary['total_prs']}  |  "
-            f"Avg Lines/PR: {summary['avg_lines_per_pr']}  |  "
-            f"Avg Cycle: {summary['avg_cycle']}h  |  "
-            f"Avg Pickup: {summary['avg_pickup']}h  |  "
-            f"Reviews: {summary['total_reviews']}  |  "
-            f"AI: {summary['ai_adoption']}%",
-            title=f"Summary ({date_range})",
-            expand=False,
+        table = Table(title=f"Summary ({date_range})")
+        for col in (
+            "Team Health",
+            "Total PRs",
+            "Avg Lines/PR",
+            "Avg Cycle (h)",
+            "Avg Pickup (h)",
+            "Reviews",
+            "AI",
+        ):
+            table.add_column(col)
+        table.add_row(
+            str(summary["team_health"]),
+            str(summary["total_prs"]),
+            str(summary["avg_lines_per_pr"]),
+            str(summary["avg_cycle"]),
+            str(summary["avg_pickup"]),
+            str(summary["total_reviews"]),
+            f"{summary['ai_adoption']}%",
         )
-        console.print(panel)
+
+        console.print()
+        console.print(table)
         console.print()
 
         self._dev_printer.print_combined_metrics(metrics, period, date_range)
