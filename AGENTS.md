@@ -54,3 +54,7 @@ Run `ruff check .` to verify complexity.
 
 ## CI
 lint → test+coverage → security audit (pip-audit)
+
+## Privacy
+
+Never include individual developer identifiers (GitHub logins, real names, handles) in PR descriptions, commit messages, issues, or any committed file. This tool measures team aggregates and trends; per-person data stays out of source control. When illustrating impact, use anonymous labels (e.g. "dev A", "dev B") or aggregate stats only.

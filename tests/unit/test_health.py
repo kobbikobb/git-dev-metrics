@@ -1,189 +1,306 @@
-from git_dev_metrics.metrics.health import calc_benchmark_penalty, calculate_health_score
+from git_dev_metrics.metrics.health import (
+    _citizenship_score,
+    _throughput_score,
+    _time_score,
+    calculate_dev_health_score,
+    calculate_health_score,
+)
 
 
-class TestCalcBenchmarkPenalty:
-    """Test cases for calc_benchmark_penalty function."""
+class TestThroughputScore:
+    def test_should_return_zero_for_zero(self):
+        assert _throughput_score(0) == 0
 
-    def test_should_return_zero_for_unknown_metric(self):
-        result = calc_benchmark_penalty(10, "unknown")
-        assert result == 0
+    def test_should_return_zero_for_negative(self):
+        assert _throughput_score(-1) == 0
 
-    def test_should_return_zero_for_zero_value(self):
-        result = calc_benchmark_penalty(0, "cycle_time")
-        assert result == 0
+    def test_should_return_80_at_good_target(self):
+        assert _throughput_score(6) == 80
 
-    def test_should_return_zero_for_negative_value(self):
-        result = calc_benchmark_penalty(-1, "cycle_time")
-        assert result == 0
+    def test_should_return_100_at_elite(self):
+        assert _throughput_score(60) == 100
 
-    def test_should_return_zero_for_excellent_cycle_time(self):
-        result = calc_benchmark_penalty(2, "cycle_time")
-        assert result == 0
+    def test_should_cap_at_100_above_elite(self):
+        assert _throughput_score(120) == 100
 
-    def test_should_return_zero_for_good_cycle_time(self):
-        result = calc_benchmark_penalty(20, "cycle_time")
-        assert result == 0
+    def test_should_scale_below_good_target(self):
+        assert _throughput_score(3) == 40
 
-    def test_should_return_20_for_ok_cycle_time(self):
-        result = calc_benchmark_penalty(50, "cycle_time")
-        assert result == 20
+    def test_should_reward_extreme_volume_above_baseline(self):
+        # 12/wk should clearly beat 6/wk (was tied at 100 in old formula)
+        assert _throughput_score(12) > _throughput_score(6)
 
-    def test_should_return_35_for_bad_cycle_time(self):
-        result = calc_benchmark_penalty(100, "cycle_time")
-        assert result == 35
 
-    def test_should_return_zero_for_excellent_pr_size(self):
-        result = calc_benchmark_penalty(50, "pr_size")
-        assert result == 0
+class TestTimeScore:
+    bands = (4, 24, 48, 96)
 
-    def test_should_return_zero_for_good_pr_size(self):
-        result = calc_benchmark_penalty(200, "pr_size")
-        assert result == 0
+    def test_should_return_100_for_excellent(self):
+        assert _time_score(2, self.bands) == 100
 
-    def test_should_return_20_for_ok_pr_size(self):
-        result = calc_benchmark_penalty(600, "pr_size")
-        assert result == 20
+    def test_should_return_80_for_good(self):
+        assert _time_score(20, self.bands) == 80
 
-    def test_should_return_20_for_bad_pr_size(self):
-        result = calc_benchmark_penalty(1000, "pr_size")
-        assert result == 20
+    def test_should_return_60_for_ok(self):
+        assert _time_score(40, self.bands) == 60
 
-    def test_should_return_zero_for_excellent_prs_per_week(self):
-        result = calc_benchmark_penalty(6, "prs_per_week")
-        assert result == 0
+    def test_should_return_40_for_bad(self):
+        assert _time_score(80, self.bands) == 40
 
-    def test_should_return_zero_for_good_prs_per_week(self):
-        result = calc_benchmark_penalty(4, "prs_per_week")
-        assert result == 0
+    def test_should_return_20_for_very_bad(self):
+        assert _time_score(200, self.bands) == 20
 
-    def test_should_return_20_for_ok_prs_per_week(self):
-        result = calc_benchmark_penalty(2, "prs_per_week")
-        assert result == 20
+    def test_should_treat_zero_as_no_signal(self):
+        assert _time_score(0, self.bands) == 100
 
-    def test_should_return_30_for_bad_prs_per_week(self):
-        result = calc_benchmark_penalty(1, "prs_per_week")
-        assert result == 30
+    def test_should_treat_negative_as_no_signal(self):
+        assert _time_score(-50, self.bands) == 100
+
+
+class TestCitizenshipScore:
+    def test_should_return_zero_when_no_prs(self):
+        assert _citizenship_score(5, 0) == 0
+
+    def test_should_return_zero_for_zero_reviews(self):
+        assert _citizenship_score(0, 5) == 0
+
+    def test_should_score_full_at_2x_ratio_and_full_absolute(self):
+        # Standalone (no team): 50 absolute (50/100) + 50 ratio (2x) → 75
+        assert _citizenship_score(50, 25) == 75
+
+    def test_should_score_top_absolute_when_team_provided(self):
+        # Top reviewer in team gets full absolute, even with low ratio
+        all_m = [{"reviews_given": 300}, {"reviews_given": 50}]
+        # ratio 300/100 = 3 → 100 ratio_score; absolute 300/300 → 100. Avg 100.
+        assert _citizenship_score(300, 100, all_m) == 100
+
+    def test_should_punish_high_volume_author_with_low_relative_reviews(self):
+        # Big author, modest reviews vs team max
+        all_m = [{"reviews_given": 1000}, {"reviews_given": 100}]
+        # ratio 100/200 = 0.5 → 25; absolute 100/1000 = 10. Avg 17.5
+        assert _citizenship_score(100, 200, all_m) == 17.5
+
+    def test_should_reward_prolific_reviewer_at_top_of_team(self):
+        # Kobbi-like: high author volume + top absolute reviews
+        all_m = [{"reviews_given": 335}, {"reviews_given": 35}]
+        # ratio 335/264 = 1.27 → 63.4; absolute 335/335 → 100. Avg ~81.7
+        result = _citizenship_score(335, 264, all_m)
+        assert 80 < result < 83
 
 
 class TestCalculateHealthScore:
-    """Test cases for calculate_health_score function."""
+    def test_should_return_zero_when_no_prs(self):
+        result = calculate_health_score({"pr_count": 0})
+        assert result == 0
 
-    def test_should_return_100_for_perfect_metrics(self):
+    def test_should_return_100_for_elite_metrics(self):
+        # Arrange: elite throughput + excellent times + top reviewer
         metrics = {
+            "pr_count": 30,
+            "prs_per_week": 60,
             "cycle_time": 2,
-            "pr_size": 50,
-            "prs_per_week": 6,
-            "pr_count": 5,
-            "reviews_given": 5,
+            "pickup_time": 1,
+            "reviews_given": 200,
         }
+
+        # Act
         result = calculate_health_score(metrics)
+
+        # Assert
         assert result == 100
 
-    def test_should_penalize_high_cycle_time(self):
-        metrics = {
-            "cycle_time": 100,
-            "pr_size": 50,
-            "prs_per_week": 6,
-            "pr_count": 5,
-            "reviews_given": 5,
-        }
-        result = calculate_health_score(metrics)
-        assert result == 70
-
-    def test_should_penalize_large_pr_size(self):
-        metrics = {
+    def test_should_ignore_pr_size(self):
+        # Arrange: same metrics with vastly different pr_size should score identically
+        small = {
+            "pr_count": 30,
+            "prs_per_week": 60,
             "cycle_time": 2,
-            "pr_size": 1000,
-            "prs_per_week": 6,
-            "pr_count": 5,
-            "reviews_given": 5,
-        }
-        result = calculate_health_score(metrics)
-        assert result == 85
-
-    def test_should_penalize_low_prs_per_week(self):
-        metrics = {
-            "cycle_time": 2,
+            "pickup_time": 1,
+            "reviews_given": 200,
             "pr_size": 50,
-            "prs_per_week": 1,
-            "pr_count": 1,
-            "reviews_given": 1,
         }
-        result = calculate_health_score(metrics)
-        assert result == 75
+        huge = {**small, "pr_size": 10000, "avg_lines_per_pr": 5000}
 
-    def test_should_penalize_low_review_ratio(self):
-        metrics = {
-            "cycle_time": 2,
-            "pr_size": 50,
-            "prs_per_week": 6,
-            "pr_count": 10,
-            "reviews_given": 1,
-        }
-        result = calculate_health_score(metrics)
-        assert result == 85
+        # Act / Assert
+        assert calculate_health_score(small) == calculate_health_score(huge)
 
-    def test_should_not_penalize_high_review_ratio(self):
+    def test_should_penalize_slow_cycle_time(self):
+        # Arrange
         metrics = {
-            "cycle_time": 2,
-            "pr_size": 50,
-            "prs_per_week": 6,
-            "pr_count": 5,
-            "reviews_given": 10,
-        }
-        result = calculate_health_score(metrics)
-        assert result == 100
-
-    def test_should_return_0_for_worst_metrics(self):
-        metrics = {
+            "pr_count": 30,
+            "prs_per_week": 60,
             "cycle_time": 200,
-            "pr_size": 2000,
-            "prs_per_week": 0.1,
+            "pickup_time": 1,
+            "reviews_given": 200,
+        }
+
+        # Act
+        result = calculate_health_score(metrics)
+
+        # Assert: speed drops 100→20, costs 0.20*80 = 16 points. 100-16 = 84
+        assert result == 84
+
+    def test_should_penalize_slow_pickup(self):
+        # Arrange
+        metrics = {
+            "pr_count": 30,
+            "prs_per_week": 60,
+            "cycle_time": 2,
+            "pickup_time": 100,
+            "reviews_given": 200,
+        }
+
+        # Act
+        result = calculate_health_score(metrics)
+
+        # Assert
+        assert result == 84
+
+    def test_should_penalize_low_throughput(self):
+        # Arrange
+        metrics = {
             "pr_count": 1,
+            "prs_per_week": 1,
+            "cycle_time": 2,
+            "pickup_time": 1,
+            "reviews_given": 100,
+        }
+
+        # Act
+        result = calculate_health_score(metrics)
+
+        # Assert: throughput 13.3 (1/6*80), citizenship 100 (top abs + top ratio).
+        # 0.25*13.3 + 0.20*100 + 0.20*100 + 0.35*100 = 78.33 → 78
+        assert result == 78
+
+    def test_should_penalize_low_citizenship(self):
+        # Arrange
+        metrics = {
+            "pr_count": 10,
+            "prs_per_week": 60,
+            "cycle_time": 2,
+            "pickup_time": 1,
             "reviews_given": 0,
         }
+
+        # Act
         result = calculate_health_score(metrics)
-        assert result == 0
+
+        # Assert: citizenship 0 (no reviews). 0.25*100 + 0.20*100 + 0.20*100 + 0.35*0 = 65
+        assert result == 65
+
+    def test_should_handle_negative_pickup_time_as_no_signal(self):
+        # Arrange
+        metrics = {
+            "pr_count": 30,
+            "prs_per_week": 60,
+            "cycle_time": 2,
+            "pickup_time": -440,
+            "reviews_given": 200,
+        }
+
+        # Act
+        result = calculate_health_score(metrics)
+
+        # Assert
+        assert result == 100
+
+    def test_should_floor_at_zero(self):
+        # Arrange
+        metrics = {
+            "pr_count": 1,
+            "prs_per_week": 0,
+            "cycle_time": 200,
+            "pickup_time": 100,
+            "reviews_given": 0,
+        }
+
+        # Act
+        result = calculate_health_score(metrics)
+
+        # Assert: all components 0/20/20/0. 0.25*0 + 0.20*20 + 0.20*20 + 0.35*0 = 8
+        assert result == 8
 
     def test_should_handle_missing_metrics(self):
-        metrics = {}
-        result = calculate_health_score(metrics)
+        result = calculate_health_score({})
         assert result == 0
 
-    def test_should_handle_zero_pr_count_no_review_penalty(self):
-        metrics = {
+    def test_should_use_team_max_for_relative_citizenship(self):
+        # Arrange: top reviewer in team gets max citizenship even with modest ratio
+        prolific = {
+            "pr_count": 264,
+            "prs_per_week": 60,
             "cycle_time": 2,
-            "pr_size": 50,
-            "prs_per_week": 6,
-            "pr_count": 0,
+            "pickup_time": 3,
+            "reviews_given": 335,
+        }
+        small = {
+            "pr_count": 23,
+            "prs_per_week": 5,
+            "cycle_time": 2,
+            "pickup_time": 1,
+            "reviews_given": 35,
+        }
+        all_m = [prolific, small]
+
+        # Act
+        prolific_score = calculate_health_score(prolific, all_m)
+        small_score = calculate_health_score(small, all_m)
+
+        # Assert: prolific (top reviewer + top throughput) should beat small dev
+        assert prolific_score > small_score
+
+
+class TestCalculateDevHealthScore:
+    def test_should_return_zero_when_no_prs(self):
+        assert calculate_dev_health_score({"pr_count": 0}) == 0
+
+    def test_should_ignore_pickup_time(self):
+        # Arrange: same metrics with vastly different pickup should score identically
+        fast_pickup = {
+            "pr_count": 30,
+            "prs_per_week": 60,
+            "cycle_time": 2,
+            "pickup_time": 1,
+            "reviews_given": 200,
+        }
+        slow_pickup = {**fast_pickup, "pickup_time": 100}
+
+        # Act / Assert
+        assert calculate_dev_health_score(fast_pickup) == calculate_dev_health_score(slow_pickup)
+
+    def test_should_return_100_for_elite_metrics(self):
+        # Arrange: elite throughput + excellent cycle + top reviewer
+        metrics = {
+            "pr_count": 30,
+            "prs_per_week": 60,
+            "cycle_time": 2,
+            "reviews_given": 200,
+        }
+
+        # Act
+        result = calculate_dev_health_score(metrics)
+
+        # Assert
+        assert result == 100
+
+    def test_should_weight_cycle_more_than_team_score(self):
+        # Same slow-cycle metrics; dev formula penalizes cycle harder (30% vs 20%)
+        slow = {
+            "pr_count": 30,
+            "prs_per_week": 60,
+            "cycle_time": 200,
+            "pickup_time": 1,
+            "reviews_given": 200,
+        }
+        # dev score: throughput 100, speed 20, citizenship 100. 0.25*100+0.30*20+0.45*100 = 76
+        assert calculate_dev_health_score(slow) == 76
+
+    def test_should_weight_citizenship_at_45_percent(self):
+        # No reviews → citizenship 0; everything else 100. 0.25*100 + 0.30*100 + 0.45*0 = 55
+        metrics = {
+            "pr_count": 10,
+            "prs_per_week": 60,
+            "cycle_time": 2,
             "reviews_given": 0,
         }
-        result = calculate_health_score(metrics)
-        assert result == 0
-
-    def test_should_add_relative_bonus_for_highest_prs_per_week(self):
-        all_metrics = [
-            {"prs_per_week": 2, "reviews_given": 5, "cycle_time": 10, "pr_count": 2},
-            {"prs_per_week": 6, "reviews_given": 3, "cycle_time": 20, "pr_count": 6},
-        ]
-        metrics = {"prs_per_week": 6, "reviews_given": 3, "cycle_time": 20, "pr_count": 6}
-        result = calculate_health_score(metrics, all_metrics)
-        assert result == 100
-
-    def test_should_add_relative_bonus_for_most_reviews(self):
-        all_metrics = [
-            {"prs_per_week": 5, "reviews_given": 2, "cycle_time": 10},
-            {"prs_per_week": 3, "reviews_given": 10, "cycle_time": 20},
-        ]
-        metrics = {"prs_per_week": 3, "reviews_given": 10, "cycle_time": 20, "pr_count": 5}
-        result = calculate_health_score(metrics, all_metrics)
-        assert result == 100
-
-    def test_should_add_relative_bonus_for_fastest_cycle_time(self):
-        all_metrics = [
-            {"prs_per_week": 5, "reviews_given": 5, "cycle_time": 10, "pr_count": 5},
-            {"prs_per_week": 3, "reviews_given": 3, "cycle_time": 5, "pr_count": 3},
-        ]
-        metrics = {"prs_per_week": 3, "reviews_given": 3, "cycle_time": 5, "pr_count": 3}
-        result = calculate_health_score(metrics, all_metrics)
-        assert result == 100
+        assert calculate_dev_health_score(metrics) == 55

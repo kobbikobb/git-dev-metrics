@@ -12,7 +12,7 @@ from .calculator import (
     median,
 )
 from .dev_printer import ConsoleDevPrinter, FileDevPrinter
-from .health import calculate_health_score
+from .health import calculate_dev_health_score, calculate_health_score
 from .label_printer import ConsoleLabelPrinter, FileLabelPrinter
 from .printer import CompositePrinter, Printer, get_default_output_path
 from .repo_printer import ConsoleRepoPrinter, FileRepoPrinter
@@ -28,6 +28,7 @@ __all__ = [
     "calculate_prs_per_week",
     "calculate_throughput",
     "calculate_health_score",
+    "calculate_dev_health_score",
     "median",
     "get_default_output_path",
     "Printer",

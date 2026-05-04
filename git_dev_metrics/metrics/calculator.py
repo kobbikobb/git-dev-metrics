@@ -3,7 +3,7 @@ from collections import defaultdict
 from collections.abc import Callable
 from datetime import datetime
 
-from ..constants import KNOWN_BOT_LOGINS
+from ..constants import is_bot_login
 from ..models import OpenPullRequest, PullRequest
 
 AI_TRAILER_PATTERNS = [
@@ -173,7 +173,7 @@ def group_prs_by_devs(prs: list[PullRequest]) -> dict[str, list[PullRequest]]:
     devs = defaultdict(list)
     for pr in prs:
         dev = pr["user"]["login"]
-        if dev not in KNOWN_BOT_LOGINS:
+        if not is_bot_login(dev):
             devs[dev].append(pr)
     return devs
 
@@ -192,17 +192,21 @@ def group_prs_by_labels(prs: list[PullRequest]) -> dict[str, list[PullRequest]]:
 
 
 def calculate_reviews_given(reviews: dict, devs: dict[str, list[PullRequest]]) -> dict[str, int]:
-    """Calculate number of PRs reviewed by each developer, excluding bots."""
+    """Count PRs reviewed by each developer. One per PR, excludes self-reviews and bots."""
+    pr_authors = {pr["number"]: author for author, prs in devs.items() for pr in prs}
     reviewer_counts: dict[str, int] = {dev: 0 for dev in devs}
 
-    for _pr_number, pr_reviews in reviews.items():
+    for pr_number, pr_reviews in reviews.items():
+        author = pr_authors.get(pr_number)
+        counted: set[str] = set()
         for review in pr_reviews:
             reviewer = review.get("user", {}).get("login")
-            if reviewer and reviewer not in KNOWN_BOT_LOGINS:
-                if reviewer in reviewer_counts:
-                    reviewer_counts[reviewer] += 1
-                elif reviewer not in devs:
-                    reviewer_counts[reviewer] = 1
+            if not reviewer or is_bot_login(reviewer):
+                continue
+            if reviewer == author or reviewer in counted:
+                continue
+            counted.add(reviewer)
+            reviewer_counts[reviewer] = reviewer_counts.get(reviewer, 0) + 1
 
     return reviewer_counts
 
