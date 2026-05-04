@@ -37,12 +37,14 @@ class FileRepoPrinter:
         title = (
             f"# Repo Metrics ({date_range})" if date_range else (f"# Repo Metrics (last {period})")
         )
-        lines = [title, "", header, separator]
-
-        all_repo_metrics = list(metrics["repo_metrics"].values())
+        lines = ["", title, "", header, separator]
+        active_repos = {
+            name: m for name, m in metrics["repo_metrics"].items() if m.get("pr_count", 0) > 0
+        }
+        all_repo_metrics = list(active_repos.values())
 
         sorted_repos = []
-        for repo_name, m in metrics["repo_metrics"].items():
+        for repo_name, m in active_repos.items():
             health = calculate_health_score(m, all_repo_metrics)
             sorted_repos.append((repo_name, m, health))
 

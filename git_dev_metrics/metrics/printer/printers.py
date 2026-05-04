@@ -42,9 +42,9 @@ class FilePrinter(Printer):
     """Print metrics to markdown file."""
 
     def __init__(self, output_path: Path | None = None) -> None:
-        path = output_path or get_default_output_path()
-        self._repo_printer = FileRepoPrinter(path)
-        self._dev_printer = FileDevPrinter(path)
+        self._path = output_path or get_default_output_path()
+        self._repo_printer = FileRepoPrinter(self._path)
+        self._dev_printer = FileDevPrinter(self._path)
 
     def print_combined_metrics(self, metrics: dict, period: str, date_range: str) -> None:
         summary = build_summary(metrics)
@@ -65,10 +65,8 @@ class FilePrinter(Printer):
         self._dev_printer.print_combined_metrics(metrics, period, date_range)
 
     def _write(self, lines: list[str]) -> None:
-
-        output_path = get_default_output_path()
-        output_path.parent.mkdir(parents=True, exist_ok=True)
-        with open(output_path, "a") as f:
+        self._path.parent.mkdir(parents=True, exist_ok=True)
+        with open(self._path, "a") as f:
             f.write("\n".join(lines))
 
 
