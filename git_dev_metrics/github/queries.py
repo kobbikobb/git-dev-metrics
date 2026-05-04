@@ -180,7 +180,7 @@ def fetch_repo_metrics(token: str, org: str, repo: str, period: TimePeriod) -> l
     return _filter_and_map_pr(prs, period)
 
 
-def fetch_open_prs(token: str, org: str, repo: str) -> list[OpenPullRequest]:
+def fetch_open_prs(token: str, org: str, repo: str, quiet: bool = False) -> list[OpenPullRequest]:
     """Fetch open pull requests for a repository."""
     client = get_client(token)
     prs = execute_paginated_query(
@@ -189,6 +189,7 @@ def fetch_open_prs(token: str, org: str, repo: str) -> list[OpenPullRequest]:
         {"owner": org, "name": repo, "first": PAGE_SIZE},
         "repository.pullRequests",
         repo_id=f"{org}/{repo}",
+        quiet=quiet,
     )
 
     result: list[OpenPullRequest] = []

@@ -13,9 +13,8 @@ from .calculator import (
 )
 from .dev_printer import ConsoleDevPrinter, FileDevPrinter
 from .health import calculate_dev_health_score, calculate_health_score
-from .label_printer import ConsoleLabelPrinter, FileLabelPrinter
 from .printer import CompositePrinter, Printer, get_default_output_path
-from .repo_printer import ConsoleRepoPrinter, FileRepoPrinter
+from .repo_printer import FileRepoPrinter
 
 __all__ = [
     "get_pull_request_metrics",
@@ -33,10 +32,7 @@ __all__ = [
     "get_default_output_path",
     "Printer",
     "CompositePrinter",
-    "ConsoleRepoPrinter",
     "FileRepoPrinter",
     "ConsoleDevPrinter",
     "FileDevPrinter",
-    "ConsoleLabelPrinter",
-    "FileLabelPrinter",
 ]
