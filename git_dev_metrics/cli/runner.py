@@ -15,6 +15,7 @@ from ..metrics import get_combined_metrics
 from ..utils import TimePeriod, parse_time_period
 from .output import print_metrics, print_stale_prs, resolve_output_path
 from .prompts import (
+    prompt_open_result,
     prompt_org_name,
     prompt_period_selection,
     prompt_repo_selection,
@@ -129,3 +130,5 @@ def run_analyze(
     stale_prs = _fetch_stale_prs(token, selected)
     if stale_prs:
         print_stale_prs(stale_prs, output_path)
+
+    prompt_open_result(output_path)

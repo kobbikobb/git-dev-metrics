@@ -44,6 +44,7 @@ class TestCLI:
             "git_dev_metrics.cli.runner._filter_repos_by_period",
             side_effect=lambda repos, since: repos,
         )
+        mocker.patch("git_dev_metrics.cli.runner.prompt_open_result")
 
         result = runner.invoke(app, [])
 

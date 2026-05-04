@@ -18,10 +18,7 @@ def resolve_output_path(output: Path | None) -> Path:
 
 def print_metrics(metrics: dict, period: str, output_path: Path, date_range: str) -> None:
     """Print metrics to the specified output path."""
-    import typer
-
     _print_combined_metrics(metrics, period, output_path, date_range)
-    typer.secho(f"Results saved to {output_path}", fg=typer.colors.GREEN)
 
 
 def print_stale_prs(stale_prs: list[dict], output_path: Path) -> None:
