@@ -65,6 +65,23 @@ def build_summary(metrics: dict) -> dict:
     repo_metrics = metrics.get("repo_metrics", {})
     total_prs = int(sum(m.get("pr_count", 0) for m in repo_metrics.values()))
     total_reviews = int(sum(m.get("reviews_given", 0) for m in repo_metrics.values()))
+    ai_adoption = (
+        round(
+            sum(m.get("ai_percentage", 0) * m.get("pr_count", 0) for m in repo_metrics.values())
+            / total_prs
+        )
+        if total_prs
+        else 0
+    )
+    avg_lines_per_pr = (
+        round(
+            sum(m.get("avg_lines_per_pr", 0) * m.get("pr_count", 0) for m in repo_metrics.values())
+            / total_prs,
+            1,
+        )
+        if total_prs
+        else 0
+    )
     return {
         "team_health": round(sum(health_by_dev) / len(health_by_dev)) if health_by_dev else 0,
         "total_prs": total_prs,
@@ -75,16 +92,8 @@ def build_summary(metrics: dict) -> dict:
         if active
         else 0,
         "total_reviews": total_reviews,
-        "ai_adoption": round(
-            sum(m.get("ai_percentage", 0) for m in repo_metrics.values()) / len(repo_metrics)
-        )
-        if repo_metrics
-        else 0,
-        "avg_lines_per_pr": round(
-            sum(m.get("avg_lines_per_pr", 0) for m in repo_metrics.values()) / len(repo_metrics), 1
-        )
-        if repo_metrics
-        else 0,
+        "ai_adoption": ai_adoption,
+        "avg_lines_per_pr": avg_lines_per_pr,
     }
 
 
