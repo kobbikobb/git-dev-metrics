@@ -39,6 +39,3 @@ def parse_time_period(event_period: str) -> TimePeriod:
 
     now = datetime.now(UTC)
     return TimePeriod(since=now - period_map[event_period], until=now)
-
-
-
