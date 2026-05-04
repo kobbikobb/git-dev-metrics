@@ -5,7 +5,7 @@ from datetime import UTC, datetime, timedelta
 import pytest
 from freezegun import freeze_time
 
-from git_dev_metrics.utils import TimePeriod, get_last_month, parse_time_period
+from git_dev_metrics.utils import TimePeriod, get_last_month, get_period_display_name, parse_time_period
 
 
 class TestTimePeriod:
@@ -62,6 +62,14 @@ class TestParseTimePeriod:
         with pytest.raises(ValueError, match="Unsupported period"):
             parse_time_period("invalid")
 
+    @freeze_time("2024-06-15 12:00:00")
+    def test_should_return_last_month_for_last_month(self):
+        result = parse_time_period("last_month")
+
+        expected = get_last_month()
+        assert result.since == expected.since
+        assert result.until == expected.until
+
 
 class TestGetLastMonth:
     @freeze_time("2024-06-15 12:00:00")
@@ -84,3 +92,18 @@ class TestGetLastMonth:
 
         assert result.since == datetime(2024, 2, 1, tzinfo=UTC)
         assert result.until == datetime(2024, 3, 1, tzinfo=UTC)
+
+
+class TestGetPeriodDisplayName:
+    def test_should_return_month_name_for_last_month(self):
+        result = get_period_display_name("last_month")
+
+        last_month = get_last_month()
+        expected = last_month.since.strftime("%B %Y")
+
+        assert result == expected
+
+    def test_should_return_last_period_for_other_values(self):
+        assert get_period_display_name("30d") == "Last 30d"
+        assert get_period_display_name("7d") == "Last 7d"
+        assert get_period_display_name("90d") == "Last 90d"
