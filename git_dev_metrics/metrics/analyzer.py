@@ -31,7 +31,7 @@ def _parse_period_days(event_period: str) -> int:
     return days
 
 
-def _build_dev_metrics(devs: dict, reviews: dict, period_days: int, reviews_given: dict) -> dict:
+def _build_dev_metrics(devs: dict, period_days: int, reviews_given: dict) -> dict:
     """Build dev-level metrics dict."""
     return {
         dev: {
@@ -39,8 +39,8 @@ def _build_dev_metrics(devs: dict, reviews: dict, period_days: int, reviews_give
             "pr_size": calculate_pr_size(dev_prs),
             "avg_lines_per_pr": calculate_avg_lines_per_pr(dev_prs),
             "pr_count": calculate_throughput(dev_prs),
-            "pickup_time": calculate_pickup_time(dev_prs, reviews),
-            "review_time": calculate_review_time(dev_prs, reviews),
+            "pickup_time": calculate_pickup_time(dev_prs),
+            "review_time": calculate_review_time(dev_prs),
             "prs_per_week": calculate_prs_per_week(dev_prs, period_days),
             "reviews_given": reviews_given.get(dev, 0),
             "ai_percentage": calculate_ai_percentage(dev_prs),
@@ -53,19 +53,19 @@ def get_pull_request_metrics(token: str, org: str, repo: str, event_period: str 
     """Get development metrics for a repository over a specified time period."""
     period = parse_time_period(event_period)
     period_days = _parse_period_days(event_period)
-    prs, reviews = fetch_repo_metrics(token, org, repo, period)
+    prs = fetch_repo_metrics(token, org, repo, period)
 
     devs = group_prs_by_devs(prs)
-    reviews_given = calculate_reviews_given(reviews, devs)
-    dev_metrics = _build_dev_metrics(devs, reviews, period_days, reviews_given)
+    reviews_given = calculate_reviews_given(prs)
+    dev_metrics = _build_dev_metrics(devs, period_days, reviews_given)
 
     return {
         "cycle_time": calculate_cycle_time(prs),
         "pr_size": calculate_pr_size(prs),
         "avg_lines_per_pr": calculate_avg_lines_per_pr(prs),
         "pr_count": calculate_throughput(prs),
-        "pickup_time": calculate_pickup_time(prs, reviews),
-        "review_time": calculate_review_time(prs, reviews),
+        "pickup_time": calculate_pickup_time(prs),
+        "review_time": calculate_review_time(prs),
         "prs_per_week": calculate_prs_per_week(prs, period_days),
         "reviews_given": sum(reviews_given.values()),
         "ai_percentage": calculate_ai_percentage(prs),
@@ -73,32 +73,31 @@ def get_pull_request_metrics(token: str, org: str, repo: str, event_period: str 
     }
 
 
-def _build_metrics(prs: list, reviews: dict, period_days: int) -> dict:
+def _build_metrics(prs: list, period_days: int) -> dict:
     """Build metrics dict for a list of PRs."""
-    devs = group_prs_by_devs(prs)
-    reviews_given = calculate_reviews_given(reviews, devs)
+    reviews_given = calculate_reviews_given(prs)
     return {
         "cycle_time": calculate_cycle_time(prs),
         "pr_size": calculate_pr_size(prs),
         "avg_lines_per_pr": calculate_avg_lines_per_pr(prs),
         "pr_count": calculate_throughput(prs),
-        "pickup_time": calculate_pickup_time(prs, reviews),
-        "review_time": calculate_review_time(prs, reviews),
+        "pickup_time": calculate_pickup_time(prs),
+        "review_time": calculate_review_time(prs),
         "prs_per_week": calculate_prs_per_week(prs, period_days),
         "reviews_given": sum(reviews_given.values()),
         "ai_percentage": calculate_ai_percentage(prs),
     }
 
 
-def _build_label_metrics(labels: dict, reviews: dict, period_days: int) -> dict:
+def _build_label_metrics(labels: dict, period_days: int) -> dict:
     """Build label-level metrics dict."""
     return {
         label: {
             "cycle_time": calculate_cycle_time(label_prs),
             "pr_size": calculate_pr_size(label_prs),
             "pr_count": calculate_throughput(label_prs),
-            "pickup_time": calculate_pickup_time(label_prs, reviews),
-            "review_time": calculate_review_time(label_prs, reviews),
+            "pickup_time": calculate_pickup_time(label_prs),
+            "review_time": calculate_review_time(label_prs),
             "prs_per_week": calculate_prs_per_week(label_prs, period_days),
         }
         for label, label_prs in labels.items()
@@ -111,23 +110,21 @@ def get_combined_metrics(token: str, selected_repos: list[str], event_period: st
     period_days = _parse_period_days(event_period)
 
     all_prs: list = []
-    all_reviews: dict = {}
     repo_metrics: dict = {}
 
     for full_name in selected_repos:
         org, name = full_name.split("/", 1)
-        prs, reviews = fetch_repo_metrics(token, org, name, period)
+        prs = fetch_repo_metrics(token, org, name, period)
 
         all_prs.extend(prs)
-        all_reviews.update(reviews)
-        repo_metrics[full_name] = _build_metrics(prs, reviews, period_days)
+        repo_metrics[full_name] = _build_metrics(prs, period_days)
 
     all_devs = group_prs_by_devs(all_prs)
-    all_reviews_given = calculate_reviews_given(all_reviews, all_devs)
-    combined_dev_metrics = _build_dev_metrics(all_devs, all_reviews, period_days, all_reviews_given)
+    all_reviews_given = calculate_reviews_given(all_prs)
+    combined_dev_metrics = _build_dev_metrics(all_devs, period_days, all_reviews_given)
 
     all_labels = group_prs_by_labels(all_prs)
-    combined_label_metrics = _build_label_metrics(all_labels, all_reviews, period_days)
+    combined_label_metrics = _build_label_metrics(all_labels, period_days)
 
     return {
         "repo_metrics": repo_metrics,

@@ -106,54 +106,41 @@ def calculate_throughput(prs: list[PullRequest]) -> int:
     return len(prs)
 
 
-def calculate_pickup_time(prs: list[PullRequest], reviews: dict) -> float:
+def _first_approval_at(pr: PullRequest) -> datetime | None:
+    for review in pr.get("reviews", []):
+        if review.get("state") == "APPROVED":
+            return _to_datetime(review.get("submitted_at"))
+    return None
+
+
+def calculate_pickup_time(prs: list[PullRequest]) -> float:
     """Calculate median time from PR creation to first approval (in hours)."""
     if not prs:
         return 0.0
 
     pickup_times = []
     for pr in prs:
-        pr_number = pr["number"]
-        pr_reviews = reviews.get(pr_number, [])
         created = _to_datetime(pr["created_at"])
-        if created is None:
-            continue
-
-        first_approval = None
-        for review in pr_reviews:
-            if review.get("state") == "APPROVED":
-                first_approval = _to_datetime(review.get("submitted_at"))
-                break
-
-        if first_approval:
-            hours = (first_approval - created).total_seconds() / 3600
-            pickup_times.append(hours)
+        first_approval = _first_approval_at(pr)
+        if created and first_approval:
+            pickup_times.append((first_approval - created).total_seconds() / 3600)
 
     if not pickup_times:
         return 0.0
     return round(median(pickup_times), 2)
 
 
-def calculate_review_time(prs: list[PullRequest], reviews: dict) -> float:
+def calculate_review_time(prs: list[PullRequest]) -> float:
     """Calculate median time from first approval to merge (in hours)."""
     if not prs:
         return 0.0
 
     review_times = []
     for pr in prs:
-        pr_number = pr["number"]
-        pr_reviews = reviews.get(pr_number, [])
         merged = _to_datetime(pr["merged_at"])
-
-        first_approval = None
-        for review in pr_reviews:
-            if review.get("state") == "APPROVED":
-                first_approval = _to_datetime(review.get("submitted_at"))
-                break
-
+        first_approval = _first_approval_at(pr)
         if merged and first_approval:
-            hours = (merged - first_approval).total_seconds() / 3600
-            review_times.append(hours)
+            review_times.append((merged - first_approval).total_seconds() / 3600)
 
     if not review_times:
         return 0.0
@@ -191,15 +178,14 @@ def group_prs_by_labels(prs: list[PullRequest]) -> dict[str, list[PullRequest]]:
     return labels
 
 
-def calculate_reviews_given(reviews: dict, devs: dict[str, list[PullRequest]]) -> dict[str, int]:
+def calculate_reviews_given(prs: list[PullRequest]) -> dict[str, int]:
     """Count PRs reviewed by each developer. One per PR, excludes self-reviews and bots."""
-    pr_authors = {pr["number"]: author for author, prs in devs.items() for pr in prs}
-    reviewer_counts: dict[str, int] = {dev: 0 for dev in devs}
+    reviewer_counts: dict[str, int] = {}
 
-    for pr_number, pr_reviews in reviews.items():
-        author = pr_authors.get(pr_number)
+    for pr in prs:
+        author = pr["user"]["login"]
         counted: set[str] = set()
-        for review in pr_reviews:
+        for review in pr.get("reviews", []):
             reviewer = review.get("user", {}).get("login")
             if not reviewer or is_bot_login(reviewer):
                 continue
