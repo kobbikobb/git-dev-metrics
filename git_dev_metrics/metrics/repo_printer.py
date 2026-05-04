@@ -20,12 +20,15 @@ REPO_COLUMNS = [
 class ConsoleRepoPrinter:
     """Print repo metrics to console using Rich."""
 
-    def print_combined_metrics(self, metrics: dict, period: str) -> None:
+    def print_combined_metrics(
+        self, metrics: dict, period: str, date_range: str | None = None
+    ) -> None:
         from rich.console import Console
         from rich.table import Table
 
         console = Console()
-        table = Table(title=f"Repo Metrics (last {period})")
+        title = f"Repo Metrics ({date_range})" if date_range else (f"Repo Metrics (last {period})")
+        table = Table(title=title)
         for col in REPO_COLUMNS:
             table.add_column(col)
 
@@ -64,7 +67,9 @@ class FileRepoPrinter:
     def __init__(self, output_path: Path):
         self.output_path = output_path
 
-    def print_combined_metrics(self, metrics: dict, period: str) -> None:
+    def print_combined_metrics(
+        self, metrics: dict, period: str, date_range: str | None = None
+    ) -> None:
         header = (
             "| Repo | Health | Pickup Time (h) | Review Time (h) | Cycle Time (h) | "
             "PR Size | Avg Lines/PR | Total PRs | PRs/Week | Reviews Given | AI |"
@@ -73,7 +78,10 @@ class FileRepoPrinter:
             "|------|--------|------------------|-----------------|----------------|"
             "---------|--------------|-----------|-----------|---------------|-----|"
         )
-        lines = [f"# Repo Metrics (last {period})", "", header, separator]
+        title = (
+            f"# Repo Metrics ({date_range})" if date_range else (f"# Repo Metrics (last {period})")
+        )
+        lines = [title, "", header, separator]
 
         all_repo_metrics = list(metrics["repo_metrics"].values())
 

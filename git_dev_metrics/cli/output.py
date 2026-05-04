@@ -16,11 +16,11 @@ def resolve_output_path(output: Path | None) -> Path:
     return output if output else get_default_output_path()
 
 
-def print_metrics(metrics: dict, period: str, output_path: Path) -> None:
+def print_metrics(metrics: dict, period: str, output_path: Path, date_range: str) -> None:
     """Print metrics to the specified output path."""
     import typer
 
-    _print_combined_metrics(metrics, period, output_path)
+    _print_combined_metrics(metrics, period, output_path, date_range)
     typer.secho(f"Results saved to {output_path}", fg=typer.colors.GREEN)
 
 

@@ -22,6 +22,8 @@ from .prompts import (
 
 logger = logging.getLogger(__name__)
 
+_DATE_FMT = "%Y-%m-%d"
+
 
 class AnalysisError(Exception):
     """Failed during analysis (auth, fetch, etc)."""
@@ -116,7 +118,11 @@ def run_analyze(
         raise AnalysisError(str(e)) from e
 
     output_path = resolve_output_path(output)
-    print_metrics(metrics, period, output_path)
+    time_period = parse_time_period(period)
+    since = time_period.since.strftime(_DATE_FMT)
+    until = time_period.until.strftime(_DATE_FMT)
+    date_range = f"{since} to {until}"
+    print_metrics(metrics, period, output_path, date_range)
 
     stale_prs = _fetch_stale_prs(token, selected)
     if stale_prs:

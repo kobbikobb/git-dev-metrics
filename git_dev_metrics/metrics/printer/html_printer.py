@@ -99,12 +99,13 @@ class FileHtmlPrinter(Printer):
         """
         self._output_path = output_path
 
-    def print_combined_metrics(self, metrics: dict, period: str) -> None:
+    def print_combined_metrics(self, metrics: dict, period: str, date_range: str) -> None:
         """Render and write the HTML dashboard to disk.
 
         Args:
             metrics: Combined metrics dict with dev_metrics.
             period: Time period string (e.g. "30d") for the header.
+            date_range: Date range string (e.g. "2026-01-01 to 2026-01-31").
         """
         env = _get_env()
         template = env.get_template("dashboard.html")
@@ -112,7 +113,7 @@ class FileHtmlPrinter(Printer):
         devs = _build_devs_list(metrics)
         summary = build_summary(metrics)
 
-        html = template.render(devs=devs, summary=summary, period=period)
+        html = template.render(devs=devs, summary=summary, period=period, date_range=date_range)
 
         html_path = self._output_path.with_suffix(".html")
         html_path.parent.mkdir(parents=True, exist_ok=True)

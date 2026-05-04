@@ -20,12 +20,17 @@ DEV_COLUMNS = [
 class ConsoleDevPrinter:
     """Print dev metrics to console using Rich."""
 
-    def print_combined_metrics(self, metrics: dict, period: str) -> None:
+    def print_combined_metrics(
+        self, metrics: dict, period: str, date_range: str | None = None
+    ) -> None:
         from rich.console import Console
         from rich.table import Table
 
         console = Console()
-        table = Table(title="Developer Metrics (combined)")
+        title = (
+            f"Developer Metrics ({date_range})" if date_range else ("Developer Metrics (combined)")
+        )
+        table = Table(title=title)
         for col in DEV_COLUMNS:
             table.add_column(col)
 
@@ -63,7 +68,9 @@ class FileDevPrinter:
     def __init__(self, output_path: Path):
         self.output_path = output_path
 
-    def print_combined_metrics(self, metrics: dict, period: str) -> None:
+    def print_combined_metrics(
+        self, metrics: dict, period: str, date_range: str | None = None
+    ) -> None:
         header = (
             "| Dev | Health | Pickup Time (h) | Review Time (h) | Cycle Time (h) | "
             "PR Size | Avg Lines/PR | Total PRs | PRs/Week | Reviews Given | AI |"
@@ -72,7 +79,12 @@ class FileDevPrinter:
             "|------|--------|------------------|-----------------|----------------|"
             "---------|--------------|-----------|-----------|---------------|-----|"
         )
-        lines = ["", "# Developer Metrics (combined)", "", header, separator]
+        title = (
+            f"# Developer Metrics ({date_range})"
+            if date_range
+            else ("# Developer Metrics (combined)")
+        )
+        lines = ["", title, "", header, separator]
 
         all_dev_metrics = list(metrics["dev_metrics"].values())
 
