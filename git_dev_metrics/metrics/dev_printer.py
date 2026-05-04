@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from .health import calculate_health_score, format_health, get_health_color
+from .health import calculate_dev_health_score, format_health, get_health_color
 
 DEV_COLUMNS = [
     "Dev",
@@ -38,7 +38,7 @@ class ConsoleDevPrinter:
 
         sorted_devs = []
         for dev, m in metrics["dev_metrics"].items():
-            health = calculate_health_score(m, all_dev_metrics)
+            health = calculate_dev_health_score(m, all_dev_metrics)
             sorted_devs.append((dev, m, health))
 
         sorted_devs.sort(key=lambda x: x[2], reverse=True)
@@ -90,7 +90,7 @@ class FileDevPrinter:
 
         sorted_devs = []
         for dev, m in metrics["dev_metrics"].items():
-            health = calculate_health_score(m, all_dev_metrics)
+            health = calculate_dev_health_score(m, all_dev_metrics)
             sorted_devs.append((dev, m, health))
 
         sorted_devs.sort(key=lambda x: x[2], reverse=True)

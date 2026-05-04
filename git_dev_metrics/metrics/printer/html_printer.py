@@ -2,7 +2,7 @@ from pathlib import Path
 
 from jinja2 import Environment, PackageLoader, select_autoescape
 
-from ..health import calculate_health_score
+from ..health import calculate_dev_health_score
 from .base import Printer
 
 _ENV: Environment | None = None
@@ -31,7 +31,7 @@ def _build_devs_list(metrics: dict) -> list[dict]:
     all_dev_metrics = list(metrics["dev_metrics"].values())
     devs = []
     for dev, m in metrics["dev_metrics"].items():
-        health = calculate_health_score(m, all_dev_metrics)
+        health = calculate_dev_health_score(m, all_dev_metrics)
         devs.append(
             {
                 "name": dev,
@@ -60,7 +60,7 @@ def build_summary(metrics: dict) -> dict:
         total_reviews, ai_adoption, avg_lines_per_pr.
     """
     all_dev_metrics = list(metrics.get("dev_metrics", {}).values())
-    health_by_dev = [calculate_health_score(d, all_dev_metrics) for d in all_dev_metrics]
+    health_by_dev = [calculate_dev_health_score(d, all_dev_metrics) for d in all_dev_metrics]
     active = [d for d, h in zip(all_dev_metrics, health_by_dev, strict=True) if h > 0]
     repo_metrics = metrics.get("repo_metrics", {})
     total_prs = int(sum(m.get("pr_count", 0) for m in repo_metrics.values()))

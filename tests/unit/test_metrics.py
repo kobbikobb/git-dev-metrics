@@ -374,6 +374,126 @@ class TestCalculateReviewsGiven:
         assert result["alice"] == 0
         assert result["external-reviewer"] == 1
 
+    def test_should_count_each_pr_only_once_per_reviewer(self):
+        # Arrange: bob submits 3 review events on alice's single PR
+        from git_dev_metrics.metrics.calculator import calculate_reviews_given, group_prs_by_devs
+
+        prs = [
+            any_pr(id=1, number=1, user={"login": "alice"}),
+        ]
+        devs = group_prs_by_devs(prs)
+        reviews = {
+            1: [
+                {
+                    "user": {"login": "bob"},
+                    "state": "COMMENTED",
+                    "submitted_at": "2024-01-01T01:00:00Z",
+                },
+                {
+                    "user": {"login": "bob"},
+                    "state": "CHANGES_REQUESTED",
+                    "submitted_at": "2024-01-01T02:00:00Z",
+                },
+                {
+                    "user": {"login": "bob"},
+                    "state": "APPROVED",
+                    "submitted_at": "2024-01-01T03:00:00Z",
+                },
+            ],
+        }
+
+        # Act
+        result = calculate_reviews_given(reviews, devs)
+
+        # Assert
+        assert result["bob"] == 1
+
+    def test_should_exclude_self_reviews(self):
+        # Arrange: alice reviews her own PR
+        from git_dev_metrics.metrics.calculator import calculate_reviews_given, group_prs_by_devs
+
+        prs = [
+            any_pr(id=1, number=1, user={"login": "alice"}),
+        ]
+        devs = group_prs_by_devs(prs)
+        reviews = {
+            1: [
+                {
+                    "user": {"login": "alice"},
+                    "state": "APPROVED",
+                    "submitted_at": "2024-01-01T01:00:00Z",
+                },
+            ],
+        }
+
+        # Act
+        result = calculate_reviews_given(reviews, devs)
+
+        # Assert
+        assert result["alice"] == 0
+
+    def test_should_exclude_bot_suffix_reviewers(self):
+        # Arrange
+        from git_dev_metrics.metrics.calculator import calculate_reviews_given, group_prs_by_devs
+
+        prs = [any_pr(id=1, number=1, user={"login": "alice"})]
+        devs = group_prs_by_devs(prs)
+        reviews = {
+            1: [
+                {
+                    "user": {"login": "patches-bot"},
+                    "state": "APPROVED",
+                    "submitted_at": "2024-01-01T01:00:00Z",
+                },
+            ],
+        }
+
+        # Act
+        result = calculate_reviews_given(reviews, devs)
+
+        # Assert
+        assert "patches-bot" not in result
+
+
+class TestIsBotLogin:
+    def test_should_match_known_bot(self):
+        from git_dev_metrics.constants import is_bot_login
+
+        assert is_bot_login("dependabot") is True
+
+    def test_should_match_dash_bot_suffix(self):
+        from git_dev_metrics.constants import is_bot_login
+
+        assert is_bot_login("patches-bot") is True
+
+    def test_should_match_bracket_bot_suffix(self):
+        from git_dev_metrics.constants import is_bot_login
+
+        assert is_bot_login("custom[bot]") is True
+
+    def test_should_not_match_human_login(self):
+        from git_dev_metrics.constants import is_bot_login
+
+        assert is_bot_login("alice") is False
+
+    def test_should_handle_none(self):
+        from git_dev_metrics.constants import is_bot_login
+
+        assert is_bot_login(None) is False
+
+
+class TestGroupPrsByDevsBotExclusion:
+    def test_should_exclude_dash_bot_authors(self):
+        from git_dev_metrics.metrics.calculator import group_prs_by_devs
+
+        prs = [
+            any_pr(id=1, number=1, user={"login": "alice"}),
+            any_pr(id=2, number=2, user={"login": "patches-bot"}),
+        ]
+        result = group_prs_by_devs(prs)
+        assert "alice" in result
+        assert "patches-bot" not in result
+
 
 class TestGroupPrsByLabels:
     """Test cases for group_prs_by_labels function."""
