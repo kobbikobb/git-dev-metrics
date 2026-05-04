@@ -53,3 +53,13 @@ class TestPromptPeriodSelection:
         choice_values = {c.value for c in call_kwargs["choices"]}
         expected_values = {value for _, value in PERIOD_OPTIONS}
         assert choice_values == expected_values
+
+    def test_should_accept_last_month_as_valid_default(self, mocker):
+        mock_select = mocker.patch("git_dev_metrics.cli.prompts.questionary.select")
+        mock_select.return_value.ask.return_value = "last_month"
+
+        result = prompt_period_selection(default="last_month")
+
+        call_kwargs = mock_select.call_args[1]
+        assert call_kwargs["default"] == "last_month"
+        assert result == "last_month"
