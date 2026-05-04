@@ -1,5 +1,10 @@
+from pathlib import Path
+
+import click
 import questionary
 from questionary import Style
+
+MAX_RESULT_FILES = 10
 
 PERIOD_OPTIONS = [
     ("Last 7 days", "7d"),
@@ -75,3 +80,28 @@ def prompt_repo_selection(repos: dict[str, str]) -> list[str]:
     ).ask()
 
     return selected or list(repos.keys())  # fallback if user cancels
+
+
+def prompt_open_result(default_path: Path) -> None:
+    """List recent result files, open the chosen one in the default app."""
+    results_dir = default_path.parent
+    files = sorted(
+        results_dir.glob("metrics_*.md"),
+        key=lambda p: p.stat().st_mtime,
+        reverse=True,
+    )[:MAX_RESULT_FILES]
+    if not files:
+        return
+
+    choices = [questionary.Choice(title=f.name, value=f) for f in files]
+    choices.append(questionary.Choice(title="(skip)", value=False))
+
+    selected = questionary.select(
+        "Open a result file:",
+        choices=choices,
+        default=choices[0],
+    ).ask()
+
+    if not selected:
+        return
+    click.launch(str(selected))
