@@ -63,7 +63,7 @@ def build_summary(metrics: dict) -> dict:
     top_reviewer = ""
     max_review_share = 0
     if total_reviews > 0 and dev_reviews:
-        top_reviewer = max(sorted(dev_reviews), key=dev_reviews.get)
+        top_reviewer = max(sorted(dev_reviews), key=lambda d: dev_reviews[d])
         max_review_share = round(dev_reviews[top_reviewer] / total_reviews * 100)
 
     return {
