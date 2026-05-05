@@ -61,39 +61,15 @@ def build_summary(metrics: dict) -> dict:
     """
     all_dev_metrics = list(metrics.get("dev_metrics", {}).values())
     health_by_dev = [calculate_dev_health_score(d, all_dev_metrics) for d in all_dev_metrics]
-    active = [d for d, h in zip(all_dev_metrics, health_by_dev, strict=True) if h > 0]
-    repo_metrics = metrics.get("repo_metrics", {})
-    total_prs = int(sum(m.get("pr_count", 0) for m in repo_metrics.values()))
-    total_reviews = int(sum(m.get("reviews_given", 0) for m in repo_metrics.values()))
-    ai_adoption = (
-        round(
-            sum(m.get("ai_percentage", 0) * m.get("pr_count", 0) for m in repo_metrics.values())
-            / total_prs
-        )
-        if total_prs
-        else 0
-    )
-    avg_lines_per_pr = (
-        round(
-            sum(m.get("avg_lines_per_pr", 0) * m.get("pr_count", 0) for m in repo_metrics.values())
-            / total_prs,
-            1,
-        )
-        if total_prs
-        else 0
-    )
+    team = metrics.get("team_metrics") or {}
     return {
         "team_health": round(sum(health_by_dev) / len(health_by_dev)) if health_by_dev else 0,
-        "total_prs": total_prs,
-        "avg_cycle": round(sum(d.get("cycle_time", 0) for d in active) / len(active), 1)
-        if active
-        else 0,
-        "avg_pickup": round(sum(d.get("pickup_time", 0) for d in active) / len(active), 1)
-        if active
-        else 0,
-        "total_reviews": total_reviews,
-        "ai_adoption": ai_adoption,
-        "avg_lines_per_pr": avg_lines_per_pr,
+        "total_prs": int(team.get("pr_count", 0)),
+        "median_cycle": round(team.get("cycle_time", 0), 1),
+        "median_pickup": round(team.get("pickup_time", 0), 1),
+        "total_reviews": int(team.get("reviews_given", 0)),
+        "ai_adoption": round(team.get("ai_percentage", 0)),
+        "avg_lines_per_pr": round(team.get("avg_lines_per_pr", 0), 1),
     }
 
 

@@ -783,35 +783,39 @@ class TestCalculateAiPercentage:
 
 
 class TestBuildSummary:
-    """Test cases for build_summary AI/lines weighting."""
+    """Test cases for build_summary reading team_metrics."""
 
-    def test_should_weight_ai_adoption_by_pr_count(self):
+    def test_should_read_team_metrics_directly(self):
         from git_dev_metrics.metrics.printer.html_printer import build_summary
 
         metrics = {
             "dev_metrics": {},
-            "repo_metrics": {
-                "big": {"pr_count": 100, "ai_percentage": 80, "avg_lines_per_pr": 100},
-                "small": {"pr_count": 1, "ai_percentage": 0, "avg_lines_per_pr": 0},
+            "repo_metrics": {},
+            "team_metrics": {
+                "pr_count": 658,
+                "cycle_time": 8.4,
+                "pickup_time": 5.3,
+                "reviews_given": 967,
+                "ai_percentage": 80.4,
+                "avg_lines_per_pr": 742.0,
             },
         }
         result = build_summary(metrics)
 
-        assert result["ai_adoption"] == 79
-        assert result["avg_lines_per_pr"] == 99.0
+        assert result["total_prs"] == 658
+        assert result["median_cycle"] == 8.4
+        assert result["median_pickup"] == 5.3
+        assert result["total_reviews"] == 967
+        assert result["ai_adoption"] == 80
+        assert result["avg_lines_per_pr"] == 742.0
 
-    def test_should_ignore_zero_pr_repos_in_weighting(self):
+    def test_should_zero_out_when_team_metrics_missing(self):
         from git_dev_metrics.metrics.printer.html_printer import build_summary
 
-        metrics = {
-            "dev_metrics": {},
-            "repo_metrics": {
-                "active": {"pr_count": 10, "ai_percentage": 50, "avg_lines_per_pr": 200},
-                "empty1": {"pr_count": 0, "ai_percentage": 0, "avg_lines_per_pr": 0},
-                "empty2": {"pr_count": 0, "ai_percentage": 0, "avg_lines_per_pr": 0},
-            },
-        }
-        result = build_summary(metrics)
+        result = build_summary({"dev_metrics": {}, "repo_metrics": {}})
 
-        assert result["ai_adoption"] == 50
-        assert result["avg_lines_per_pr"] == 200.0
+        assert result["total_prs"] == 0
+        assert result["median_cycle"] == 0
+        assert result["median_pickup"] == 0
+        assert result["ai_adoption"] == 0
+        assert result["avg_lines_per_pr"] == 0

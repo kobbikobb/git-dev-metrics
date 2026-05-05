@@ -355,19 +355,19 @@
     <div class="sub">Across all devs</div>
   </div>
   <div class="summary-card">
-    <div class="label">Avg Lines/PR</div>
+    <div class="label">Mean Lines/PR</div>
     <div class="value">{{ summary.avg_lines_per_pr }}</div>
-    <div class="sub">Average per PR</div>
+    <div class="sub">Mean across all PRs</div>
   </div>
   <div class="summary-card">
-    <div class="label">Avg Cycle Time</div>
-    <div class="value">{{ summary.avg_cycle }}h</div>
-    <div class="sub">Excl. inactive</div>
+    <div class="label">Median Cycle Time</div>
+    <div class="value">{{ summary.median_cycle }}h</div>
+    <div class="sub">Median across all PRs</div>
   </div>
   <div class="summary-card">
-    <div class="label">Avg Pickup Time</div>
-    <div class="value">{{ summary.avg_pickup }}h</div>
-    <div class="sub">Excl. inactive</div>
+    <div class="label">Median Pickup Time</div>
+    <div class="value">{{ summary.median_pickup }}h</div>
+    <div class="sub">Median across all PRs</div>
   </div>
   <div class="summary-card">
     <div class="label">Reviews Given</div>
@@ -377,7 +377,7 @@
   <div class="summary-card">
     <div class="label">AI Adoption</div>
     <div class="value">{{ summary.ai_adoption }}%</div>
-    <div class="sub">Average AI usage</div>
+    <div class="sub">Share of all PRs</div>
   </div>
 </div>
 
