@@ -57,14 +57,17 @@ def build_summary(metrics: dict) -> dict:
     pr_count = int(team.get("pr_count", 0))
     total_reviews = int(team.get("reviews_given", 0))
 
-    dev_reviews = {
-        dev: int(m.get("reviews_given", 0)) for dev, m in (metrics.get("dev_metrics") or {}).items()
-    }
+    raw_counts = metrics.get("reviewer_counts")
+    if raw_counts is None:
+        raw_counts = {
+            dev: m.get("reviews_given", 0) for dev, m in (metrics.get("dev_metrics") or {}).items()
+        }
+    reviewer_counts = {r: int(c) for r, c in raw_counts.items() if c}
     top_reviewer = ""
     max_review_share = 0
-    if total_reviews > 0 and dev_reviews:
-        top_reviewer = max(sorted(dev_reviews), key=lambda d: dev_reviews[d])
-        max_review_share = round(dev_reviews[top_reviewer] / total_reviews * 100)
+    if total_reviews > 0 and reviewer_counts:
+        top_reviewer = max(sorted(reviewer_counts), key=lambda d: reviewer_counts[d])
+        max_review_share = round(reviewer_counts[top_reviewer] / total_reviews * 100)
 
     return {
         "team_health": round(sum(health_by_dev) / len(health_by_dev)) if health_by_dev else 0,
