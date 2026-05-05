@@ -106,8 +106,10 @@ def get_combined_metrics(token: str, selected_repos: list[str], event_period: st
     all_devs = group_prs_by_devs(all_prs)
     all_reviews_given = calculate_reviews_given(all_prs)
     combined_dev_metrics = _build_dev_metrics(all_devs, period_days, all_reviews_given)
+    team_metrics = _build_metrics(all_prs, period_days)
 
     return {
         "repo_metrics": repo_metrics,
         "dev_metrics": combined_dev_metrics,
+        "team_metrics": team_metrics,
     }
