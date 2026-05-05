@@ -58,8 +58,7 @@ def build_summary(metrics: dict) -> dict:
     total_reviews = int(team.get("reviews_given", 0))
 
     dev_reviews = {
-        dev: int(m.get("reviews_given", 0))
-        for dev, m in (metrics.get("dev_metrics") or {}).items()
+        dev: int(m.get("reviews_given", 0)) for dev, m in (metrics.get("dev_metrics") or {}).items()
     }
     top_reviewer = ""
     max_review_share = 0
