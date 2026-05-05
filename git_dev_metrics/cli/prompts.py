@@ -86,7 +86,7 @@ def prompt_open_result(default_path: Path) -> None:
     """List recent result files, open the chosen one in the default app."""
     results_dir = default_path.parent
     files = sorted(
-        results_dir.glob("metrics_*.md"),
+        [*results_dir.glob("metrics_*.html"), *results_dir.glob("metrics_*.md")],
         key=lambda p: p.stat().st_mtime,
         reverse=True,
     )[:MAX_RESULT_FILES]
