@@ -79,7 +79,7 @@ class TestPromptOpenResult:
         mock_select.assert_not_called()
 
     def test_should_offer_most_recent_files_first(self, tmp_path, mocker):
-        for i, name in enumerate(["metrics_a.md", "metrics_b.md", "metrics_c.md"]):
+        for i, name in enumerate(["metrics_a.html", "metrics_b.html", "metrics_c.html"]):
             f = tmp_path / name
             f.write_text("x")
             import os
@@ -92,12 +92,12 @@ class TestPromptOpenResult:
 
         call_kwargs = mock_select.call_args[1]
         titles = [c.title for c in call_kwargs["choices"]]
-        assert titles[:3] == ["metrics_c.md", "metrics_b.md", "metrics_a.md"]
+        assert titles[:3] == ["metrics_c.html", "metrics_b.html", "metrics_a.html"]
         assert titles[-1] == "(skip)"
 
     def test_should_cap_at_max_result_files(self, tmp_path, mocker):
         for i in range(MAX_RESULT_FILES + 5):
-            (tmp_path / f"metrics_{i:02d}.md").write_text("x")
+            (tmp_path / f"metrics_{i:02d}.html").write_text("x")
         mock_select = mocker.patch("git_dev_metrics.cli.prompts.questionary.select")
         mock_select.return_value.ask.return_value = None
 
@@ -108,7 +108,7 @@ class TestPromptOpenResult:
         assert len(file_choices) == MAX_RESULT_FILES
 
     def test_should_launch_selected_file(self, tmp_path, mocker):
-        target = tmp_path / "metrics_pick.md"
+        target = tmp_path / "metrics_pick.html"
         target.write_text("x")
         mock_select = mocker.patch("git_dev_metrics.cli.prompts.questionary.select")
         mock_select.return_value.ask.return_value = target
@@ -119,7 +119,7 @@ class TestPromptOpenResult:
         mock_launch.assert_called_once_with(str(target))
 
     def test_should_skip_launch_when_user_aborts(self, tmp_path, mocker):
-        (tmp_path / "metrics_a.md").write_text("x")
+        (tmp_path / "metrics_a.html").write_text("x")
         mock_select = mocker.patch("git_dev_metrics.cli.prompts.questionary.select")
         mock_select.return_value.ask.return_value = None
         mock_launch = mocker.patch("git_dev_metrics.cli.prompts.click.launch")
@@ -129,7 +129,7 @@ class TestPromptOpenResult:
         mock_launch.assert_not_called()
 
     def test_should_skip_launch_when_user_picks_skip_option(self, tmp_path, mocker):
-        (tmp_path / "metrics_a.md").write_text("x")
+        (tmp_path / "metrics_a.html").write_text("x")
         mock_select = mocker.patch("git_dev_metrics.cli.prompts.questionary.select")
         mock_select.return_value.ask.return_value = False
         mock_launch = mocker.patch("git_dev_metrics.cli.prompts.click.launch")
@@ -137,3 +137,20 @@ class TestPromptOpenResult:
         prompt_open_result(tmp_path / "metrics_unused.md")
 
         mock_launch.assert_not_called()
+
+    def test_should_include_both_html_and_md_files(self, tmp_path, mocker):
+        import os
+
+        for i, name in enumerate(["metrics_a.html", "metrics_a.md"]):
+            f = tmp_path / name
+            f.write_text("x")
+            os.utime(f, (i, i))
+        mock_select = mocker.patch("git_dev_metrics.cli.prompts.questionary.select")
+        mock_select.return_value.ask.return_value = None
+
+        prompt_open_result(tmp_path / "metrics_unused.md")
+
+        call_kwargs = mock_select.call_args[1]
+        titles = [c.title for c in call_kwargs["choices"]]
+        assert "metrics_a.html" in titles
+        assert "metrics_a.md" in titles
