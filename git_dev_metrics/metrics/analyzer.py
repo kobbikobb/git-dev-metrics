@@ -112,4 +112,5 @@ def get_combined_metrics(token: str, selected_repos: list[str], event_period: st
         "repo_metrics": repo_metrics,
         "dev_metrics": combined_dev_metrics,
         "team_metrics": team_metrics,
+        "reviewer_counts": all_reviews_given,
     }

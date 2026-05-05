@@ -21,40 +21,26 @@ class ConsolePrinter(Printer):
         console = Console()
 
         summary = build_summary(metrics)
-        table = Table(title=f"Summary ({date_range})")
-        for col in (
-            "Team Health",
-            "Total PRs",
-            "Mean Lines/PR",
-            "Median Cycle (h)",
-            "Median Pickup (h)",
-            "Reviews",
-            "AI",
-        ):
-            table.add_column(col)
-        table.add_row(
-            str(summary["team_health"]),
-            str(summary["total_prs"]),
-            str(summary["avg_lines_per_pr"]),
-            str(summary["median_cycle"]),
-            str(summary["median_pickup"]),
-            str(summary["total_reviews"]),
-            f"{summary['ai_adoption']}%",
-        )
+        table = Table(title=f"Summary ({date_range})", show_lines=False)
+        rows = [
+            ("Team Health", str(summary["team_health"])),
+            ("Total PRs", str(summary["total_prs"])),
+            ("Mean Lines/PR", str(summary["avg_lines_per_pr"])),
+            ("Median Cycle (h)", str(summary["median_cycle"])),
+            ("Median Pickup (h)", str(summary["median_pickup"])),
+            ("Total Reviews", str(summary["total_reviews"])),
+            ("AI Adoption", f"{summary['ai_adoption']}%"),
+            ("Review Ratio", f"{summary['review_ratio']}x"),
+            ("Top Reviewer", summary["top_reviewer"] or "—"),
+            ("Max Review Share", f"{summary['max_review_share']}%"),
+        ]
+        table.add_column("Metric")
+        table.add_column("Value")
+        for label, value in rows:
+            table.add_row(label, value)
 
         console.print()
         console.print(table)
-        console.print()
-
-        review_table = Table(title=f"Review Culture ({date_range})")
-        for col in ("Review Ratio", "Top Reviewer", "Max Review Share"):
-            review_table.add_column(col)
-        review_table.add_row(
-            f"{summary['review_ratio']}x",
-            summary["top_reviewer"] or "—",
-            f"{summary['max_review_share']}%",
-        )
-        console.print(review_table)
         console.print()
 
         self._dev_printer.print_combined_metrics(metrics, period, date_range)
@@ -80,9 +66,6 @@ class FilePrinter(Printer):
             f"- **Median Pickup Time:** {summary['median_pickup']}h",
             f"- **Total Reviews:** {summary['total_reviews']}",
             f"- **AI Adoption:** {summary['ai_adoption']}%",
-            "",
-            f"## Review Culture ({date_range})",
-            "",
             f"- **Review Ratio:** {summary['review_ratio']}x",
             f"- **Top Reviewer:** {summary['top_reviewer'] or '—'}",
             f"- **Max Review Share:** {summary['max_review_share']}%",
