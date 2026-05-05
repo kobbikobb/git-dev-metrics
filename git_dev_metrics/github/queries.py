@@ -68,7 +68,6 @@ def _map_pull_request(pr: dict) -> PullRequest:
         "user": {"login": _author_login(pr.get("author"))},
         "first_commit_at": first_commit_date,
         "body": pr.get("body"),
-        "labels": [label.get("name") for label in pr.get("labels", {}).get("nodes", [])],
         "commit_messages": commit_messages,
         "reviews": [],
     }
