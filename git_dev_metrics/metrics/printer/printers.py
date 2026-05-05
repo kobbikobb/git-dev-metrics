@@ -47,7 +47,7 @@ class ConsolePrinter(Printer):
         console.print()
 
         review_table = Table(title=f"Review Culture ({date_range})")
-        for col in ("Review Ratio", "Top Reviewer", "Max Share"):
+        for col in ("Review Ratio", "Top Reviewer", "Max Review Share"):
             review_table.add_column(col)
         review_table.add_row(
             f"{summary['review_ratio']}x",
@@ -84,8 +84,8 @@ class FilePrinter(Printer):
             f"## Review Culture ({date_range})",
             "",
             f"- **Review Ratio:** {summary['review_ratio']}x",
-            f"- **Top Reviewer:** {summary['top_reviewer'] or '—'} "
-            f"({summary['max_review_share']}% of reviews)",
+            f"- **Top Reviewer:** {summary['top_reviewer'] or '—'}",
+            f"- **Max Review Share:** {summary['max_review_share']}%",
             "",
         ]
         self._write(lines)
