@@ -12,6 +12,7 @@ from .graphql_queries import (
 )
 
 PAGE_SIZE = 50
+SEARCH_PAGE_SIZE = 25
 
 
 def _build_merged_prs_query(org: str, repo: str, period: TimePeriod) -> str:
@@ -112,7 +113,7 @@ def fetch_pull_requests(token: str, org: str, repo: str, period: TimePeriod) -> 
     prs = execute_paginated_query(
         client,
         SEARCH_MERGED_PRS_QUERY,
-        {"query": search_query, "first": PAGE_SIZE},
+        {"query": search_query, "first": SEARCH_PAGE_SIZE},
         "search",
         repo_id=f"{org}/{repo}",
     )
@@ -172,7 +173,7 @@ def fetch_repo_metrics(token: str, org: str, repo: str, period: TimePeriod) -> l
     prs = execute_paginated_query(
         client,
         SEARCH_MERGED_PRS_QUERY,
-        {"query": search_query, "first": PAGE_SIZE},
+        {"query": search_query, "first": SEARCH_PAGE_SIZE},
         "search",
         repo_id=f"{org}/{repo}",
     )
