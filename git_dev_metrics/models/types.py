@@ -35,7 +35,6 @@ class PullRequest(PullRequestInfo):
     changed_files: int
     first_commit_at: datetime | None
     body: str | None
-    labels: list[str]
     commit_messages: list[str]
     reviews: list[Review]
 
