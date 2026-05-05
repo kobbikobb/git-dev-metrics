@@ -46,6 +46,17 @@ class ConsolePrinter(Printer):
         console.print(table)
         console.print()
 
+        review_table = Table(title=f"Review Culture ({date_range})")
+        for col in ("Review Ratio", "Top Reviewer", "Max Share"):
+            review_table.add_column(col)
+        review_table.add_row(
+            f"{summary['review_ratio']}x",
+            summary["top_reviewer"] or "—",
+            f"{summary['max_review_share']}%",
+        )
+        console.print(review_table)
+        console.print()
+
         self._dev_printer.print_combined_metrics(metrics, period, date_range)
 
 
@@ -69,6 +80,12 @@ class FilePrinter(Printer):
             f"- **Median Pickup Time:** {summary['median_pickup']}h",
             f"- **Total Reviews:** {summary['total_reviews']}",
             f"- **AI Adoption:** {summary['ai_adoption']}%",
+            "",
+            f"## Review Culture ({date_range})",
+            "",
+            f"- **Review Ratio:** {summary['review_ratio']}x",
+            f"- **Top Reviewer:** {summary['top_reviewer'] or '—'} "
+            f"({summary['max_review_share']}% of reviews)",
             "",
         ]
         self._write(lines)
