@@ -440,3 +440,69 @@ class TestPagination:
         assert len(result) == 1
         assert result[0]["number"] == 1
         assert len(responses.calls) == 1
+
+
+class TestRetryOnTransientErrors:
+    @responses.activate
+    def test_should_retry_then_succeed_on_504(self, monkeypatch):
+        from git_dev_metrics.github import graphql_client
+
+        monkeypatch.setattr(graphql_client.time, "sleep", lambda _: None)
+
+        responses.add(
+            responses.POST,
+            re.compile(r"https://api\.github\.com/graphql"),
+            json={"message": "Gateway Timeout"},
+            status=504,
+        )
+        responses.add(
+            responses.POST,
+            re.compile(r"https://api\.github\.com/graphql"),
+            json={
+                "data": {
+                    "repository": {
+                        "pullRequests": {
+                            "nodes": [],
+                            "pageInfo": {"hasNextPage": False, "endCursor": None},
+                        }
+                    }
+                }
+            },
+            status=200,
+        )
+
+        client = get_client("fake-token")
+        result = execute_paginated_query(
+            client,
+            REPO_METRICS_QUERY,
+            {"owner": "o", "name": "r", "first": 1},
+            "repository.pullRequests",
+        )
+
+        assert result == []
+        assert len(responses.calls) == 2
+
+    @responses.activate
+    def test_should_give_up_after_exhausting_retries(self, monkeypatch):
+        from git_dev_metrics.github import graphql_client
+
+        monkeypatch.setattr(graphql_client.time, "sleep", lambda _: None)
+
+        for _ in range(graphql_client.TRANSIENT_RETRY_ATTEMPTS):
+            responses.add(
+                responses.POST,
+                re.compile(r"https://api\.github\.com/graphql"),
+                json={"message": "Gateway Timeout"},
+                status=504,
+            )
+
+        client = get_client("fake-token")
+        with raises(GitHubAPIError):
+            execute_paginated_query(
+                client,
+                REPO_METRICS_QUERY,
+                {"owner": "o", "name": "r", "first": 1},
+                "repository.pullRequests",
+            )
+
+        assert len(responses.calls) == graphql_client.TRANSIENT_RETRY_ATTEMPTS
