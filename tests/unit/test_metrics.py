@@ -819,3 +819,72 @@ class TestBuildSummary:
         assert result["median_pickup"] == 0
         assert result["ai_adoption"] == 0
         assert result["avg_lines_per_pr"] == 0
+        assert result["review_ratio"] == 0.0
+        assert result["top_reviewer"] == ""
+        assert result["max_review_share"] == 0
+
+    def test_should_compute_review_ratio_from_team_totals(self):
+        from git_dev_metrics.metrics.printer.html_printer import build_summary
+
+        metrics = {
+            "dev_metrics": {"alice": {"reviews_given": 4}, "bob": {"reviews_given": 6}},
+            "team_metrics": {"pr_count": 5, "reviews_given": 10},
+        }
+        result = build_summary(metrics)
+
+        assert result["review_ratio"] == 2.0
+
+    def test_should_pick_top_reviewer_and_share(self):
+        from git_dev_metrics.metrics.printer.html_printer import build_summary
+
+        metrics = {
+            "dev_metrics": {
+                "alice": {"reviews_given": 3},
+                "bob": {"reviews_given": 7},
+            },
+            "team_metrics": {"pr_count": 5, "reviews_given": 10},
+        }
+        result = build_summary(metrics)
+
+        assert result["top_reviewer"] == "bob"
+        assert result["max_review_share"] == 70
+
+    def test_should_break_top_reviewer_ties_alphabetically(self):
+        from git_dev_metrics.metrics.printer.html_printer import build_summary
+
+        metrics = {
+            "dev_metrics": {
+                "carol": {"reviews_given": 5},
+                "alice": {"reviews_given": 5},
+                "bob": {"reviews_given": 5},
+            },
+            "team_metrics": {"pr_count": 5, "reviews_given": 15},
+        }
+        result = build_summary(metrics)
+
+        assert result["top_reviewer"] == "alice"
+        assert result["max_review_share"] == 33
+
+    def test_should_zero_review_culture_when_no_reviews(self):
+        from git_dev_metrics.metrics.printer.html_printer import build_summary
+
+        metrics = {
+            "dev_metrics": {"alice": {"reviews_given": 0}},
+            "team_metrics": {"pr_count": 4, "reviews_given": 0},
+        }
+        result = build_summary(metrics)
+
+        assert result["review_ratio"] == 0.0
+        assert result["top_reviewer"] == ""
+        assert result["max_review_share"] == 0
+
+    def test_should_zero_review_ratio_when_no_prs(self):
+        from git_dev_metrics.metrics.printer.html_printer import build_summary
+
+        metrics = {
+            "dev_metrics": {"alice": {"reviews_given": 2}},
+            "team_metrics": {"pr_count": 0, "reviews_given": 2},
+        }
+        result = build_summary(metrics)
+
+        assert result["review_ratio"] == 0.0

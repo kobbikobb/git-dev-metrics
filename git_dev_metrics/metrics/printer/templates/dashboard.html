@@ -379,6 +379,16 @@
     <div class="value">{{ summary.ai_adoption }}%</div>
     <div class="sub">Share of all PRs</div>
   </div>
+  <div class="summary-card">
+    <div class="label">Review Ratio</div>
+    <div class="value">{{ summary.review_ratio }}x</div>
+    <div class="sub">Reviews per PR</div>
+  </div>
+  <div class="summary-card">
+    <div class="label">Top Reviewer</div>
+    <div class="value">{{ summary.top_reviewer or "—" }}</div>
+    <div class="sub">{{ summary.max_review_share }}% of reviews</div>
+  </div>
 </div>
 
 <div class="table-wrapper">
