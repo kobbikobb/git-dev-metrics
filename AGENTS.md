@@ -55,6 +55,19 @@ Run `ruff check .` to verify complexity.
 ## CI
 lint → test+coverage → security audit (pip-audit)
 
+## Before opening a PR
+
+Run these locally — they mirror the CI lint+test jobs. If any fail, fix before pushing:
+
+```bash
+uv run ruff check git_dev_metrics
+uv run ruff format --check git_dev_metrics
+uv run pyright
+uv run pytest
+```
+
+If `ruff format --check` reports drift, run `./scripts/format.sh` to apply formatting and re-stage the changed files. CI runs `ruff format --check` (no fix) and will fail on any drift.
+
 ## Privacy
 
 Never include individual developer identifiers (GitHub logins, real names, handles) in PR descriptions, commit messages, issues, or any committed file. This tool measures team aggregates and trends; per-person data stays out of source control. When illustrating impact, use anonymous labels (e.g. "dev A", "dev B") or aggregate stats only.
