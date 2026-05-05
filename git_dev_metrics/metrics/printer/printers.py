@@ -21,8 +21,7 @@ class ConsolePrinter(Printer):
         console = Console()
 
         summary = build_summary(metrics)
-        table = Table(title=f"Summary ({date_range})", show_lines=False)
-        rows = [
+        cells = [
             ("Team Health", str(summary["team_health"])),
             ("Total PRs", str(summary["total_prs"])),
             ("Mean Lines/PR", str(summary["avg_lines_per_pr"])),
@@ -34,13 +33,19 @@ class ConsolePrinter(Printer):
             ("Top Reviewer", summary["top_reviewer"] or "—"),
             ("Max Review Share", f"{summary['max_review_share']}%"),
         ]
-        table.add_column("Metric")
-        table.add_column("Value")
-        for label, value in rows:
-            table.add_row(label, value)
 
         console.print()
-        console.print(table)
+        for chunk_start in (0, 5):
+            chunk = cells[chunk_start : chunk_start + 5]
+            table = Table(
+                title=f"Summary ({date_range})" if chunk_start == 0 else None,
+                show_header=True,
+                header_style="bold",
+            )
+            for label, _ in chunk:
+                table.add_column(label, justify="left")
+            table.add_row(*(value for _, value in chunk))
+            console.print(table)
         console.print()
 
         self._dev_printer.print_combined_metrics(metrics, period, date_range)
