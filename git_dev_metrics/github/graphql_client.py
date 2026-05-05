@@ -3,6 +3,7 @@ import time
 from collections.abc import Callable
 from typing import Any
 
+import requests
 from gql import Client
 from gql.graphql_request import GraphQLRequest
 from gql.transport import exceptions as transport_exceptions
@@ -11,6 +12,9 @@ from rich.console import Console
 from rich.live import Live
 
 from .exceptions import GitHubAPIError, GitHubAuthError, GitHubNotFoundError, GitHubRateLimitError
+
+TRANSIENT_RETRY_ATTEMPTS = 4
+TRANSIENT_RETRY_BASE_DELAY = 2.0
 
 logger = logging.getLogger(__name__)
 console = Console()
@@ -32,20 +36,42 @@ def get_client(token: str) -> Client:
     return Client(transport=transport)
 
 
+_TRANSIENT_STATUSES = (500, 502, 503, 504)
+
+
+def _is_transient(exc: BaseException) -> bool:
+    """Detect transient errors worth retrying (gateway timeouts, 5xx)."""
+    if isinstance(exc, transport_exceptions.TransportServerError):
+        status = getattr(exc, "code", None)
+        return status in _TRANSIENT_STATUSES
+    if isinstance(exc, requests.HTTPError) and exc.response is not None:
+        return exc.response.status_code in _TRANSIENT_STATUSES
+    return isinstance(exc, requests.Timeout | requests.ConnectionError)
+
+
 def execute_query(
     client: Client, query: GraphQLRequest, variables: dict[str, Any] | None = None
 ) -> dict[str, Any]:
-    """Execute a GraphQL query and handle errors."""
-    try:
-        result = client.execute(query, variable_values=variables)
-        return result if result is not None else {}
-    except transport_exceptions.TransportQueryError as e:
-        _handle_graphql_error(e)
-        return {}  # unreachable but needed for type checker
-    except transport_exceptions.TransportConnectionFailed as e:
-        raise GitHubAPIError(f"Network error: {e}") from e
-    except Exception as e:
-        raise GitHubAPIError(f"GitHub API error: {e}") from e
+    """Execute a GraphQL query and handle errors. Retries transient 5xx with backoff."""
+    last_exc: Exception | None = None
+    for attempt in range(TRANSIENT_RETRY_ATTEMPTS):
+        try:
+            result = client.execute(query, variable_values=variables)
+            return result if result is not None else {}
+        except transport_exceptions.TransportQueryError as e:
+            _handle_graphql_error(e)
+            return {}  # unreachable but needed for type checker
+        except transport_exceptions.TransportConnectionFailed as e:
+            raise GitHubAPIError(f"Network error: {e}") from e
+        except Exception as e:
+            if _is_transient(e) and attempt < TRANSIENT_RETRY_ATTEMPTS - 1:
+                delay = TRANSIENT_RETRY_BASE_DELAY * (2**attempt)
+                logger.warning("Transient GitHub error (%s); retrying in %.0fs", e, delay)
+                time.sleep(delay)
+                last_exc = e
+                continue
+            raise GitHubAPIError(f"GitHub API error: {e}") from e
+    raise GitHubAPIError(f"GitHub API error after retries: {last_exc}") from last_exc
 
 
 def _handle_graphql_error(e: transport_exceptions.TransportQueryError) -> None:
