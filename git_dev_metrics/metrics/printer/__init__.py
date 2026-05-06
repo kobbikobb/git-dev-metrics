@@ -6,7 +6,7 @@ from .printers import (
     print_combined_metrics,
     print_stale_prs,
 )
-from .stale_printer import FileStalePRPrinter
+from .stale import FileStalePRPrinter
 from .utils import get_default_output_path
 
 __all__ = [

@@ -1,28 +1,19 @@
 from pathlib import Path
 
-
-def _calculate_summary(prs: list[dict]) -> tuple[int, float]:
-    """Calculate total count and average age in days."""
-    total = len(prs)
-    avg_age = sum(pr["age_days"] for pr in prs) / total if prs else 0.0
-    return total, round(avg_age, 1)
-
-
-def _truncate(text: str, length: int) -> str:
-    """Truncate text to length with ellipsis."""
-    return text[:length] + "..." if len(text) > length else text
-
-
-def _check_mark(value: bool) -> str:
-    """Return check mark or cross mark for boolean."""
-    return "✓" if value else "✗"
-
+from ..calculator import summarize_stale_prs
 
 TITLE_FILE_LENGTH = 60
 
 
+def _truncate(text: str, length: int) -> str:
+    return text[:length] + "..." if len(text) > length else text
+
+
+def _check_mark(value: bool) -> str:
+    return "✓" if value else "✗"
+
+
 def _stale_path(output_path: Path) -> Path:
-    """Sibling file with `_stale` appended to the stem."""
     return output_path.with_name(f"{output_path.stem}_stale{output_path.suffix}")
 
 
@@ -36,8 +27,7 @@ class FileStalePRPrinter:
         if not stale_prs:
             return
 
-        total, avg_age = _calculate_summary(stale_prs)
-        sorted_prs = sorted(stale_prs, key=lambda pr: pr["age_days"], reverse=True)
+        total, avg_age = summarize_stale_prs(stale_prs)
 
         self.output_path.parent.mkdir(parents=True, exist_ok=True)
         with open(self.output_path, "w") as f:
@@ -45,7 +35,7 @@ class FileStalePRPrinter:
             f.write(f"**Total: {total} | Avg Age: {avg_age:.1f} days**\n\n")
             f.write("| PR | Title | Repo | Author | Draft | Approved | Age (days) |\n")
             f.write("|---|---|---|---|---|---|---|\n")
-            for pr in sorted_prs:
+            for pr in stale_prs:
                 row = (
                     f"| [#{pr['number']}]({pr['url']}) | "
                     f"{_truncate(pr['title'], TITLE_FILE_LENGTH)} | "
