@@ -34,6 +34,7 @@ class PullRequest(PullRequestInfo):
     deletions: int
     changed_files: int
     first_commit_at: datetime | None
+    ready_for_review_at: datetime | None
     body: str | None
     commit_messages: list[str]
     reviews: list[Review]

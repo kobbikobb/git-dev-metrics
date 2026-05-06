@@ -61,7 +61,7 @@ def median(values: list[float | int]) -> float:
 
 
 def calculate_cycle_time(prs: list[PullRequest]) -> float:
-    """Calculate median time from first commit/PR creation to merge (in hours)."""
+    """Median hours from first commit/PR open to merge, excluding any draft window."""
     if not prs:
         return 0.0
 
@@ -69,6 +69,7 @@ def calculate_cycle_time(prs: list[PullRequest]) -> float:
     for pr in prs:
         created = _to_datetime(pr["created_at"])
         first_commit = _to_datetime(pr.get("first_commit_at"))
+        ready_for_review = _to_datetime(pr.get("ready_for_review_at"))
         merged = _to_datetime(pr["merged_at"])
 
         if created is None or merged is None:
@@ -77,6 +78,8 @@ def calculate_cycle_time(prs: list[PullRequest]) -> float:
         start_time = created
         if first_commit is not None and first_commit < created:
             start_time = first_commit
+        if ready_for_review is not None and ready_for_review > start_time:
+            start_time = ready_for_review
 
         hours = (merged - start_time).total_seconds() / 3600
         cycle_times.append(hours)

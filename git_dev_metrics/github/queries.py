@@ -57,6 +57,12 @@ def _map_pull_request(pr: dict) -> PullRequest:
 
     commit_messages = [msg for c in commits if (msg := (c.get("commit") or {}).get("message"))]
 
+    timeline_nodes = (pr.get("timelineItems") or {}).get("nodes") or []
+    ready_for_review = next(
+        (_parse_datetime(n.get("createdAt")) for n in timeline_nodes if n.get("createdAt")),
+        None,
+    )
+
     return {  # type: ignore[return-value]
         "number": pr.get("number"),
         "title": pr.get("title"),
@@ -67,6 +73,7 @@ def _map_pull_request(pr: dict) -> PullRequest:
         "changed_files": pr.get("changedFiles", 0),
         "user": {"login": _author_login(pr.get("author"))},
         "first_commit_at": first_commit_date,
+        "ready_for_review_at": ready_for_review,
         "body": pr.get("body"),
         "commit_messages": commit_messages,
         "reviews": [],
