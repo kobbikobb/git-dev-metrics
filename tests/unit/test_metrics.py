@@ -15,7 +15,7 @@ from git_dev_metrics.metrics import (
 from git_dev_metrics.metrics.analyzer import _parse_period_days
 from git_dev_metrics.models import OpenPullRequest
 
-from .conftest import any_pr
+from .conftest import any_pr, approved_review
 
 
 class TestMedian:
@@ -51,7 +51,13 @@ class TestCalculateCycleTime:
         assert result == 0.0
 
     def test_should_return_correct_cycle_time_for_single_pr(self):
-        prs = [any_pr(created_at="2024-01-01T00:00:00Z", merged_at="2024-01-02T00:00:00Z")]
+        prs = [
+            any_pr(
+                created_at="2024-01-01T00:00:00Z",
+                merged_at="2024-01-02T00:00:00Z",
+                reviews=[approved_review("2024-01-01T06:00:00Z")],
+            )
+        ]
 
         result = calculate_cycle_time(prs)
 
@@ -59,8 +65,16 @@ class TestCalculateCycleTime:
 
     def test_should_return_average_cycle_time_for_multiple_prs(self):
         prs = [
-            any_pr(created_at="2024-01-01T00:00:00Z", merged_at="2024-01-02T00:00:00Z"),
-            any_pr(created_at="2024-01-01T00:00:00Z", merged_at="2024-01-03T00:00:00Z"),
+            any_pr(
+                created_at="2024-01-01T00:00:00Z",
+                merged_at="2024-01-02T00:00:00Z",
+                reviews=[approved_review("2024-01-01T06:00:00Z")],
+            ),
+            any_pr(
+                created_at="2024-01-01T00:00:00Z",
+                merged_at="2024-01-03T00:00:00Z",
+                reviews=[approved_review("2024-01-01T06:00:00Z")],
+            ),
         ]
 
         result = calculate_cycle_time(prs)
@@ -69,7 +83,11 @@ class TestCalculateCycleTime:
 
     def test_should_handle_prs_with_different_time_zones(self):
         prs = [
-            any_pr(created_at="2024-01-01T12:00:00Z", merged_at="2024-01-02T12:00:00Z"),
+            any_pr(
+                created_at="2024-01-01T12:00:00Z",
+                merged_at="2024-01-02T12:00:00Z",
+                reviews=[approved_review("2024-01-01T18:00:00Z")],
+            ),
         ]
 
         result = calculate_cycle_time(prs)
@@ -82,6 +100,7 @@ class TestCalculateCycleTime:
                 created_at="2024-01-02T00:00:00Z",
                 merged_at="2024-01-03T00:00:00Z",
                 first_commit_at="2024-01-01T00:00:00Z",
+                reviews=[approved_review("2024-01-02T12:00:00Z")],
             ),
         ]
 
@@ -95,6 +114,7 @@ class TestCalculateCycleTime:
                 created_at="2024-01-01T00:00:00Z",
                 merged_at="2024-01-03T00:00:00Z",
                 first_commit_at="2024-01-02T00:00:00Z",
+                reviews=[approved_review("2024-01-02T12:00:00Z")],
             ),
         ]
 
@@ -108,6 +128,7 @@ class TestCalculateCycleTime:
                 created_at="2024-01-01T00:00:00Z",
                 merged_at="2024-01-02T00:00:00Z",
                 first_commit_at=None,
+                reviews=[approved_review("2024-01-01T06:00:00Z")],
             ),
         ]
 
@@ -121,6 +142,7 @@ class TestCalculateCycleTime:
                 created_at="2024-01-01T00:00:00Z",
                 ready_for_review_at="2024-01-04T00:00:00Z",
                 merged_at="2024-01-05T00:00:00Z",
+                reviews=[approved_review("2024-01-04T12:00:00Z")],
             ),
         ]
 
@@ -135,12 +157,26 @@ class TestCalculateCycleTime:
                 first_commit_at="2024-01-01T00:00:00Z",
                 ready_for_review_at="2023-12-31T00:00:00Z",
                 merged_at="2024-01-03T00:00:00Z",
+                reviews=[approved_review("2024-01-02T12:00:00Z")],
             ),
         ]
 
         result = calculate_cycle_time(prs)
 
         assert result == 48.0
+
+    def test_should_skip_prs_without_approval(self):
+        prs = [
+            any_pr(
+                created_at="2024-01-01T00:00:00Z",
+                merged_at="2024-01-02T00:00:00Z",
+                reviews=[],
+            ),
+        ]
+
+        result = calculate_cycle_time(prs)
+
+        assert result == 0.0
 
 
 class TestCalculatePrSize:
@@ -275,6 +311,19 @@ class TestCalculatePickupTime:
         ]
         result = calculate_pickup_time(prs)
         assert result == 12.0
+
+    def test_should_exclude_draft_window_from_pickup(self):
+        prs = [
+            any_pr(
+                number=1,
+                created_at="2024-01-01T00:00:00Z",
+                ready_for_review_at="2024-01-04T00:00:00Z",
+                merged_at="2024-01-05T00:00:00Z",
+                reviews=[approved_review("2024-01-04T06:00:00Z")],
+            )
+        ]
+        result = calculate_pickup_time(prs)
+        assert result == 6.0
 
 
 class TestCalculateReviewTime:
@@ -807,6 +856,76 @@ class TestCalculateAiPercentage:
         ]
         result = calculate_ai_percentage(prs)
         assert result == 50.0
+
+
+class TestTeamAggregation:
+    """Combined metrics aggregate per-dev medians for time-based team stats."""
+
+    def test_should_use_median_of_dev_medians_for_time_metrics(self, mocker):
+        from git_dev_metrics.metrics.analyzer import get_combined_metrics
+
+        # heavy author: 3 PRs with cycle ~ 100h
+        # lean author: 1 PR with cycle ~ 1h
+        # PR-level median = 100h (volume-weighted), dev-level median = 50.5h
+        heavy = [
+            any_pr(
+                number=i,
+                user={"login": "kobbi"},
+                created_at="2024-01-01T00:00:00Z",
+                merged_at=f"2024-01-0{5 + i}T00:00:00Z",  # 4-6 days
+                reviews=[approved_review("2024-01-01T06:00:00Z")],
+            )
+            for i in range(1, 4)
+        ]
+        lean = [
+            any_pr(
+                number=10,
+                user={"login": "alice"},
+                created_at="2024-01-01T00:00:00Z",
+                merged_at="2024-01-01T01:00:00Z",
+                reviews=[approved_review("2024-01-01T00:30:00Z")],
+            )
+        ]
+        mocker.patch(
+            "git_dev_metrics.metrics.analyzer.fetch_repo_metrics",
+            return_value=heavy + lean,
+        )
+        mocker.patch(
+            "git_dev_metrics.metrics.analyzer.parse_time_period",
+            return_value=mocker.MagicMock(),
+        )
+
+        result = get_combined_metrics(token="t", selected_repos=["org/repo"])
+
+        team = result["team_metrics"]
+        kobbi_cycle = result["dev_metrics"]["kobbi"]["cycle_time"]
+        alice_cycle = result["dev_metrics"]["alice"]["cycle_time"]
+        # team cycle is the median of the two dev cycle medians, not pulled by PR volume
+        assert team["cycle_time"] == round((kobbi_cycle + alice_cycle) / 2, 2)
+        assert team["pr_count"] == 4  # counts stay sum-based
+
+    def test_should_keep_pickup_le_cycle_at_team_level(self, mocker):
+        from git_dev_metrics.metrics.analyzer import get_combined_metrics
+
+        prs = [
+            any_pr(
+                number=1,
+                user={"login": "dev"},
+                created_at="2024-01-01T00:00:00Z",
+                ready_for_review_at="2024-01-04T00:00:00Z",
+                merged_at="2024-01-05T00:00:00Z",
+                reviews=[approved_review("2024-01-04T12:00:00Z")],
+            )
+        ]
+        mocker.patch("git_dev_metrics.metrics.analyzer.fetch_repo_metrics", return_value=prs)
+        mocker.patch(
+            "git_dev_metrics.metrics.analyzer.parse_time_period",
+            return_value=mocker.MagicMock(),
+        )
+
+        result = get_combined_metrics(token="t", selected_repos=["org/repo"])
+
+        assert result["team_metrics"]["pickup_time"] <= result["team_metrics"]["cycle_time"]
 
 
 class TestBuildSummary:
