@@ -93,6 +93,13 @@ REPO_METRICS_QUERY = gql.gql(
                             submittedAt
                         }
                     }
+                    timelineItems(itemTypes: [READY_FOR_REVIEW_EVENT], first: 1) {
+                        nodes {
+                            ... on ReadyForReviewEvent {
+                                createdAt
+                            }
+                        }
+                    }
                 }
                 pageInfo {
                     hasNextPage
@@ -170,6 +177,13 @@ SEARCH_MERGED_PRS_QUERY = gql.gql(
                             }
                             state
                             submittedAt
+                        }
+                    }
+                    timelineItems(itemTypes: [READY_FOR_REVIEW_EVENT], first: 1) {
+                        nodes {
+                            ... on ReadyForReviewEvent {
+                                createdAt
+                            }
                         }
                     }
                 }

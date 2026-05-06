@@ -115,6 +115,33 @@ class TestCalculateCycleTime:
 
         assert result == 24.0
 
+    def test_should_exclude_draft_window_using_ready_for_review_at(self):
+        prs = [
+            any_pr(
+                created_at="2024-01-01T00:00:00Z",
+                ready_for_review_at="2024-01-04T00:00:00Z",
+                merged_at="2024-01-05T00:00:00Z",
+            ),
+        ]
+
+        result = calculate_cycle_time(prs)
+
+        assert result == 24.0
+
+    def test_should_ignore_ready_for_review_when_before_start_time(self):
+        prs = [
+            any_pr(
+                created_at="2024-01-02T00:00:00Z",
+                first_commit_at="2024-01-01T00:00:00Z",
+                ready_for_review_at="2023-12-31T00:00:00Z",
+                merged_at="2024-01-03T00:00:00Z",
+            ),
+        ]
+
+        result = calculate_cycle_time(prs)
+
+        assert result == 48.0
+
 
 class TestCalculatePrSize:
     """Test cases for calculate_pr_size function."""

@@ -23,6 +23,7 @@ def any_pr(**overrides: Any) -> PullRequest:
         "deletions": 50,
         "changed_files": 5,
         "first_commit_at": None,
+        "ready_for_review_at": None,
         "body": None,
         "commit_messages": [],
         "reviews": [],
