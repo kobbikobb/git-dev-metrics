@@ -13,6 +13,16 @@ from .calculator import (
     calculate_reviews_given,
     calculate_throughput,
     group_prs_by_devs,
+    median,
+)
+
+_PER_DEV_AGGREGATED_KEYS = (
+    "cycle_time",
+    "pickup_time",
+    "review_time",
+    "pr_size",
+    "avg_lines_per_pr",
+    "ai_percentage",
 )
 
 
@@ -107,6 +117,9 @@ def get_combined_metrics(token: str, selected_repos: list[str], event_period: st
     all_reviews_given = calculate_reviews_given(all_prs)
     combined_dev_metrics = _build_dev_metrics(all_devs, period_days, all_reviews_given)
     team_metrics = _build_metrics(all_prs, period_days)
+    for key in _PER_DEV_AGGREGATED_KEYS:
+        values = [m[key] for m in combined_dev_metrics.values() if m.get(key)]
+        team_metrics[key] = round(median(values), 2) if values else 0.0
 
     return {
         "repo_metrics": repo_metrics,

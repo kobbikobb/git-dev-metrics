@@ -61,7 +61,12 @@ def median(values: list[float | int]) -> float:
 
 
 def calculate_cycle_time(prs: list[PullRequest]) -> float:
-    """Median hours from first commit/PR open to merge, excluding any draft window."""
+    """Median hours from first commit/ready-for-review to merge for approved PRs.
+
+    Restricted to PRs that received at least one approval so the team-level
+    invariant pickup <= cycle holds. PRs merged without review (auto-merge,
+    owner override) are excluded.
+    """
     if not prs:
         return 0.0
 
@@ -74,6 +79,8 @@ def calculate_cycle_time(prs: list[PullRequest]) -> float:
 
         if created is None or merged is None:
             continue
+        if _first_approval_at(pr) is None:
+            continue
 
         start_time = created
         if first_commit is not None and first_commit < created:
@@ -84,6 +91,8 @@ def calculate_cycle_time(prs: list[PullRequest]) -> float:
         hours = (merged - start_time).total_seconds() / 3600
         cycle_times.append(hours)
 
+    if not cycle_times:
+        return 0.0
     return round(median(cycle_times), 2)
 
 
@@ -117,16 +126,21 @@ def _first_approval_at(pr: PullRequest) -> datetime | None:
 
 
 def calculate_pickup_time(prs: list[PullRequest]) -> float:
-    """Calculate median time from PR creation to first approval (in hours)."""
+    """Median hours from PR ready-for-review to first approval, excluding draft time."""
     if not prs:
         return 0.0
 
     pickup_times = []
     for pr in prs:
         created = _to_datetime(pr["created_at"])
+        ready_for_review = _to_datetime(pr.get("ready_for_review_at"))
         first_approval = _first_approval_at(pr)
-        if created and first_approval:
-            pickup_times.append((first_approval - created).total_seconds() / 3600)
+        if not (created and first_approval):
+            continue
+        start_time = created
+        if ready_for_review is not None and ready_for_review > start_time:
+            start_time = ready_for_review
+        pickup_times.append((first_approval - start_time).total_seconds() / 3600)
 
     if not pickup_times:
         return 0.0

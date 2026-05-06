@@ -29,3 +29,8 @@ def any_pr(**overrides: Any) -> PullRequest:
         "reviews": [],
     }
     return {**defaults, **overrides}  # type: ignore[return-value]
+
+
+def approved_review(submitted_at: str = "2024-01-01T12:00:00Z", login: str = "reviewer") -> dict:
+    """Approval review row for use in PullRequest fixtures."""
+    return {"user": {"login": login}, "state": "APPROVED", "submitted_at": submitted_at}
