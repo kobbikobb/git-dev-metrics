@@ -1,7 +1,5 @@
 from pathlib import Path
 
-MAX_STALE_PRS_DISPLAY = 10
-
 
 def _calculate_summary(prs: list[dict]) -> tuple[int, float]:
     """Calculate total count and average age in days."""
@@ -20,34 +18,34 @@ def _check_mark(value: bool) -> str:
     return "✓" if value else "✗"
 
 
-TITLE_FILE_LENGTH = 35
+TITLE_FILE_LENGTH = 60
+
+
+def _stale_path(output_path: Path) -> Path:
+    """Sibling file with `_stale` appended to the stem."""
+    return output_path.with_name(f"{output_path.stem}_stale{output_path.suffix}")
 
 
 class FileStalePRPrinter:
-    """Print stale PRs to markdown file."""
+    """Print stale PRs to a dedicated markdown file."""
 
     def __init__(self, output_path: Path):
-        self.output_path = output_path
+        self.output_path = _stale_path(output_path)
 
     def print_stale_prs(self, stale_prs: list[dict]) -> None:
         if not stale_prs:
             return
 
         total, avg_age = _calculate_summary(stale_prs)
-        display_prs = stale_prs[:MAX_STALE_PRS_DISPLAY]
+        sorted_prs = sorted(stale_prs, key=lambda pr: pr["age_days"], reverse=True)
 
-        with open(self.output_path, "a") as f:
-            f.write("\n# Stale PRs\n\n")
-            if total > MAX_STALE_PRS_DISPLAY:
-                f.write(
-                    f"**Total: {total} (showing {MAX_STALE_PRS_DISPLAY}) | Avg Age: "
-                    f"{avg_age:.1f} days**\n\n"
-                )
-            else:
-                f.write(f"**Total: {total} | Avg Age: {avg_age:.1f} days**\n\n")
+        self.output_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(self.output_path, "w") as f:
+            f.write("# Stale PRs\n\n")
+            f.write(f"**Total: {total} | Avg Age: {avg_age:.1f} days**\n\n")
             f.write("| PR | Title | Repo | Author | Draft | Approved | Age (days) |\n")
             f.write("|---|---|---|---|---|---|---|\n")
-            for pr in display_prs:
+            for pr in sorted_prs:
                 row = (
                     f"| [#{pr['number']}]({pr['url']}) | "
                     f"{_truncate(pr['title'], TITLE_FILE_LENGTH)} | "
