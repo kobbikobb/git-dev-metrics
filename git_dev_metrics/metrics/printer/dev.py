@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from .health import calculate_dev_health_score, format_health, get_health_color
+from ..health import calculate_dev_health_score, format_health, get_health_color
 
 DEV_COLUMNS = [
     "Dev",

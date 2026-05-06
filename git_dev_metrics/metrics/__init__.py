@@ -11,10 +11,10 @@ from .calculator import (
     calculate_throughput,
     median,
 )
-from .dev_printer import ConsoleDevPrinter, FileDevPrinter
 from .health import calculate_dev_health_score, calculate_health_score
 from .printer import CompositePrinter, Printer, get_default_output_path
-from .repo_printer import FileRepoPrinter
+from .printer.dev import ConsoleDevPrinter, FileDevPrinter
+from .printer.repo import FileRepoPrinter
 
 __all__ = [
     "get_pull_request_metrics",

@@ -813,7 +813,7 @@ class TestBuildSummary:
     """Test cases for build_summary reading team_metrics."""
 
     def test_should_read_team_metrics_directly(self):
-        from git_dev_metrics.metrics.printer.html_printer import build_summary
+        from git_dev_metrics.metrics.summary import build_summary
 
         metrics = {
             "dev_metrics": {},
@@ -837,7 +837,7 @@ class TestBuildSummary:
         assert result["avg_lines_per_pr"] == 742.0
 
     def test_should_zero_out_when_team_metrics_missing(self):
-        from git_dev_metrics.metrics.printer.html_printer import build_summary
+        from git_dev_metrics.metrics.summary import build_summary
 
         result = build_summary({"dev_metrics": {}, "repo_metrics": {}})
 
@@ -851,7 +851,7 @@ class TestBuildSummary:
         assert result["max_review_share"] == 0
 
     def test_should_compute_review_ratio_from_team_totals(self):
-        from git_dev_metrics.metrics.printer.html_printer import build_summary
+        from git_dev_metrics.metrics.summary import build_summary
 
         metrics = {
             "dev_metrics": {"alice": {"reviews_given": 4}, "bob": {"reviews_given": 6}},
@@ -862,7 +862,7 @@ class TestBuildSummary:
         assert result["review_ratio"] == 2.0
 
     def test_should_pick_top_reviewer_and_share(self):
-        from git_dev_metrics.metrics.printer.html_printer import build_summary
+        from git_dev_metrics.metrics.summary import build_summary
 
         metrics = {
             "dev_metrics": {
@@ -877,7 +877,7 @@ class TestBuildSummary:
         assert result["max_review_share"] == 70
 
     def test_should_break_top_reviewer_ties_alphabetically(self):
-        from git_dev_metrics.metrics.printer.html_printer import build_summary
+        from git_dev_metrics.metrics.summary import build_summary
 
         metrics = {
             "dev_metrics": {
@@ -893,7 +893,7 @@ class TestBuildSummary:
         assert result["max_review_share"] == 33
 
     def test_should_zero_review_culture_when_no_reviews(self):
-        from git_dev_metrics.metrics.printer.html_printer import build_summary
+        from git_dev_metrics.metrics.summary import build_summary
 
         metrics = {
             "dev_metrics": {"alice": {"reviews_given": 0}},
@@ -906,7 +906,7 @@ class TestBuildSummary:
         assert result["max_review_share"] == 0
 
     def test_should_zero_review_ratio_when_no_prs(self):
-        from git_dev_metrics.metrics.printer.html_printer import build_summary
+        from git_dev_metrics.metrics.summary import build_summary
 
         metrics = {
             "dev_metrics": {"alice": {"reviews_given": 2}},

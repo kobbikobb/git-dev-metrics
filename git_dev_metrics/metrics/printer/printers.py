@@ -1,10 +1,11 @@
 from pathlib import Path
 
-from ..dev_printer import ConsoleDevPrinter, FileDevPrinter
-from ..repo_printer import FileRepoPrinter
+from ..summary import build_summary
 from .base import Printer
-from .html_printer import FileHtmlPrinter, build_summary
-from .stale_printer import FileStalePRPrinter
+from .dev import ConsoleDevPrinter, FileDevPrinter
+from .html import FileHtmlPrinter
+from .repo import FileRepoPrinter
+from .stale import FileStalePRPrinter
 from .utils import get_default_output_path
 
 

@@ -238,3 +238,10 @@ def get_stale_prs(
     stale = [p for p in (_is_stale_pr(pr, repo, clock) for pr in prs) if p]
     stale.sort(key=lambda x: x["age_hours"], reverse=True)
     return stale
+
+
+def summarize_stale_prs(stale_prs: list[dict]) -> tuple[int, float]:
+    """Total count and mean age in days for the stale-PR list."""
+    total = len(stale_prs)
+    avg_age = sum(pr["age_days"] for pr in stale_prs) / total if stale_prs else 0.0
+    return total, round(avg_age, 1)
