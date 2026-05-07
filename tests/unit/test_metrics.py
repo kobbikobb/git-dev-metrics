@@ -927,6 +927,34 @@ class TestTeamAggregation:
 
         assert result["team_metrics"]["pickup_time"] <= result["team_metrics"]["cycle_time"]
 
+    def test_should_use_mean_of_dev_rates_for_ai_adoption(self, mocker):
+        from git_dev_metrics.metrics.analyzer import get_combined_metrics
+
+        # alice 100% AI, bob 40% AI -> mean 70, median 70 (only with 2 devs both
+        # match). Use 3 devs to differentiate: 100, 40, 40 -> mean 60, median 40.
+        prs = []
+        for login, count, ai_count in [("alice", 5, 5), ("bob", 5, 2), ("carol", 5, 2)]:
+            for i in range(count):
+                prs.append(
+                    any_pr(
+                        number=f"{login}-{i}",
+                        user={"login": login},
+                        created_at="2024-01-01T00:00:00Z",
+                        merged_at="2024-01-02T00:00:00Z",
+                        reviews=[approved_review("2024-01-01T06:00:00Z")],
+                        body="Co-Authored-By: Claude" if i < ai_count else "",
+                    )
+                )
+        mocker.patch("git_dev_metrics.metrics.analyzer.fetch_repo_metrics", return_value=prs)
+        mocker.patch(
+            "git_dev_metrics.metrics.analyzer.parse_time_period",
+            return_value=mocker.MagicMock(),
+        )
+
+        result = get_combined_metrics(token="t", selected_repos=["org/repo"])
+
+        assert result["team_metrics"]["ai_percentage"] == 60.0
+
 
 class TestBuildSummary:
     """Test cases for build_summary reading team_metrics."""
@@ -971,6 +999,22 @@ class TestBuildSummary:
         assert result["review_ratio"] == 0.0
         assert result["top_reviewer"] == ""
         assert result["max_review_share"] == 0
+        assert result["ai_per_dev"] == []
+
+    def test_should_emit_sorted_ai_per_dev(self):
+        from git_dev_metrics.metrics.summary import build_summary
+
+        metrics = {
+            "dev_metrics": {
+                "alice": {"ai_percentage": 90, "reviews_given": 0},
+                "bob": {"ai_percentage": 40, "reviews_given": 0},
+                "carol": {"ai_percentage": 100, "reviews_given": 0},
+            },
+            "team_metrics": {"pr_count": 3, "reviews_given": 0},
+        }
+        result = build_summary(metrics)
+
+        assert result["ai_per_dev"] == [40, 90, 100]
 
     def test_should_compute_review_ratio_from_team_totals(self):
         from git_dev_metrics.metrics.summary import build_summary
