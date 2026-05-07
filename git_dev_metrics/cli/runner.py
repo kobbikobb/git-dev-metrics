@@ -80,6 +80,7 @@ def run_analyze(
     org: str | None = None,
     repo: str | None = None,
     period: str | None = None,
+    anonymize: bool = False,
 ) -> None:
     """
     Orchestrate the full analyze flow.
@@ -120,6 +121,13 @@ def run_analyze(
     except GitHubError as e:
         raise AnalysisError(str(e)) from e
 
+    mapping: dict[str, str] = {}
+    if anonymize:
+        from ..metrics.anonymize import anonymize_metrics
+
+        metrics = anonymize_metrics(metrics)
+        mapping = metrics.get("_anonymize_mapping", {})
+
     output_path = resolve_output_path(output)
     time_period = parse_time_period(period)
     since = time_period.since.strftime(_DATE_FMT)
@@ -129,6 +137,10 @@ def run_analyze(
 
     stale_prs = _fetch_stale_prs(token, selected)
     if stale_prs:
+        if anonymize:
+            from ..metrics.anonymize import anonymize_stale_prs
+
+            stale_prs = anonymize_stale_prs(stale_prs, mapping)
         print_stale_prs(stale_prs, output_path)
 
     prompt_open_result(output_path)

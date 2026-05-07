@@ -13,6 +13,11 @@ def analyze(
     repo: str | None = typer.Option(None, "--repo", help="GitHub repository name"),
     period: str | None = typer.Option(None, "--period", help="Time period (e.g., 30d, 7d, 90d)"),
     output: Path | None = typer.Option(None, help="Output file path"),
+    anonymize: bool = typer.Option(
+        False,
+        "--anonymize",
+        help="Replace dev names with dev-1, dev-2, ... for safe team sharing",
+    ),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Show full error tracebacks"),
     log_level: str = typer.Option(
         "WARNING", "--log-level", help="Logging level (DEBUG, INFO, WARNING, ERROR)"
@@ -24,7 +29,7 @@ def analyze(
         format="%(levelname)s: %(message)s",
     )
     try:
-        run_analyze(output=output, org=org, repo=repo, period=period)
+        run_analyze(output=output, org=org, repo=repo, period=period, anonymize=anonymize)
     except AnalysisError as e:
         logger.error("Analysis failed: %s", e)
         if verbose:
