@@ -5,13 +5,13 @@ from ..health import calculate_health_score
 REPO_COLUMNS = [
     "Repo",
     "Health",
+    "Total PRs",
+    "PRs/Week",
+    "PR Size",
+    "Avg Lines/PR",
     "Pickup Time (h)",
     "Review Time (h)",
     "Cycle Time (h)",
-    "PR Size",
-    "Avg Lines/PR",
-    "Total PRs",
-    "PRs/Week",
     "Reviews Given",
     "AI",
 ]
@@ -27,12 +27,12 @@ class FileRepoPrinter:
         self, metrics: dict, period: str, date_range: str | None = None
     ) -> None:
         header = (
-            "| Repo | Health | Pickup Time (h) | Review Time (h) | Cycle Time (h) | "
-            "PR Size | Avg Lines/PR | Total PRs | PRs/Week | Reviews Given | AI |"
+            "| Repo | Health | Total PRs | PRs/Week | PR Size | Avg Lines/PR | "
+            "Pickup Time (h) | Review Time (h) | Cycle Time (h) | Reviews Given | AI |"
         )
         separator = (
-            "|------|--------|------------------|-----------------|----------------|"
-            "---------|--------------|-----------|-----------|---------------|-----|"
+            "|------|--------|-----------|-----------|---------|--------------|"
+            "------------------|-----------------|----------------|---------------|-----|"
         )
         title = (
             f"# Repo Metrics ({date_range})" if date_range else (f"# Repo Metrics (last {period})")
@@ -58,11 +58,11 @@ class FileRepoPrinter:
             else:
                 emoji = "❌"
             row = (
-                f"| {repo_name} | {emoji}{health} | {m['pickup_time']:.2f} | "
-                f"{m['review_time']:.2f} | {m['cycle_time']:.2f} | {m['pr_size']:.1f} | "
-                f"{m.get('avg_lines_per_pr', 0):.1f} | "
-                f"{m['pr_count']:.0f} | {m['prs_per_week']:.2f} | {m['reviews_given']:.0f} | "
-                f"{m['ai_percentage']:.0f}% |"
+                f"| {repo_name} | {emoji}{health} | "
+                f"{m['pr_count']:.0f} | {m['prs_per_week']:.2f} | "
+                f"{m['pr_size']:.1f} | {m.get('avg_lines_per_pr', 0):.1f} | "
+                f"{m['pickup_time']:.2f} | {m['review_time']:.2f} | {m['cycle_time']:.2f} | "
+                f"{m['reviews_given']:.0f} | {m['ai_percentage']:.0f}% |"
             )
             lines.append(row)
 

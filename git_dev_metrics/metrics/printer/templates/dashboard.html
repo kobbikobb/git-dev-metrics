@@ -365,13 +365,13 @@
     <div class="sub">Across all devs</div>
   </div>
   <div class="summary-card">
-    <div class="label">Median Lines/PR</div>
-    <div class="value">{{ summary.median_lines_per_pr }}</div>
-    <div class="sub">Median of dev medians</div>
+    <div class="label">PRs/Week per Dev</div>
+    <div class="value">{{ summary.median_prs_per_week }}</div>
+    <div class="sub">Median of dev rates</div>
   </div>
   <div class="summary-card">
-    <div class="label">Median Cycle Time</div>
-    <div class="value">{{ summary.median_cycle }}h</div>
+    <div class="label">Median Lines/PR</div>
+    <div class="value">{{ summary.median_lines_per_pr }}</div>
     <div class="sub">Median of dev medians</div>
   </div>
   <div class="summary-card">
@@ -380,19 +380,14 @@
     <div class="sub">Median of dev medians</div>
   </div>
   <div class="summary-card">
-    <div class="label">PRs/Week per Dev</div>
-    <div class="value">{{ summary.median_prs_per_week }}</div>
-    <div class="sub">Median of dev rates</div>
+    <div class="label">Median Cycle Time</div>
+    <div class="value">{{ summary.median_cycle }}h</div>
+    <div class="sub">Median of dev medians</div>
   </div>
   <div class="summary-card">
     <div class="label">Reviews Given</div>
     <div class="value">{{ summary.total_reviews }}</div>
     <div class="sub">Total team reviews</div>
-  </div>
-  <div class="summary-card">
-    <div class="label">AI Adoption</div>
-    <div class="value">{{ summary.ai_adoption }}%</div>
-    <div class="sub">Share of all PRs</div>
   </div>
   <div class="summary-card">
     <div class="label">Review Ratio</div>
@@ -408,6 +403,11 @@
     <div class="label">Max Review Share</div>
     <div class="value">{{ summary.max_review_share }}%</div>
     <div class="sub">Reviews by top reviewer</div>
+  </div>
+  <div class="summary-card">
+    <div class="label">AI Adoption</div>
+    <div class="value">{{ summary.ai_adoption }}%</div>
+    <div class="sub">Share of all PRs</div>
   </div>
 </div>
 
@@ -468,12 +468,12 @@ const columns = [
     const cls = v >= 100 ? "health-100" : v >= 90 ? "health-90" : v >= 85 ? "health-85" : "health-0";
     return `<span class="health-badge ${cls}"><span class="health-dot"></span>${v}</span>`;
   }},
+  { key:"prs", label:"Total PRs", fmt: v => v },
+  { key:"prsWeek", label:"PRs/Week", fmt: v => v.toFixed(1) },
+  { key:"size", label:"PR Size", fmt: v => v.toLocaleString() },
   { key:"pickup", label:"Pickup (h)", fmt: (v,d) => timeBar(v, 20, "#6366f1") },
   { key:"review", label:"Review (h)", fmt: (v,d) => timeBar(v, 15, "#3b82f6") },
   { key:"cycle", label:"Cycle (h)", fmt: (v,d) => timeBar(v, 25, "#06b6d4") },
-  { key:"size", label:"PR Size", fmt: v => v.toLocaleString() },
-  { key:"prs", label:"Total PRs", fmt: v => v },
-  { key:"prsWeek", label:"PRs/Week", fmt: v => v.toFixed(1) },
   { key:"reviews", label:"Reviews", fmt: v => v },
   { key:"ai", label:"AI %", fmt: v => {
     const cls = v >= 60 ? "ai-high" : v > 0 ? "ai-med" : "ai-low";

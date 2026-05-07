@@ -25,15 +25,15 @@ class ConsolePrinter(Printer):
         cells = [
             ("Team Health", str(summary["team_health"])),
             ("Total PRs", str(summary["total_prs"])),
-            ("Median Lines/PR", str(summary["median_lines_per_pr"])),
-            ("Median Cycle (h)", str(summary["median_cycle"])),
-            ("Median Pickup (h)", str(summary["median_pickup"])),
             ("PRs/Week per Dev", str(summary["median_prs_per_week"])),
+            ("Median Lines/PR", str(summary["median_lines_per_pr"])),
+            ("Median Pickup (h)", str(summary["median_pickup"])),
+            ("Median Cycle (h)", str(summary["median_cycle"])),
             ("Total Reviews", str(summary["total_reviews"])),
-            ("AI Adoption", f"{summary['ai_adoption']}%"),
             ("Review Ratio", f"{summary['review_ratio']}x"),
             ("Top Reviewer", summary["top_reviewer"] or "—"),
             ("Max Review Share", f"{summary['max_review_share']}%"),
+            ("AI Adoption", f"{summary['ai_adoption']}%"),
         ]
 
         console.print()
@@ -69,15 +69,15 @@ class FilePrinter(Printer):
             "",
             f"- **Team Health:** {summary['team_health']}",
             f"- **Total PRs:** {summary['total_prs']}",
-            f"- **Median Lines/PR:** {summary['median_lines_per_pr']}",
-            f"- **Median Cycle Time:** {summary['median_cycle']}h",
-            f"- **Median Pickup Time:** {summary['median_pickup']}h",
             f"- **PRs/Week per Dev:** {summary['median_prs_per_week']}",
+            f"- **Median Lines/PR:** {summary['median_lines_per_pr']}",
+            f"- **Median Pickup Time:** {summary['median_pickup']}h",
+            f"- **Median Cycle Time:** {summary['median_cycle']}h",
             f"- **Total Reviews:** {summary['total_reviews']}",
-            f"- **AI Adoption:** {summary['ai_adoption']}%",
             f"- **Review Ratio:** {summary['review_ratio']}x",
             f"- **Top Reviewer:** {summary['top_reviewer'] or '—'}",
             f"- **Max Review Share:** {summary['max_review_share']}%",
+            f"- **AI Adoption:** {summary['ai_adoption']}%",
             "",
         ]
         self._write(lines)
