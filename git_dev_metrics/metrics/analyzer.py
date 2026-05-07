@@ -23,6 +23,7 @@ _PER_DEV_AGGREGATED_KEYS = (
     "pr_size",
     "avg_lines_per_pr",
     "ai_percentage",
+    "prs_per_week",
 )
 
 
