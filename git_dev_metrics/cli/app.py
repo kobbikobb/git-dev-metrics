@@ -7,7 +7,14 @@ app = typer.Typer()
 
 
 @app.callback(invoke_without_command=True)
-def main(ctx: typer.Context) -> None:
+def main(
+    ctx: typer.Context,
+    anonymize: bool = typer.Option(
+        False,
+        "--anonymize",
+        help="Replace dev names with dev-1, dev-2, ... for safe team sharing",
+    ),
+) -> None:
     """Git development metrics CLI."""
     if ctx.invoked_subcommand is None:
         analyze(
@@ -15,7 +22,7 @@ def main(ctx: typer.Context) -> None:
             repo=None,
             period=None,
             output=None,
-            anonymize=False,
+            anonymize=anonymize,
             verbose=False,
             log_level="WARNING",
         )
