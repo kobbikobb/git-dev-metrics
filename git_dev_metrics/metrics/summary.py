@@ -21,6 +21,10 @@ def build_summary(metrics: dict) -> dict:
         top_reviewer = max(sorted(reviewer_counts), key=lambda d: reviewer_counts[d])
         max_review_share = round(reviewer_counts[top_reviewer] / total_reviews * 100)
 
+    ai_per_dev = sorted(
+        int(m.get("ai_percentage", 0)) for m in (metrics.get("dev_metrics") or {}).values()
+    )
+
     return {
         "team_health": round(sum(health_by_dev) / len(health_by_dev)) if health_by_dev else 0,
         "total_prs": pr_count,
@@ -28,6 +32,7 @@ def build_summary(metrics: dict) -> dict:
         "median_pickup": round(team.get("pickup_time", 0), 1),
         "total_reviews": total_reviews,
         "ai_adoption": round(team.get("ai_percentage", 0)),
+        "ai_per_dev": ai_per_dev,
         "median_lines_per_pr": round(team.get("pr_size", 0), 1),
         "median_prs_per_week": round(team.get("prs_per_week", 0), 2),
         "review_ratio": round(total_reviews / pr_count, 2) if pr_count else 0.0,

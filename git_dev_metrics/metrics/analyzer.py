@@ -22,7 +22,6 @@ _PER_DEV_AGGREGATED_KEYS = (
     "review_time",
     "pr_size",
     "avg_lines_per_pr",
-    "ai_percentage",
     "prs_per_week",
 )
 
@@ -121,6 +120,8 @@ def get_combined_metrics(token: str, selected_repos: list[str], event_period: st
     for key in _PER_DEV_AGGREGATED_KEYS:
         values = [m[key] for m in combined_dev_metrics.values() if m.get(key)]
         team_metrics[key] = round(median(values), 2) if values else 0.0
+    ai_values = [m["ai_percentage"] for m in combined_dev_metrics.values()]
+    team_metrics["ai_percentage"] = round(sum(ai_values) / len(ai_values), 1) if ai_values else 0.0
 
     return {
         "repo_metrics": repo_metrics,

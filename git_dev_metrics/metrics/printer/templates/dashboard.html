@@ -212,6 +212,24 @@
   .ai-med { background: rgba(139,92,246,0.08); color: #c4b5fd; }
   .ai-low { background: rgba(99,102,241,0.06); color: var(--muted); }
 
+  .ai-strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3px;
+    margin-top: 0.5rem;
+  }
+
+  .ai-strip-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    cursor: default;
+  }
+
+  .ai-strip-high { background: #a78bfa; }
+  .ai-strip-mid  { background: #c4b5fd; }
+  .ai-strip-low  { background: var(--border); }
+
   .time-cell {
     display: flex;
     align-items: center;
@@ -392,7 +410,15 @@
   <div class="summary-card">
     <div class="label">AI Adoption</div>
     <div class="value">{{ summary.ai_adoption }}%</div>
-    <div class="sub">Share of all PRs</div>
+    <div class="sub">Mean of dev rates</div>
+    <div class="ai-strip">
+      {% for pct in summary.ai_per_dev %}
+      <span
+        class="ai-strip-dot {% if pct >= 80 %}ai-strip-high{% elif pct >= 50 %}ai-strip-mid{% else %}ai-strip-low{% endif %}"
+        title="{{ pct }}%"
+      ></span>
+      {% endfor %}
+    </div>
   </div>
   <div class="summary-card">
     <div class="label">Review Ratio</div>
