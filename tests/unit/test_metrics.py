@@ -943,7 +943,8 @@ class TestBuildSummary:
                 "pickup_time": 5.3,
                 "reviews_given": 967,
                 "ai_percentage": 80.4,
-                "avg_lines_per_pr": 742.0,
+                "pr_size": 320.0,
+                "prs_per_week": 4.5,
             },
         }
         result = build_summary(metrics)
@@ -953,7 +954,8 @@ class TestBuildSummary:
         assert result["median_pickup"] == 5.3
         assert result["total_reviews"] == 967
         assert result["ai_adoption"] == 80
-        assert result["avg_lines_per_pr"] == 742.0
+        assert result["median_lines_per_pr"] == 320.0
+        assert result["median_prs_per_week"] == 4.5
 
     def test_should_zero_out_when_team_metrics_missing(self):
         from git_dev_metrics.metrics.summary import build_summary
@@ -964,7 +966,8 @@ class TestBuildSummary:
         assert result["median_cycle"] == 0
         assert result["median_pickup"] == 0
         assert result["ai_adoption"] == 0
-        assert result["avg_lines_per_pr"] == 0
+        assert result["median_lines_per_pr"] == 0
+        assert result["median_prs_per_week"] == 0
         assert result["review_ratio"] == 0.0
         assert result["top_reviewer"] == ""
         assert result["max_review_share"] == 0

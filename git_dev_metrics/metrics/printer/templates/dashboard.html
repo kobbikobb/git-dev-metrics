@@ -49,7 +49,7 @@
 
   .summary {
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(6, 1fr);
     gap: 1rem;
     margin-bottom: 2rem;
     max-width: 1400px;
@@ -57,10 +57,13 @@
     margin-right: auto;
   }
 
-  @media (max-width: 1100px) {
+  @media (max-width: 1300px) {
+    .summary { grid-template-columns: repeat(4, 1fr); }
+  }
+  @media (max-width: 900px) {
     .summary { grid-template-columns: repeat(3, 1fr); }
   }
-  @media (max-width: 700px) {
+  @media (max-width: 600px) {
     .summary { grid-template-columns: repeat(2, 1fr); }
   }
 
@@ -362,19 +365,24 @@
     <div class="sub">Across all devs</div>
   </div>
   <div class="summary-card">
-    <div class="label">Mean Lines/PR</div>
-    <div class="value">{{ summary.avg_lines_per_pr }}</div>
-    <div class="sub">Mean across all PRs</div>
+    <div class="label">Median Lines/PR</div>
+    <div class="value">{{ summary.median_lines_per_pr }}</div>
+    <div class="sub">Median of dev medians</div>
   </div>
   <div class="summary-card">
     <div class="label">Median Cycle Time</div>
     <div class="value">{{ summary.median_cycle }}h</div>
-    <div class="sub">Median across all PRs</div>
+    <div class="sub">Median of dev medians</div>
   </div>
   <div class="summary-card">
     <div class="label">Median Pickup Time</div>
     <div class="value">{{ summary.median_pickup }}h</div>
-    <div class="sub">Median across all PRs</div>
+    <div class="sub">Median of dev medians</div>
+  </div>
+  <div class="summary-card">
+    <div class="label">PRs/Week per Dev</div>
+    <div class="value">{{ summary.median_prs_per_week }}</div>
+    <div class="sub">Median of dev rates</div>
   </div>
   <div class="summary-card">
     <div class="label">Reviews Given</div>

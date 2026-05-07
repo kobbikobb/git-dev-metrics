@@ -25,9 +25,10 @@ class ConsolePrinter(Printer):
         cells = [
             ("Team Health", str(summary["team_health"])),
             ("Total PRs", str(summary["total_prs"])),
-            ("Mean Lines/PR", str(summary["avg_lines_per_pr"])),
+            ("Median Lines/PR", str(summary["median_lines_per_pr"])),
             ("Median Cycle (h)", str(summary["median_cycle"])),
             ("Median Pickup (h)", str(summary["median_pickup"])),
+            ("PRs/Week per Dev", str(summary["median_prs_per_week"])),
             ("Total Reviews", str(summary["total_reviews"])),
             ("AI Adoption", f"{summary['ai_adoption']}%"),
             ("Review Ratio", f"{summary['review_ratio']}x"),
@@ -36,8 +37,9 @@ class ConsolePrinter(Printer):
         ]
 
         console.print()
-        for chunk_start in (0, 5):
-            chunk = cells[chunk_start : chunk_start + 5]
+        chunk_size = 6
+        for chunk_start in range(0, len(cells), chunk_size):
+            chunk = cells[chunk_start : chunk_start + chunk_size]
             table = Table(
                 title=f"Summary ({date_range})" if chunk_start == 0 else None,
                 show_header=True,
@@ -67,9 +69,10 @@ class FilePrinter(Printer):
             "",
             f"- **Team Health:** {summary['team_health']}",
             f"- **Total PRs:** {summary['total_prs']}",
-            f"- **Mean Lines/PR:** {summary['avg_lines_per_pr']}",
+            f"- **Median Lines/PR:** {summary['median_lines_per_pr']}",
             f"- **Median Cycle Time:** {summary['median_cycle']}h",
             f"- **Median Pickup Time:** {summary['median_pickup']}h",
+            f"- **PRs/Week per Dev:** {summary['median_prs_per_week']}",
             f"- **Total Reviews:** {summary['total_reviews']}",
             f"- **AI Adoption:** {summary['ai_adoption']}%",
             f"- **Review Ratio:** {summary['review_ratio']}x",
