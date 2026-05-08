@@ -1,3 +1,5 @@
+import re
+from datetime import UTC, datetime
 from pathlib import Path
 
 import click
@@ -6,6 +8,9 @@ from questionary import Style
 
 MAX_RESULT_FILES = 10
 
+PICK_MONTH_SENTINEL = "__pick_month__"
+CUSTOM_MONTH_SENTINEL = "__custom_month__"
+
 PERIOD_OPTIONS = [
     ("Last 7 days", "7d"),
     ("Last 14 days", "14d"),
@@ -13,7 +18,58 @@ PERIOD_OPTIONS = [
     ("Last 60 days", "60d"),
     ("Last 90 days", "90d"),
     ("Last month (calendar)", "last_month"),
+    ("Pick a month…", PICK_MONTH_SENTINEL),
 ]
+
+_YEAR_MONTH_RE = re.compile(r"^\d{4}-(0[1-9]|1[0-2])$")
+
+
+def _last_six_months(now: datetime) -> list[tuple[str, str]]:
+    out: list[tuple[str, str]] = []
+    year, month = now.year, now.month
+    for _ in range(6):
+        label = datetime(year, month, 1).strftime("%B %Y")
+        out.append((label, f"{year:04d}-{month:02d}"))
+        month -= 1
+        if month == 0:
+            month = 12
+            year -= 1
+    return out
+
+
+def _validate_year_month(text: str) -> bool | str:
+    return True if _YEAR_MONTH_RE.match(text) else "Use format YYYY-MM (e.g. 2026-03)"
+
+
+def prompt_month_selection() -> str | None:
+    """Sub-prompt: last 6 calendar months newest-first, plus custom YYYY-MM."""
+    custom_style = Style(
+        [
+            ("highlighted", "fg:#00b4d8 bold"),
+            ("selected", "fg:#90e0ef"),
+        ]
+    )
+
+    months = _last_six_months(datetime.now(UTC))
+    choices = [questionary.Choice(title=title, value=value) for title, value in months]
+    choices.append(questionary.Choice(title="Custom (YYYY-MM)…", value=CUSTOM_MONTH_SENTINEL))
+
+    selected = questionary.select(
+        "Select month:",
+        choices=choices,
+        style=custom_style,
+    ).ask()
+
+    if selected is None:
+        return None
+    if selected != CUSTOM_MONTH_SENTINEL:
+        return selected
+
+    return questionary.text(
+        "Enter year-month (YYYY-MM):",
+        validate=_validate_year_month,
+        style=custom_style,
+    ).ask()
 
 
 def prompt_period_selection(default: str | None = None) -> str:
@@ -36,6 +92,9 @@ def prompt_period_selection(default: str | None = None) -> str:
         default=default,
         style=custom_style,
     ).ask()
+
+    if selected == PICK_MONTH_SENTINEL:
+        return prompt_month_selection() or default
 
     return selected or default
 

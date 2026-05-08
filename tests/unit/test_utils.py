@@ -6,6 +6,7 @@ import pytest
 from freezegun import freeze_time
 
 from git_dev_metrics.utils import TimePeriod, get_last_month, parse_time_period
+from git_dev_metrics.utils.date_utils import month_range
 
 
 class TestTimePeriod:
@@ -69,6 +70,32 @@ class TestParseTimePeriod:
         expected = get_last_month()
         assert result.since == expected.since
         assert result.until == expected.until
+
+    def test_should_return_calendar_month_for_year_month_string(self):
+        result = parse_time_period("2026-03")
+
+        assert result.since == datetime(2026, 3, 1, tzinfo=UTC)
+        assert result.until == datetime(2026, 4, 1, tzinfo=UTC)
+
+    def test_should_cross_year_boundary_for_december(self):
+        result = parse_time_period("2025-12")
+
+        assert result.since == datetime(2025, 12, 1, tzinfo=UTC)
+        assert result.until == datetime(2026, 1, 1, tzinfo=UTC)
+
+    def test_should_raise_for_invalid_month_in_year_month(self):
+        with pytest.raises(ValueError, match="Unsupported period"):
+            parse_time_period("2026-13")
+
+
+class TestMonthRange:
+    def test_should_raise_for_month_zero(self):
+        with pytest.raises(ValueError, match="Unsupported period"):
+            month_range(2026, 0)
+
+    def test_should_raise_for_month_thirteen(self):
+        with pytest.raises(ValueError, match="Unsupported period"):
+            month_range(2026, 13)
 
 
 class TestGetLastMonth:
