@@ -128,7 +128,7 @@ def run_analyze(
         metrics = anonymize_metrics(metrics)
         mapping = metrics.get("_anonymize_mapping", {})
 
-    output_path = resolve_output_path(output)
+    output_path = resolve_output_path(output, period)
     time_period = parse_time_period(period)
     since = time_period.since.strftime(_DATE_FMT)
     until = time_period.until.strftime(_DATE_FMT)
