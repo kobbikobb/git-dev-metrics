@@ -1,7 +1,5 @@
-import re
-
 from ..github import fetch_repo_metrics
-from ..utils import parse_time_period
+from ..utils import TimePeriod, parse_time_period
 from .calculator import (
     calculate_ai_percentage,
     calculate_avg_lines_per_pr,
@@ -26,18 +24,9 @@ _PER_DEV_AGGREGATED_KEYS = (
 )
 
 
-def _parse_period_days(event_period: str) -> int:
-    """Extract number of days from period string like '30d', '2w', '1m'."""
-    match = re.match(r"(\d+)(d|w|m)", event_period)
-    if not match:
-        return 30
-    value, unit = match.groups()
-    days = int(value)
-    if unit == "w":
-        days *= 7
-    elif unit == "m":
-        days *= 30
-    return days
+def _period_days(period: TimePeriod) -> int:
+    """Whole days spanned by the TimePeriod (min 1). Source of truth for prs_per_week."""
+    return max(1, round((period.until - period.since).total_seconds() / 86400))
 
 
 def _build_dev_metrics(devs: dict, period_days: int, reviews_given: dict) -> dict:
@@ -61,7 +50,7 @@ def _build_dev_metrics(devs: dict, period_days: int, reviews_given: dict) -> dic
 def get_pull_request_metrics(token: str, org: str, repo: str, event_period: str = "30d") -> dict:
     """Get development metrics for a repository over a specified time period."""
     period = parse_time_period(event_period)
-    period_days = _parse_period_days(event_period)
+    period_days = _period_days(period)
     prs = fetch_repo_metrics(token, org, repo, period)
 
     devs = group_prs_by_devs(prs)
@@ -101,7 +90,7 @@ def _build_metrics(prs: list, period_days: int) -> dict:
 def get_combined_metrics(token: str, selected_repos: list[str], event_period: str = "30d") -> dict:
     """Get combined metrics for multiple repositories."""
     period = parse_time_period(event_period)
-    period_days = _parse_period_days(event_period)
+    period_days = _period_days(period)
 
     all_prs: list = []
     repo_metrics: dict = {}

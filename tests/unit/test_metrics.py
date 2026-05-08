@@ -1,5 +1,6 @@
 """Unit tests for reports.py functions."""
 
+from datetime import UTC, datetime
 from typing import cast
 
 from git_dev_metrics.metrics import (
@@ -12,8 +13,9 @@ from git_dev_metrics.metrics import (
     calculate_throughput,
     median,
 )
-from git_dev_metrics.metrics.analyzer import _parse_period_days
+from git_dev_metrics.metrics.analyzer import _period_days
 from git_dev_metrics.models import OpenPullRequest
+from git_dev_metrics.utils import TimePeriod
 
 from .conftest import any_pr, approved_review
 
@@ -389,20 +391,65 @@ class TestCalculatePrsPerWeek:
         assert result == 1.0
 
 
-class TestParsePeriodDays:
-    """Test cases for _parse_period_days function."""
+class TestPeriodDays:
+    """Test cases for _period_days function — derives whole days from a TimePeriod.
 
-    def test_should_parse_days(self):
-        assert _parse_period_days("30d") == 30
+    This is the source of truth for the prs_per_week denominator. Must reflect the
+    real span (28/29/30/31) for calendar months, not the period-string shape.
+    """
 
-    def test_should_parse_weeks(self):
-        assert _parse_period_days("2w") == 14
+    def test_should_return_28_for_february_non_leap(self):
+        period = TimePeriod(
+            since=datetime(2026, 2, 1, tzinfo=UTC),
+            until=datetime(2026, 3, 1, tzinfo=UTC),
+        )
 
-    def test_should_parse_months(self):
-        assert _parse_period_days("1m") == 30
+        assert _period_days(period) == 28
 
-    def test_should_default_to_30_for_invalid(self):
-        assert _parse_period_days("invalid") == 30
+    def test_should_return_29_for_february_leap(self):
+        period = TimePeriod(
+            since=datetime(2024, 2, 1, tzinfo=UTC),
+            until=datetime(2024, 3, 1, tzinfo=UTC),
+        )
+
+        assert _period_days(period) == 29
+
+    def test_should_return_31_for_thirty_one_day_month(self):
+        period = TimePeriod(
+            since=datetime(2026, 3, 1, tzinfo=UTC),
+            until=datetime(2026, 4, 1, tzinfo=UTC),
+        )
+
+        assert _period_days(period) == 31
+
+    def test_should_return_exact_days_for_sliding_window(self):
+        until = datetime(2026, 5, 8, 12, 0, tzinfo=UTC)
+        since = datetime(2026, 4, 8, 12, 0, tzinfo=UTC)
+        period = TimePeriod(since=since, until=until)
+
+        assert _period_days(period) == 30
+
+    def test_should_clamp_to_one_for_zero_span(self):
+        instant = datetime(2026, 5, 8, tzinfo=UTC)
+        period = TimePeriod(since=instant, until=instant)
+
+        assert _period_days(period) == 1
+
+
+class TestCalculatePrsPerWeekUsesActualSpan:
+    """Regression: prs_per_week was computed with hard-coded 30 for `last_month` and YYYY-MM."""
+
+    def test_should_match_calendar_month_length_for_february(self):
+        period = TimePeriod(
+            since=datetime(2026, 2, 1, tzinfo=UTC),
+            until=datetime(2026, 3, 1, tzinfo=UTC),
+        )
+        prs = [any_pr(id=i, number=i) for i in range(1, 5)]
+
+        result = calculate_prs_per_week(prs, _period_days(period))
+
+        # 4 PRs over 28d = 1.0/wk; old 30d default would give ≈ 0.93
+        assert result == 1.0
 
 
 class TestCalculateReviewsGiven:
@@ -892,7 +939,10 @@ class TestTeamAggregation:
         )
         mocker.patch(
             "git_dev_metrics.metrics.analyzer.parse_time_period",
-            return_value=mocker.MagicMock(),
+            return_value=TimePeriod(
+                since=datetime(2024, 1, 1, tzinfo=UTC),
+                until=datetime(2024, 1, 31, tzinfo=UTC),
+            ),
         )
 
         result = get_combined_metrics(token="t", selected_repos=["org/repo"])
@@ -920,7 +970,10 @@ class TestTeamAggregation:
         mocker.patch("git_dev_metrics.metrics.analyzer.fetch_repo_metrics", return_value=prs)
         mocker.patch(
             "git_dev_metrics.metrics.analyzer.parse_time_period",
-            return_value=mocker.MagicMock(),
+            return_value=TimePeriod(
+                since=datetime(2024, 1, 1, tzinfo=UTC),
+                until=datetime(2024, 1, 31, tzinfo=UTC),
+            ),
         )
 
         result = get_combined_metrics(token="t", selected_repos=["org/repo"])
@@ -948,7 +1001,10 @@ class TestTeamAggregation:
         mocker.patch("git_dev_metrics.metrics.analyzer.fetch_repo_metrics", return_value=prs)
         mocker.patch(
             "git_dev_metrics.metrics.analyzer.parse_time_period",
-            return_value=mocker.MagicMock(),
+            return_value=TimePeriod(
+                since=datetime(2024, 1, 1, tzinfo=UTC),
+                until=datetime(2024, 1, 31, tzinfo=UTC),
+            ),
         )
 
         result = get_combined_metrics(token="t", selected_repos=["org/repo"])
