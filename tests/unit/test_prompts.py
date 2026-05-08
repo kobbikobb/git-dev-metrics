@@ -1,8 +1,17 @@
 """Unit tests for prompts.py functions."""
 
+from datetime import UTC, datetime
+
+from freezegun import freeze_time
+
 from git_dev_metrics.cli.prompts import (
+    CUSTOM_MONTH_SENTINEL,
     MAX_RESULT_FILES,
     PERIOD_OPTIONS,
+    PICK_MONTH_SENTINEL,
+    _last_six_months,
+    _validate_year_month,
+    prompt_month_selection,
     prompt_open_result,
     prompt_period_selection,
 )
@@ -68,6 +77,86 @@ class TestPromptPeriodSelection:
         call_kwargs = mock_select.call_args[1]
         assert call_kwargs["default"] == "last_month"
         assert result == "last_month"
+
+
+class TestPromptMonthSelection:
+    @freeze_time("2026-05-08 12:00:00")
+    def test_should_return_selected_year_month_value(self, mocker):
+        mock_select = mocker.patch("git_dev_metrics.cli.prompts.questionary.select")
+        mock_select.return_value.ask.return_value = "2026-03"
+
+        result = prompt_month_selection()
+
+        assert result == "2026-03"
+
+    @freeze_time("2026-05-08 12:00:00")
+    def test_should_offer_six_months_newest_first_plus_custom(self, mocker):
+        mock_select = mocker.patch("git_dev_metrics.cli.prompts.questionary.select")
+        mock_select.return_value.ask.return_value = "2026-05"
+
+        prompt_month_selection()
+
+        choices = mock_select.call_args[1]["choices"]
+        values = [c.value for c in choices]
+        assert values == [
+            "2026-05",
+            "2026-04",
+            "2026-03",
+            "2026-02",
+            "2026-01",
+            "2025-12",
+            CUSTOM_MONTH_SENTINEL,
+        ]
+
+    @freeze_time("2026-05-08 12:00:00")
+    def test_should_prompt_for_custom_year_month_when_chosen(self, mocker):
+        mock_select = mocker.patch("git_dev_metrics.cli.prompts.questionary.select")
+        mock_select.return_value.ask.return_value = CUSTOM_MONTH_SENTINEL
+        mock_text = mocker.patch("git_dev_metrics.cli.prompts.questionary.text")
+        mock_text.return_value.ask.return_value = "2025-11"
+
+        result = prompt_month_selection()
+
+        assert result == "2025-11"
+        mock_text.assert_called_once()
+
+    @freeze_time("2026-05-08 12:00:00")
+    def test_should_return_none_when_user_aborts_main(self, mocker):
+        mock_select = mocker.patch("git_dev_metrics.cli.prompts.questionary.select")
+        mock_select.return_value.ask.return_value = None
+
+        assert prompt_month_selection() is None
+
+
+class TestValidateYearMonth:
+    def test_should_accept_valid_year_month(self):
+        assert _validate_year_month("2026-03") is True
+
+    def test_should_reject_invalid_month(self):
+        assert isinstance(_validate_year_month("2026-13"), str)
+
+    def test_should_reject_garbage(self):
+        assert isinstance(_validate_year_month("foo"), str)
+
+
+class TestLastSixMonths:
+    def test_should_handle_year_boundary(self):
+        result = _last_six_months(datetime(2026, 2, 15, tzinfo=UTC))
+
+        values = [v for _, v in result]
+        assert values == ["2026-02", "2026-01", "2025-12", "2025-11", "2025-10", "2025-09"]
+
+
+class TestPromptPeriodSelectionWithMonth:
+    @freeze_time("2026-05-08 12:00:00")
+    def test_should_drill_into_month_picker_when_sentinel_selected(self, mocker):
+        mock_select = mocker.patch("git_dev_metrics.cli.prompts.questionary.select")
+        mock_select.return_value.ask.side_effect = [PICK_MONTH_SENTINEL, "2026-03"]
+
+        result = prompt_period_selection(default="30d")
+
+        assert result == "2026-03"
+        assert mock_select.call_count == 2
 
 
 class TestPromptOpenResult:
