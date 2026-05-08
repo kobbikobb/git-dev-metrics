@@ -11,9 +11,9 @@ from ..metrics.printer import (
 )
 
 
-def resolve_output_path(output: Path | None) -> Path:
-    """Resolve output path from user input or return default."""
-    return output if output else get_default_output_path()
+def resolve_output_path(output: Path | None, period: str = "") -> Path:
+    """Resolve output path from user input or return default with period encoded."""
+    return output if output else get_default_output_path(period)
 
 
 def print_metrics(metrics: dict, period: str, output_path: Path, date_range: str) -> None:
