@@ -22,6 +22,26 @@ def month_range(year: int, month: int) -> TimePeriod:
     return TimePeriod(since=since, until=until)
 
 
+def month_iter(start: tuple[int, int], end: tuple[int, int]) -> list[tuple[int, int]]:
+    """Inclusive list of (year, month) tuples from start to end in chronological order."""
+    out: list[tuple[int, int]] = []
+    y, m = start
+    while (y, m) <= end:
+        out.append((y, m))
+        m += 1
+        if m == 13:
+            m = 1
+            y += 1
+    return out
+
+
+def range_period(start: tuple[int, int], end: tuple[int, int]) -> TimePeriod:
+    """TimePeriod from start month's first day to end month's first-of-next-month."""
+    since = month_range(*start).since
+    until = month_range(*end).until
+    return TimePeriod(since=since, until=until)
+
+
 def get_last_month() -> TimePeriod:
     """Gets the TimePeriod for last month"""
     now = datetime.now(UTC)
@@ -30,6 +50,14 @@ def get_last_month() -> TimePeriod:
 
 
 _YEAR_MONTH_RE = re.compile(r"^(\d{4})-(\d{2})$")
+
+
+def parse_year_month(value: str) -> tuple[int, int]:
+    """Parse "YYYY-MM" into (year, month). Raises ValueError on malformed input."""
+    m = _YEAR_MONTH_RE.match(value)
+    if not m or not 1 <= int(m.group(2)) <= 12:
+        raise ValueError(f"Expected YYYY-MM, got {value!r}")
+    return int(m.group(1)), int(m.group(2))
 
 
 def parse_time_period(event_period: str) -> TimePeriod:

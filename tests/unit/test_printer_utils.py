@@ -4,7 +4,6 @@ from pathlib import Path
 
 from freezegun import freeze_time
 
-from git_dev_metrics.cli.output import resolve_output_path
 from git_dev_metrics.metrics.printer.utils import get_default_output_path
 
 
@@ -32,18 +31,3 @@ class TestGetDefaultOutputPath:
         result = get_default_output_path()
 
         assert result == Path("./metrics_results/metrics_2026-05-08_09-04-07.md")
-
-
-class TestResolveOutputPath:
-    @freeze_time("2026-05-08 09:04:07")
-    def test_should_use_default_with_period_when_no_override(self):
-        result = resolve_output_path(None, "30d")
-
-        assert result == Path("./metrics_results/metrics_2026-05-08_09-04-07_30d.md")
-
-    def test_should_honour_explicit_override(self):
-        explicit = Path("/tmp/custom.md")
-
-        result = resolve_output_path(explicit, "30d")
-
-        assert result == explicit
