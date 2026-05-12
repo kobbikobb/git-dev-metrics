@@ -7,6 +7,7 @@ from ..cache import is_sealed, load_prs_for_range
 from ..metrics.printer.trend import FileTrendPrinter
 from ..metrics.trend_calculator import build_trend_dataset
 from ..utils.date_utils import month_iter
+from ._browser import open_in_browser
 
 YearMonth = tuple[int, int]
 
@@ -25,6 +26,7 @@ def perform_trend(
     to_ym: YearMonth,
     output: Path | None,
     db_path: Path | None,
+    open_browser: bool = True,
 ) -> None:
     """Shared core: validate range, verify each month sealed, build dataset, render HTML."""
     if to_ym < from_ym:
@@ -44,3 +46,5 @@ def perform_trend(
     out_path = output or _default_output(org, repo, from_ym, to_ym)
     FileTrendPrinter(out_path).render(dataset, org, repo)
     typer.echo(f"Trend written to {out_path}.")
+    if open_browser:
+        open_in_browser(out_path)

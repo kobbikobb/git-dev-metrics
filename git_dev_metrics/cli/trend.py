@@ -14,6 +14,9 @@ def trend(
     repo: str | None = typer.Option(None, "--repo", help="GitHub repository name"),
     output: Path | None = typer.Option(None, "--output", help="Output HTML path"),
     db: Path | None = typer.Option(None, "--db", help="Override cache database path"),
+    open_browser: bool = typer.Option(
+        True, "--open/--no-open", help="Open HTML in browser after writing."
+    ),
 ) -> None:
     """Render a multi-month trend HTML for one repository."""
     if from_ is None and to is None and org is None and repo is None:
@@ -30,4 +33,4 @@ def trend(
 
     from_ym = parse_month_arg(from_, "--from")
     to_ym = parse_month_arg(to, "--to")
-    perform_trend(org, repo, from_ym, to_ym, output=output, db_path=db)
+    perform_trend(org, repo, from_ym, to_ym, output=output, db_path=db, open_browser=open_browser)

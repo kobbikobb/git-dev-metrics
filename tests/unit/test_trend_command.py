@@ -170,6 +170,69 @@ class TestTrendCli:
         wizard.assert_called_once_with(db_path=db_path)
 
 
+class TestTrendOpensBrowser:
+    @freeze_time("2026-05-12")
+    def test_should_open_html_in_browser_by_default(self, tmp_path, _stub_webbrowser):
+        # Arrange
+        db_path = tmp_path / "cache.db"
+        _seed_three_months(db_path)
+        out = tmp_path / "t.html"
+
+        # Act
+        result = runner.invoke(
+            app,
+            [
+                "trend", "--from", "2026-02", "--to", "2026-04",
+                "--org", "myorg", "--repo", "myrepo",
+                "--db", str(db_path), "--output", str(out),
+            ],
+        )
+
+        # Assert
+        assert result.exit_code == 0, result.output
+        _stub_webbrowser.assert_called_once_with(out.resolve().as_uri())
+
+    @freeze_time("2026-05-12")
+    def test_should_not_open_when_no_open_flag(self, tmp_path, _stub_webbrowser):
+        # Arrange
+        db_path = tmp_path / "cache.db"
+        _seed_three_months(db_path)
+        out = tmp_path / "t.html"
+
+        # Act
+        result = runner.invoke(
+            app,
+            [
+                "trend", "--from", "2026-02", "--to", "2026-04",
+                "--org", "myorg", "--repo", "myrepo",
+                "--db", str(db_path), "--output", str(out), "--no-open",
+            ],
+        )
+
+        # Assert
+        assert result.exit_code == 0, result.output
+        _stub_webbrowser.assert_not_called()
+
+    @freeze_time("2026-05-12")
+    def test_should_open_html_in_wizard_flow(self, tmp_path, monkeypatch, _stub_webbrowser):
+        # Arrange
+        db_path = tmp_path / "cache.db"
+        _seed_three_months(db_path)
+        monkeypatch.chdir(tmp_path)
+
+        # Act
+        trend_wizard(
+            db_path=db_path,
+            ask_repo_pick=lambda _repos: ("myorg", "myrepo"),
+            ask_from=lambda _months: (2026, 2),
+            ask_to=lambda _months: (2026, 4),
+        )
+
+        # Assert
+        expected = tmp_path / "metrics_results" / "trend_myorg-myrepo_2026-02_2026-04.html"
+        _stub_webbrowser.assert_called_once_with(expected.resolve().as_uri())
+
+
 class TestTrendRefusesUnsealed:
     @freeze_time("2026-05-12")
     def test_should_refuse_when_month_in_range_not_sealed(self, tmp_path):

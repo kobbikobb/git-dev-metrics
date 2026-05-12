@@ -1,11 +1,17 @@
 from typing import Any
 
 import freezegun
+import pytest
 
 from git_dev_metrics.models import PullRequest
 
 # default ignore list contains "gi" prefix which incorrectly skips git_dev_metrics modules
 freezegun.configure(default_ignore_list=[])
+
+
+@pytest.fixture(autouse=True)
+def _stub_webbrowser(mocker):
+    return mocker.patch("webbrowser.open", return_value=False)
 
 
 def any_pr(**overrides: Any) -> PullRequest:

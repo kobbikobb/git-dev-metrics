@@ -195,3 +195,84 @@ class TestReportWizardDispatch:
 
         assert result.exit_code == 0, result.output
         wizard.assert_called_once_with(db_path=db_path)
+
+
+class TestReportOpensBrowser:
+    def test_should_open_html_in_browser_for_default_output(
+        self, tmp_path, monkeypatch, _stub_webbrowser
+    ):
+        # Arrange
+        db_path = tmp_path / "cache.db"
+        _seed_two_repos_apr(db_path)
+        monkeypatch.chdir(tmp_path)
+
+        # Act
+        result = runner.invoke(
+            app,
+            ["report", "--from", "2026-04", "--to", "2026-04", "--db", str(db_path)],
+        )
+
+        # Assert
+        assert result.exit_code == 0, result.output
+        _stub_webbrowser.assert_called_once()
+        uri = _stub_webbrowser.call_args.args[0]
+        assert uri.startswith("file://")
+        assert uri.endswith("_2026-04-to-2026-04.html")
+
+    def test_should_open_html_when_output_suffix_html(self, tmp_path, _stub_webbrowser):
+        # Arrange
+        db_path = tmp_path / "cache.db"
+        _seed_two_repos_apr(db_path)
+        out = tmp_path / "r.html"
+
+        # Act
+        result = runner.invoke(
+            app,
+            [
+                "report", "--from", "2026-04", "--to", "2026-04",
+                "--output", str(out), "--db", str(db_path),
+            ],
+        )
+
+        # Assert
+        assert result.exit_code == 0, result.output
+        _stub_webbrowser.assert_called_once()
+        assert _stub_webbrowser.call_args.args[0] == out.resolve().as_uri()
+
+    def test_should_not_open_when_output_is_markdown(self, tmp_path, _stub_webbrowser):
+        # Arrange
+        db_path = tmp_path / "cache.db"
+        _seed_two_repos_apr(db_path)
+        out = tmp_path / "r.md"
+
+        # Act
+        result = runner.invoke(
+            app,
+            [
+                "report", "--from", "2026-04", "--to", "2026-04",
+                "--output", str(out), "--db", str(db_path),
+            ],
+        )
+
+        # Assert
+        assert result.exit_code == 0, result.output
+        _stub_webbrowser.assert_not_called()
+
+    def test_should_not_open_when_no_open_flag(self, tmp_path, monkeypatch, _stub_webbrowser):
+        # Arrange
+        db_path = tmp_path / "cache.db"
+        _seed_two_repos_apr(db_path)
+        monkeypatch.chdir(tmp_path)
+
+        # Act
+        result = runner.invoke(
+            app,
+            [
+                "report", "--from", "2026-04", "--to", "2026-04",
+                "--db", str(db_path), "--no-open",
+            ],
+        )
+
+        # Assert
+        assert result.exit_code == 0, result.output
+        _stub_webbrowser.assert_not_called()
