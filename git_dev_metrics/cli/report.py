@@ -17,6 +17,9 @@ def report(
     to: str | None = typer.Option(None, "--to", help="End month, YYYY-MM"),
     output: Path | None = typer.Option(None, "--output", help="Output file path (.md or .html)"),
     db: Path | None = typer.Option(None, "--db", help="Override cache database path"),
+    open_browser: bool = typer.Option(
+        True, "--open/--no-open", help="Open HTML in browser after writing."
+    ),
 ) -> None:
     """Render the dashboard for all cached repos across a month range."""
     if from_ is None and to is None:
@@ -51,4 +54,4 @@ def report(
     metrics = build_combined_metrics_for_repos(repo_prs, period)
     period_slug = f"{from_}-to-{to}"
     date_range = f"{period.since.strftime(_DATE_FMT)} to {period.until.strftime(_DATE_FMT)}"
-    render_combined(metrics, period_slug, date_range, output)
+    render_combined(metrics, period_slug, date_range, output, open_browser=open_browser)
