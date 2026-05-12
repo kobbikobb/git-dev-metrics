@@ -1,32 +1,23 @@
 import typer
 
-from .analyze import analyze
+from .clear import clear
 from .logout import logout
+from .pull import pull
+from .report import report
+from .trend import trend
 
-app = typer.Typer()
+app = typer.Typer(help="Git development metrics CLI.")
 
 
 @app.callback(invoke_without_command=True)
-def main(
-    ctx: typer.Context,
-    anonymize: bool = typer.Option(
-        False,
-        "--anonymize",
-        help="Replace dev names with dev-1, dev-2, ... for safe team sharing",
-    ),
-) -> None:
+def main(ctx: typer.Context) -> None:
     """Git development metrics CLI."""
     if ctx.invoked_subcommand is None:
-        analyze(
-            org=None,
-            repo=None,
-            period=None,
-            output=None,
-            anonymize=anonymize,
-            verbose=False,
-            log_level="WARNING",
-        )
+        typer.echo(ctx.get_help())
 
 
-app.command()(analyze)
+app.command()(clear)
 app.command()(logout)
+app.command()(pull)
+app.command()(report)
+app.command()(trend)
