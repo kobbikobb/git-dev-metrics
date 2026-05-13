@@ -1,3 +1,5 @@
+from datetime import UTC, datetime
+
 from freezegun import freeze_time
 from typer.testing import CliRunner
 
@@ -17,8 +19,8 @@ def _ten_prs_for_april() -> list:
             id=100 + i,
             number=200 + i,
             user={"login": logins[i]},
-            created_at=f"2026-04-{day:02d}T08:00:00Z",
-            merged_at=f"2026-04-{day:02d}T18:00:00Z",
+            created_at=datetime(2026, 4, day, 8, 0, tzinfo=UTC),
+            merged_at=datetime(2026, 4, day, 18, 0, tzinfo=UTC),
             reviews=[approved_review(login="reviewer-1")] if i % 3 == 0 else [],
         )
         for i, day in enumerate(days)

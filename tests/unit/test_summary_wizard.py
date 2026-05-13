@@ -1,3 +1,5 @@
+from datetime import UTC, datetime
+
 import pytest
 import typer
 
@@ -15,9 +17,9 @@ def _seed_feb_mar_apr(db_path) -> None:
                     any_pr(
                         number=year * 100 + month, user={"login": "alice"},
                         additions=20, deletions=5, changed_files=2,
-                        created_at=f"2026-{month:02d}-{day:02d}T08:00:00Z",
-                        merged_at=f"2026-{month:02d}-{day:02d}T16:00:00Z",
-                        closed_at=f"2026-{month:02d}-{day:02d}T16:00:00Z",
+                        created_at=datetime(year, month, day, 8, 0, tzinfo=UTC),
+                        merged_at=datetime(year, month, day, 16, 0, tzinfo=UTC),
+                        closed_at=datetime(year, month, day, 16, 0, tzinfo=UTC),
                         reviews=[approved_review(login="bob")],
                     )
                 ],

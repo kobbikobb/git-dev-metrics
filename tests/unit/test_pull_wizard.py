@@ -17,8 +17,8 @@ def _three_prs(prefix: int) -> list:
             id=prefix + i,
             number=prefix + i,
             user={"login": f"dev-{i}"},
-            created_at=f"2026-04-{day:02d}T08:00:00Z",
-            merged_at=f"2026-04-{day:02d}T16:00:00Z",
+            created_at=datetime(2026, 4, day, 8, 0, tzinfo=UTC),
+            merged_at=datetime(2026, 4, day, 16, 0, tzinfo=UTC),
             reviews=[approved_review(login="reviewer")],
         )
         for i, day in enumerate((5, 12, 22))

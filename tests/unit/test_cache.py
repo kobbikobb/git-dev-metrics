@@ -1,4 +1,5 @@
 import json
+from datetime import UTC, datetime
 
 from git_dev_metrics.cache import (
     count_prs,
@@ -42,8 +43,8 @@ class TestInsertPrs:
         pr_from_mapper = {
             "number": 42,
             "title": "Real PR",
-            "created_at": "2026-04-05T08:00:00+00:00",
-            "merged_at": "2026-04-05T18:00:00+00:00",
+            "created_at": datetime(2026, 4, 5, 8, 0, tzinfo=UTC),
+            "merged_at": datetime(2026, 4, 5, 18, 0, tzinfo=UTC),
             "additions": 100,
             "deletions": 50,
             "changed_files": 5,
@@ -88,8 +89,8 @@ class TestInsertPrs:
         pr = any_pr(
             number=5,
             reviews=[
-                approved_review(login="bob", submitted_at="2026-04-02T10:00:00+00:00"),
-                approved_review(login="carol", submitted_at="2026-04-02T11:00:00+00:00"),
+                approved_review(login="bob", submitted_at=datetime(2026, 4, 2, 10, 0, tzinfo=UTC)),
+                approved_review(login="carol", submitted_at=datetime(2026, 4, 2, 11, 0, tzinfo=UTC)),
             ],
         )
 

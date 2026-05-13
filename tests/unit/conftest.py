@@ -1,3 +1,4 @@
+from datetime import UTC, datetime
 from typing import Any
 
 import freezegun
@@ -14,6 +15,10 @@ def _stub_webbrowser(mocker):
     return mocker.patch("webbrowser.open", return_value=False)
 
 
+def _dt(s: str) -> datetime:
+    return datetime.fromisoformat(s.replace("Z", "+00:00"))
+
+
 def any_pr(**overrides: Any) -> PullRequest:
     """Create a PullRequest with sensible defaults for testing."""
     defaults: PullRequest = {
@@ -22,9 +27,9 @@ def any_pr(**overrides: Any) -> PullRequest:
         "state": "merged",
         "title": "Test PR",
         "user": {"login": "dev1"},
-        "created_at": "2024-01-01T00:00:00Z",
-        "merged_at": "2024-01-02T00:00:00Z",
-        "closed_at": "2024-01-02T00:00:00Z",
+        "created_at": _dt("2024-01-01T00:00:00Z"),
+        "merged_at": _dt("2024-01-02T00:00:00Z"),
+        "closed_at": _dt("2024-01-02T00:00:00Z"),
         "additions": 100,
         "deletions": 50,
         "changed_files": 5,
@@ -37,6 +42,10 @@ def any_pr(**overrides: Any) -> PullRequest:
     return {**defaults, **overrides}  # type: ignore[return-value]
 
 
-def approved_review(submitted_at: str = "2024-01-01T12:00:00Z", login: str = "reviewer") -> dict:
+def approved_review(
+    submitted_at: datetime | None = None, login: str = "reviewer"
+) -> dict:
     """Approval review row for use in PullRequest fixtures."""
+    if submitted_at is None:
+        submitted_at = _dt("2024-01-01T12:00:00Z")
     return {"user": {"login": login}, "state": "APPROVED", "submitted_at": submitted_at}
