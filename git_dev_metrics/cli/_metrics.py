@@ -3,7 +3,7 @@ from pathlib import Path
 import typer
 
 from ..cache import load_all_repos_for_range
-from ..metrics.analyzer import build_combined_metrics_for_repos
+from ..metrics import MetricsSnapshot
 from ..utils.date_utils import month_iter, range_period
 from ._month_arg import parse_month_arg
 
@@ -18,18 +18,18 @@ def _slug(ym: YearMonth) -> str:
 
 def metrics_for_months(
     months: list[YearMonth], db_path: Path | None
-) -> tuple[dict, str, str] | None:
+) -> tuple[MetricsSnapshot, str, str] | None:
     repo_prs = load_all_repos_for_range(months, db_path=db_path)
     if not repo_prs:
         return None
     period = range_period(months[0], months[-1])
-    metrics = build_combined_metrics_for_repos(repo_prs, period)
+    snapshot = MetricsSnapshot.from_repo_prs(repo_prs, period)
     period_slug = f"{_slug(months[0])}-to-{_slug(months[-1])}"
     date_range = f"{period.since.strftime(_DATE_FMT)} to {period.until.strftime(_DATE_FMT)}"
-    return metrics, period_slug, date_range
+    return snapshot, period_slug, date_range
 
 
-def metrics_for_range(from_: str, to: str, db: Path | None) -> tuple[dict, str, str]:
+def metrics_for_range(from_: str, to: str, db: Path | None) -> tuple[MetricsSnapshot, str, str]:
     from_ym = parse_month_arg(from_, "--from")
     to_ym = parse_month_arg(to, "--to")
     if to_ym < from_ym:

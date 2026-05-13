@@ -2,8 +2,7 @@ from pathlib import Path
 
 from jinja2 import Environment, PackageLoader, select_autoescape
 
-from ..health import calculate_dev_health_score
-from ..summary import build_summary
+from ..snapshot import MetricsSnapshot
 from .base import Printer
 
 _ENV: Environment | None = None
@@ -19,27 +18,41 @@ def _get_env() -> Environment:
     return _ENV
 
 
-def _build_devs_list(metrics: dict) -> list[dict]:
-    """Flatten dev_metrics into the row shape the dashboard template expects."""
-    all_dev_metrics = list(metrics["dev_metrics"].values())
-    devs = []
-    for dev, m in metrics["dev_metrics"].items():
-        health = calculate_dev_health_score(m, all_dev_metrics)
-        devs.append(
-            {
-                "name": dev,
-                "health": health,
-                "pickup": m.get("pickup_time", 0),
-                "review": m.get("review_time", 0),
-                "cycle": m.get("cycle_time", 0),
-                "size": int(m.get("pr_size", 0)),
-                "prs": int(m.get("pr_count", 0)),
-                "prs_week": m.get("prs_per_week", 0),
-                "reviews": int(m.get("reviews_given", 0)),
-                "ai": int(m.get("ai_percentage", 0)),
-            }
-        )
-    return devs
+def _devs_for_template(snapshot: MetricsSnapshot) -> list[dict]:
+    return [
+        {
+            "name": row.name,
+            "health": row.health,
+            "pickup": row.pickup_time,
+            "review": row.review_time,
+            "cycle": row.cycle_time,
+            "size": int(row.pr_size),
+            "prs": row.pr_count,
+            "prs_week": row.prs_per_week,
+            "reviews": row.reviews_given,
+            "ai": int(row.ai_percentage),
+        }
+        for row in snapshot.devs
+    ]
+
+
+def _summary_for_template(snapshot: MetricsSnapshot) -> dict:
+    team = snapshot.team
+    summary = snapshot.summary
+    return {
+        "team_health": team.health,
+        "total_prs": team.pr_count,
+        "median_lines_per_pr": round(team.pr_size, 1),
+        "median_cycle": round(team.cycle_time, 1),
+        "median_pickup": round(team.pickup_time, 1),
+        "median_prs_per_week": round(team.prs_per_week, 2),
+        "total_reviews": team.reviews_given,
+        "ai_adoption": round(team.ai_percentage),
+        "ai_per_dev": list(summary.ai_per_dev),
+        "review_ratio": summary.review_ratio,
+        "top_reviewer": summary.top_reviewer,
+        "max_review_share": summary.max_review_share,
+    }
 
 
 class FileHtmlPrinter(Printer):
@@ -48,14 +61,18 @@ class FileHtmlPrinter(Printer):
     def __init__(self, output_path: Path) -> None:
         self._output_path = output_path
 
-    def print_combined_metrics(self, metrics: dict, period: str, date_range: str) -> None:
+    def print_combined_metrics(
+        self, snapshot: MetricsSnapshot, period: str, date_range: str
+    ) -> None:
         env = _get_env()
         template = env.get_template("dashboard.html")
 
-        devs = _build_devs_list(metrics)
-        summary = build_summary(metrics)
-
-        html = template.render(devs=devs, summary=summary, period=period, date_range=date_range)
+        html = template.render(
+            devs=_devs_for_template(snapshot),
+            summary=_summary_for_template(snapshot),
+            period=period,
+            date_range=date_range,
+        )
 
         html_path = self._output_path.with_suffix(".html")
         html_path.parent.mkdir(parents=True, exist_ok=True)

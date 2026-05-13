@@ -27,6 +27,13 @@ from .health import calculate_dev_health_score, calculate_health_score
 
 Band = Literal["good", "ok", "bad"]
 
+_BAND_COLOR: dict[Band, str] = {"good": "green", "ok": "yellow", "bad": "red"}
+
+
+def band_color(band: Band) -> str:
+    return _BAND_COLOR[band]
+
+
 _PER_DEV_AGGREGATED_KEYS = (
     "cycle_time",
     "pickup_time",
@@ -209,4 +216,4 @@ def _build_summary(
     )
 
 
-__all__ = ["Band", "MetricsSnapshot", "Row", "Summary"]
+__all__ = ["Band", "MetricsSnapshot", "Row", "Summary", "band_color"]
