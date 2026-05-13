@@ -4,6 +4,7 @@ from .clear import clear
 from .dashboard import dashboard
 from .logout import logout
 from .pull import pull
+from .stale import stale
 from .summary import summary
 from .trend import trend
 
@@ -21,5 +22,6 @@ app.command()(clear)
 app.command()(dashboard)
 app.command()(logout)
 app.command()(pull)
+app.command()(stale)
 app.command()(summary)
 app.command()(trend)

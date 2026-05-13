@@ -22,6 +22,7 @@ class TestNoSubcommand:
         assert "summary" in result.output
         assert "dashboard" in result.output
         assert "trend" in result.output
+        assert "stale" in result.output
         assert "clear" in result.output
         assert "logout" in result.output
         assert "analyze" not in result.output
