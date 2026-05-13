@@ -1,12 +1,10 @@
-from datetime import UTC, datetime
-
 from freezegun import freeze_time
 from typer.testing import CliRunner
 
 from git_dev_metrics.cache import count_prs, seal_month
 from git_dev_metrics.cli.app import app
 
-from .conftest import any_pr, approved_review
+from .conftest import any_pr, approved_review, dt
 
 runner = CliRunner()
 
@@ -19,8 +17,8 @@ def _ten_prs_for_april() -> list:
             id=100 + i,
             number=200 + i,
             user={"login": logins[i]},
-            created_at=datetime(2026, 4, day, 8, 0, tzinfo=UTC),
-            merged_at=datetime(2026, 4, day, 18, 0, tzinfo=UTC),
+            created_at=dt(year=2026, month=4, day=day, hour=8, minute=0),
+            merged_at=dt(year=2026, month=4, day=day, hour=18, minute=0),
             reviews=[approved_review(login="reviewer-1")] if i % 3 == 0 else [],
         )
         for i, day in enumerate(days)

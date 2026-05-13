@@ -1,12 +1,10 @@
-from datetime import UTC, datetime
-
 import pytest
 import typer
 
 from git_dev_metrics.cache import insert_prs, seal_month
 from git_dev_metrics.cli.summary_wizard import summary_wizard
 
-from .conftest import any_pr, approved_review
+from .conftest import any_pr, approved_review, dt
 
 
 def _seed_feb_mar_apr(db_path) -> None:
@@ -15,15 +13,22 @@ def _seed_feb_mar_apr(db_path) -> None:
             insert_prs(
                 [
                     any_pr(
-                        number=year * 100 + month, user={"login": "alice"},
-                        additions=20, deletions=5, changed_files=2,
-                        created_at=datetime(year, month, day, 8, 0, tzinfo=UTC),
-                        merged_at=datetime(year, month, day, 16, 0, tzinfo=UTC),
-                        closed_at=datetime(year, month, day, 16, 0, tzinfo=UTC),
+                        number=year * 100 + month,
+                        user={"login": "alice"},
+                        additions=20,
+                        deletions=5,
+                        changed_files=2,
+                        created_at=dt(year=year, month=month, day=day, hour=8, minute=0),
+                        merged_at=dt(year=year, month=month, day=day, hour=16, minute=0),
+                        closed_at=dt(year=year, month=month, day=day, hour=16, minute=0),
                         reviews=[approved_review(login="bob")],
                     )
                 ],
-                org, repo, year, month, db_path=db_path,
+                org,
+                repo,
+                year,
+                month,
+                db_path=db_path,
             )
             seal_month(org, repo, year, month, db_path=db_path)
 

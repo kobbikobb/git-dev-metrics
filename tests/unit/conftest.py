@@ -15,6 +15,12 @@ def _stub_webbrowser(mocker):
     return mocker.patch("webbrowser.open", return_value=False)
 
 
+def dt(
+    *, year: int, month: int, day: int, hour: int = 0, minute: int = 0, second: int = 0
+) -> datetime:
+    return datetime(year, month, day, hour, minute, second, tzinfo=UTC)
+
+
 def _dt(s: str) -> datetime:
     return datetime.fromisoformat(s.replace("Z", "+00:00"))
 
@@ -42,9 +48,7 @@ def any_pr(**overrides: Any) -> PullRequest:
     return {**defaults, **overrides}  # type: ignore[return-value]
 
 
-def approved_review(
-    submitted_at: datetime | None = None, login: str = "reviewer"
-) -> dict:
+def approved_review(submitted_at: datetime | None = None, login: str = "reviewer") -> dict:
     """Approval review row for use in PullRequest fixtures."""
     if submitted_at is None:
         submitted_at = _dt("2024-01-01T12:00:00Z")

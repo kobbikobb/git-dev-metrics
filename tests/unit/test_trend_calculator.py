@@ -1,9 +1,7 @@
-from datetime import UTC, datetime
-
 from git_dev_metrics.metrics.trend_calculator import build_trend_dataset
 from git_dev_metrics.models import PullRequest
 
-from .conftest import any_pr, approved_review
+from .conftest import any_pr, approved_review, dt
 
 
 def _pr(pr_id: int, login: str, year: int, month: int, day: int) -> PullRequest:
@@ -11,9 +9,11 @@ def _pr(pr_id: int, login: str, year: int, month: int, day: int) -> PullRequest:
         id=pr_id,
         number=pr_id,
         user={"login": login},
-        created_at=datetime(year, month, day, 8, 0, tzinfo=UTC),
-        merged_at=datetime(year, month, day, 18, 0, tzinfo=UTC),
-        reviews=[approved_review(submitted_at=datetime(year, month, day, 12, 0, tzinfo=UTC))],
+        created_at=dt(year=year, month=month, day=day, hour=8, minute=0),
+        merged_at=dt(year=year, month=month, day=day, hour=18, minute=0),
+        reviews=[
+            approved_review(submitted_at=dt(year=year, month=month, day=day, hour=12, minute=0))
+        ],
     )
 
 

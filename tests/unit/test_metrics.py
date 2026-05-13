@@ -1,6 +1,5 @@
 """Unit tests for reports.py functions."""
 
-from datetime import UTC, datetime
 from typing import cast
 
 from git_dev_metrics.metrics import (
@@ -17,7 +16,7 @@ from git_dev_metrics.models import OpenPullRequest
 from git_dev_metrics.utils import TimePeriod
 from git_dev_metrics.utils import period_days as _period_days
 
-from .conftest import any_pr, approved_review
+from .conftest import any_pr, approved_review, dt
 
 
 class TestMedian:
@@ -55,9 +54,9 @@ class TestCalculateCycleTime:
     def test_should_return_correct_cycle_time_for_single_pr(self):
         prs = [
             any_pr(
-                created_at=datetime(2024, 1, 1, 0, 0, tzinfo=UTC),
-                merged_at=datetime(2024, 1, 2, 0, 0, tzinfo=UTC),
-                reviews=[approved_review(datetime(2024, 1, 1, 6, 0, tzinfo=UTC))],
+                created_at=dt(year=2024, month=1, day=1, hour=0, minute=0),
+                merged_at=dt(year=2024, month=1, day=2, hour=0, minute=0),
+                reviews=[approved_review(dt(year=2024, month=1, day=1, hour=6, minute=0))],
             )
         ]
 
@@ -68,14 +67,14 @@ class TestCalculateCycleTime:
     def test_should_return_average_cycle_time_for_multiple_prs(self):
         prs = [
             any_pr(
-                created_at=datetime(2024, 1, 1, 0, 0, tzinfo=UTC),
-                merged_at=datetime(2024, 1, 2, 0, 0, tzinfo=UTC),
-                reviews=[approved_review(datetime(2024, 1, 1, 6, 0, tzinfo=UTC))],
+                created_at=dt(year=2024, month=1, day=1, hour=0, minute=0),
+                merged_at=dt(year=2024, month=1, day=2, hour=0, minute=0),
+                reviews=[approved_review(dt(year=2024, month=1, day=1, hour=6, minute=0))],
             ),
             any_pr(
-                created_at=datetime(2024, 1, 1, 0, 0, tzinfo=UTC),
-                merged_at=datetime(2024, 1, 3, 0, 0, tzinfo=UTC),
-                reviews=[approved_review(datetime(2024, 1, 1, 6, 0, tzinfo=UTC))],
+                created_at=dt(year=2024, month=1, day=1, hour=0, minute=0),
+                merged_at=dt(year=2024, month=1, day=3, hour=0, minute=0),
+                reviews=[approved_review(dt(year=2024, month=1, day=1, hour=6, minute=0))],
             ),
         ]
 
@@ -86,9 +85,9 @@ class TestCalculateCycleTime:
     def test_should_handle_prs_with_different_time_zones(self):
         prs = [
             any_pr(
-                created_at=datetime(2024, 1, 1, 12, 0, tzinfo=UTC),
-                merged_at=datetime(2024, 1, 2, 12, 0, tzinfo=UTC),
-                reviews=[approved_review(datetime(2024, 1, 1, 18, 0, tzinfo=UTC))],
+                created_at=dt(year=2024, month=1, day=1, hour=12, minute=0),
+                merged_at=dt(year=2024, month=1, day=2, hour=12, minute=0),
+                reviews=[approved_review(dt(year=2024, month=1, day=1, hour=18, minute=0))],
             ),
         ]
 
@@ -99,10 +98,10 @@ class TestCalculateCycleTime:
     def test_should_use_first_commit_when_older_than_created_at(self):
         prs = [
             any_pr(
-                created_at=datetime(2024, 1, 2, 0, 0, tzinfo=UTC),
-                merged_at=datetime(2024, 1, 3, 0, 0, tzinfo=UTC),
-                first_commit_at=datetime(2024, 1, 1, 0, 0, tzinfo=UTC),
-                reviews=[approved_review(datetime(2024, 1, 2, 12, 0, tzinfo=UTC))],
+                created_at=dt(year=2024, month=1, day=2, hour=0, minute=0),
+                merged_at=dt(year=2024, month=1, day=3, hour=0, minute=0),
+                first_commit_at=dt(year=2024, month=1, day=1, hour=0, minute=0),
+                reviews=[approved_review(dt(year=2024, month=1, day=2, hour=12, minute=0))],
             ),
         ]
 
@@ -113,10 +112,10 @@ class TestCalculateCycleTime:
     def test_should_use_created_at_when_older_than_first_commit(self):
         prs = [
             any_pr(
-                created_at=datetime(2024, 1, 1, 0, 0, tzinfo=UTC),
-                merged_at=datetime(2024, 1, 3, 0, 0, tzinfo=UTC),
-                first_commit_at=datetime(2024, 1, 2, 0, 0, tzinfo=UTC),
-                reviews=[approved_review(datetime(2024, 1, 2, 12, 0, tzinfo=UTC))],
+                created_at=dt(year=2024, month=1, day=1, hour=0, minute=0),
+                merged_at=dt(year=2024, month=1, day=3, hour=0, minute=0),
+                first_commit_at=dt(year=2024, month=1, day=2, hour=0, minute=0),
+                reviews=[approved_review(dt(year=2024, month=1, day=2, hour=12, minute=0))],
             ),
         ]
 
@@ -127,10 +126,10 @@ class TestCalculateCycleTime:
     def test_should_use_created_at_when_first_commit_is_none(self):
         prs = [
             any_pr(
-                created_at=datetime(2024, 1, 1, 0, 0, tzinfo=UTC),
-                merged_at=datetime(2024, 1, 2, 0, 0, tzinfo=UTC),
+                created_at=dt(year=2024, month=1, day=1, hour=0, minute=0),
+                merged_at=dt(year=2024, month=1, day=2, hour=0, minute=0),
                 first_commit_at=None,
-                reviews=[approved_review(datetime(2024, 1, 1, 6, 0, tzinfo=UTC))],
+                reviews=[approved_review(dt(year=2024, month=1, day=1, hour=6, minute=0))],
             ),
         ]
 
@@ -141,10 +140,10 @@ class TestCalculateCycleTime:
     def test_should_exclude_draft_window_using_ready_for_review_at(self):
         prs = [
             any_pr(
-                created_at=datetime(2024, 1, 1, 0, 0, tzinfo=UTC),
-                ready_for_review_at=datetime(2024, 1, 4, 0, 0, tzinfo=UTC),
-                merged_at=datetime(2024, 1, 5, 0, 0, tzinfo=UTC),
-                reviews=[approved_review(datetime(2024, 1, 4, 12, 0, tzinfo=UTC))],
+                created_at=dt(year=2024, month=1, day=1, hour=0, minute=0),
+                ready_for_review_at=dt(year=2024, month=1, day=4, hour=0, minute=0),
+                merged_at=dt(year=2024, month=1, day=5, hour=0, minute=0),
+                reviews=[approved_review(dt(year=2024, month=1, day=4, hour=12, minute=0))],
             ),
         ]
 
@@ -155,11 +154,11 @@ class TestCalculateCycleTime:
     def test_should_ignore_ready_for_review_when_before_start_time(self):
         prs = [
             any_pr(
-                created_at=datetime(2024, 1, 2, 0, 0, tzinfo=UTC),
-                first_commit_at=datetime(2024, 1, 1, 0, 0, tzinfo=UTC),
-                ready_for_review_at=datetime(2023, 12, 31, 0, 0, tzinfo=UTC),
-                merged_at=datetime(2024, 1, 3, 0, 0, tzinfo=UTC),
-                reviews=[approved_review(datetime(2024, 1, 2, 12, 0, tzinfo=UTC))],
+                created_at=dt(year=2024, month=1, day=2, hour=0, minute=0),
+                first_commit_at=dt(year=2024, month=1, day=1, hour=0, minute=0),
+                ready_for_review_at=dt(year=2023, month=12, day=31, hour=0, minute=0),
+                merged_at=dt(year=2024, month=1, day=3, hour=0, minute=0),
+                reviews=[approved_review(dt(year=2024, month=1, day=2, hour=12, minute=0))],
             ),
         ]
 
@@ -170,8 +169,8 @@ class TestCalculateCycleTime:
     def test_should_skip_prs_without_approval(self):
         prs = [
             any_pr(
-                created_at=datetime(2024, 1, 1, 0, 0, tzinfo=UTC),
-                merged_at=datetime(2024, 1, 2, 0, 0, tzinfo=UTC),
+                created_at=dt(year=2024, month=1, day=1, hour=0, minute=0),
+                merged_at=dt(year=2024, month=1, day=2, hour=0, minute=0),
                 reviews=[],
             ),
         ]
@@ -270,8 +269,8 @@ class TestCalculatePickupTime:
         prs = [
             any_pr(
                 number=1,
-                created_at=datetime(2024, 1, 1, 0, 0, tzinfo=UTC),
-                merged_at=datetime(2024, 1, 2, 0, 0, tzinfo=UTC),
+                created_at=dt(year=2024, month=1, day=1, hour=0, minute=0),
+                merged_at=dt(year=2024, month=1, day=2, hour=0, minute=0),
                 reviews=[],
             )
         ]
@@ -282,13 +281,13 @@ class TestCalculatePickupTime:
         prs = [
             any_pr(
                 number=1,
-                created_at=datetime(2024, 1, 1, 0, 0, tzinfo=UTC),
-                merged_at=datetime(2024, 1, 2, 0, 0, tzinfo=UTC),
+                created_at=dt(year=2024, month=1, day=1, hour=0, minute=0),
+                merged_at=dt(year=2024, month=1, day=2, hour=0, minute=0),
                 reviews=[
                     {
                         "user": {"login": "reviewer"},
                         "state": "COMMENTED",
-                        "submitted_at": datetime(2024, 1, 1, 12, 0, tzinfo=UTC),
+                        "submitted_at": dt(year=2024, month=1, day=1, hour=12, minute=0),
                     }
                 ],
             )
@@ -300,13 +299,13 @@ class TestCalculatePickupTime:
         prs = [
             any_pr(
                 number=1,
-                created_at=datetime(2024, 1, 1, 0, 0, tzinfo=UTC),
-                merged_at=datetime(2024, 1, 2, 0, 0, tzinfo=UTC),
+                created_at=dt(year=2024, month=1, day=1, hour=0, minute=0),
+                merged_at=dt(year=2024, month=1, day=2, hour=0, minute=0),
                 reviews=[
                     {
                         "user": {"login": "reviewer"},
                         "state": "APPROVED",
-                        "submitted_at": datetime(2024, 1, 1, 12, 0, tzinfo=UTC),
+                        "submitted_at": dt(year=2024, month=1, day=1, hour=12, minute=0),
                     }
                 ],
             )
@@ -318,10 +317,10 @@ class TestCalculatePickupTime:
         prs = [
             any_pr(
                 number=1,
-                created_at=datetime(2024, 1, 1, 0, 0, tzinfo=UTC),
-                ready_for_review_at=datetime(2024, 1, 4, 0, 0, tzinfo=UTC),
-                merged_at=datetime(2024, 1, 5, 0, 0, tzinfo=UTC),
-                reviews=[approved_review(datetime(2024, 1, 4, 6, 0, tzinfo=UTC))],
+                created_at=dt(year=2024, month=1, day=1, hour=0, minute=0),
+                ready_for_review_at=dt(year=2024, month=1, day=4, hour=0, minute=0),
+                merged_at=dt(year=2024, month=1, day=5, hour=0, minute=0),
+                reviews=[approved_review(dt(year=2024, month=1, day=4, hour=6, minute=0))],
             )
         ]
         result = calculate_pickup_time(prs)
@@ -339,13 +338,13 @@ class TestCalculateReviewTime:
         prs = [
             any_pr(
                 number=1,
-                created_at=datetime(2024, 1, 1, 0, 0, tzinfo=UTC),
-                merged_at=datetime(2024, 1, 2, 0, 0, tzinfo=UTC),
+                created_at=dt(year=2024, month=1, day=1, hour=0, minute=0),
+                merged_at=dt(year=2024, month=1, day=2, hour=0, minute=0),
                 reviews=[
                     {
                         "user": {"login": "reviewer"},
                         "state": "COMMENTED",
-                        "submitted_at": datetime(2024, 1, 1, 12, 0, tzinfo=UTC),
+                        "submitted_at": dt(year=2024, month=1, day=1, hour=12, minute=0),
                     }
                 ],
             )
@@ -357,13 +356,13 @@ class TestCalculateReviewTime:
         prs = [
             any_pr(
                 number=1,
-                created_at=datetime(2024, 1, 1, 0, 0, tzinfo=UTC),
-                merged_at=datetime(2024, 1, 3, 0, 0, tzinfo=UTC),
+                created_at=dt(year=2024, month=1, day=1, hour=0, minute=0),
+                merged_at=dt(year=2024, month=1, day=3, hour=0, minute=0),
                 reviews=[
                     {
                         "user": {"login": "reviewer"},
                         "state": "APPROVED",
-                        "submitted_at": datetime(2024, 1, 2, 0, 0, tzinfo=UTC),
+                        "submitted_at": dt(year=2024, month=1, day=2, hour=0, minute=0),
                     }
                 ],
             )
@@ -400,37 +399,37 @@ class TestPeriodDays:
 
     def test_should_return_28_for_february_non_leap(self):
         period = TimePeriod(
-            since=datetime(2026, 2, 1, tzinfo=UTC),
-            until=datetime(2026, 3, 1, tzinfo=UTC),
+            since=dt(year=2026, month=2, day=1),
+            until=dt(year=2026, month=3, day=1),
         )
 
         assert _period_days(period) == 28
 
     def test_should_return_29_for_february_leap(self):
         period = TimePeriod(
-            since=datetime(2024, 2, 1, tzinfo=UTC),
-            until=datetime(2024, 3, 1, tzinfo=UTC),
+            since=dt(year=2024, month=2, day=1),
+            until=dt(year=2024, month=3, day=1),
         )
 
         assert _period_days(period) == 29
 
     def test_should_return_31_for_thirty_one_day_month(self):
         period = TimePeriod(
-            since=datetime(2026, 3, 1, tzinfo=UTC),
-            until=datetime(2026, 4, 1, tzinfo=UTC),
+            since=dt(year=2026, month=3, day=1),
+            until=dt(year=2026, month=4, day=1),
         )
 
         assert _period_days(period) == 31
 
     def test_should_return_exact_days_for_sliding_window(self):
-        until = datetime(2026, 5, 8, 12, 0, tzinfo=UTC)
-        since = datetime(2026, 4, 8, 12, 0, tzinfo=UTC)
+        until = dt(year=2026, month=5, day=8, hour=12, minute=0)
+        since = dt(year=2026, month=4, day=8, hour=12, minute=0)
         period = TimePeriod(since=since, until=until)
 
         assert _period_days(period) == 30
 
     def test_should_clamp_to_one_for_zero_span(self):
-        instant = datetime(2026, 5, 8, tzinfo=UTC)
+        instant = dt(year=2026, month=5, day=8)
         period = TimePeriod(since=instant, until=instant)
 
         assert _period_days(period) == 1
@@ -441,8 +440,8 @@ class TestCalculatePrsPerWeekUsesActualSpan:
 
     def test_should_match_calendar_month_length_for_february(self):
         period = TimePeriod(
-            since=datetime(2026, 2, 1, tzinfo=UTC),
-            until=datetime(2026, 3, 1, tzinfo=UTC),
+            since=dt(year=2026, month=2, day=1),
+            until=dt(year=2026, month=3, day=1),
         )
         prs = [any_pr(id=i, number=i) for i in range(1, 5)]
 
@@ -473,7 +472,7 @@ class TestCalculateReviewsGiven:
                     {
                         "user": {"login": "bob"},
                         "state": "APPROVED",
-                        "submitted_at": datetime(2024, 1, 1, 1, 0, tzinfo=UTC),
+                        "submitted_at": dt(year=2024, month=1, day=1, hour=1, minute=0),
                     },
                 ],
             ),
@@ -485,7 +484,7 @@ class TestCalculateReviewsGiven:
                     {
                         "user": {"login": "alice"},
                         "state": "APPROVED",
-                        "submitted_at": datetime(2024, 1, 1, 2, 0, tzinfo=UTC),
+                        "submitted_at": dt(year=2024, month=1, day=1, hour=2, minute=0),
                     },
                 ],
             ),
@@ -506,7 +505,7 @@ class TestCalculateReviewsGiven:
                     {
                         "user": {"login": "external-reviewer"},
                         "state": "APPROVED",
-                        "submitted_at": datetime(2024, 1, 1, 1, 0, tzinfo=UTC),
+                        "submitted_at": dt(year=2024, month=1, day=1, hour=1, minute=0),
                     },
                 ],
             ),
@@ -527,17 +526,17 @@ class TestCalculateReviewsGiven:
                     {
                         "user": {"login": "bob"},
                         "state": "COMMENTED",
-                        "submitted_at": datetime(2024, 1, 1, 1, 0, tzinfo=UTC),
+                        "submitted_at": dt(year=2024, month=1, day=1, hour=1, minute=0),
                     },
                     {
                         "user": {"login": "bob"},
                         "state": "CHANGES_REQUESTED",
-                        "submitted_at": datetime(2024, 1, 1, 2, 0, tzinfo=UTC),
+                        "submitted_at": dt(year=2024, month=1, day=1, hour=2, minute=0),
                     },
                     {
                         "user": {"login": "bob"},
                         "state": "APPROVED",
-                        "submitted_at": datetime(2024, 1, 1, 3, 0, tzinfo=UTC),
+                        "submitted_at": dt(year=2024, month=1, day=1, hour=3, minute=0),
                     },
                 ],
             ),
@@ -562,7 +561,7 @@ class TestCalculateReviewsGiven:
                     {
                         "user": {"login": "alice"},
                         "state": "APPROVED",
-                        "submitted_at": datetime(2024, 1, 1, 1, 0, tzinfo=UTC),
+                        "submitted_at": dt(year=2024, month=1, day=1, hour=1, minute=0),
                     },
                 ],
             ),
@@ -587,7 +586,7 @@ class TestCalculateReviewsGiven:
                     {
                         "user": {"login": "patches-bot"},
                         "state": "APPROVED",
-                        "submitted_at": datetime(2024, 1, 1, 1, 0, tzinfo=UTC),
+                        "submitted_at": dt(year=2024, month=1, day=1, hour=1, minute=0),
                     },
                 ],
             )
@@ -611,13 +610,13 @@ class TestCalculateReviewsGiven:
                 id=10,
                 number=1,
                 user={"login": "alice"},
-                created_at=datetime(2024, 1, 1, 0, 0, tzinfo=UTC),
-                merged_at=datetime(2024, 1, 2, 0, 0, tzinfo=UTC),
+                created_at=dt(year=2024, month=1, day=1, hour=0, minute=0),
+                merged_at=dt(year=2024, month=1, day=2, hour=0, minute=0),
                 reviews=[
                     {
                         "user": {"login": "bob"},
                         "state": "APPROVED",
-                        "submitted_at": datetime(2024, 1, 1, 2, 0, tzinfo=UTC),
+                        "submitted_at": dt(year=2024, month=1, day=1, hour=2, minute=0),
                     }
                 ],
             ),
@@ -625,13 +624,13 @@ class TestCalculateReviewsGiven:
                 id=20,
                 number=1,
                 user={"login": "carol"},
-                created_at=datetime(2024, 2, 1, 0, 0, tzinfo=UTC),
-                merged_at=datetime(2024, 2, 2, 0, 0, tzinfo=UTC),
+                created_at=dt(year=2024, month=2, day=1, hour=0, minute=0),
+                merged_at=dt(year=2024, month=2, day=2, hour=0, minute=0),
                 reviews=[
                     {
                         "user": {"login": "dave"},
                         "state": "APPROVED",
-                        "submitted_at": datetime(2024, 2, 1, 5, 0, tzinfo=UTC),
+                        "submitted_at": dt(year=2024, month=2, day=1, hour=5, minute=0),
                     }
                 ],
             ),
@@ -903,5 +902,3 @@ class TestCalculateAiPercentage:
         ]
         result = calculate_ai_percentage(prs)
         assert result == 50.0
-
-

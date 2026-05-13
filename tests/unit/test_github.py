@@ -1,5 +1,4 @@
 import re
-from datetime import UTC, datetime
 
 import responses
 from pytest import raises
@@ -13,6 +12,8 @@ from git_dev_metrics.github import (
 from git_dev_metrics.github.graphql_client import execute_paginated_query, get_client
 from git_dev_metrics.github.graphql_queries import REPO_METRICS_QUERY
 from git_dev_metrics.utils import TimePeriod
+
+from .conftest import dt
 
 
 class TestFetchRepositories:
@@ -81,7 +82,7 @@ class TestFetchRepositories:
             status=200,
         )
         period = TimePeriod(
-            since=datetime(2024, 1, 1, tzinfo=UTC), until=datetime(2024, 2, 1, tzinfo=UTC)
+            since=dt(year=2024, month=1, day=1), until=dt(year=2024, month=2, day=1)
         )
 
         result = fetch_pull_requests("fake-token", "facebook", "react", period)
@@ -102,7 +103,7 @@ class TestFetchRepositories:
             status=200,
         )
         period = TimePeriod(
-            since=datetime(2024, 3, 1, tzinfo=UTC), until=datetime(2024, 4, 1, tzinfo=UTC)
+            since=dt(year=2024, month=3, day=1), until=dt(year=2024, month=4, day=1)
         )
 
         result = fetch_pull_requests("fake-token", "facebook", "react", period)
@@ -147,9 +148,7 @@ class TestFetchReviews:
             "facebook",
             "react",
             [1],
-            TimePeriod(
-                since=datetime(2024, 1, 1, tzinfo=UTC), until=datetime(2024, 2, 1, tzinfo=UTC)
-            ),
+            TimePeriod(since=dt(year=2024, month=1, day=1), until=dt(year=2024, month=2, day=1)),
         )
 
         assert len(result) == 1
@@ -185,9 +184,7 @@ class TestFetchReviews:
             "facebook",
             "react",
             [1],
-            TimePeriod(
-                since=datetime(2024, 1, 1, tzinfo=UTC), until=datetime(2024, 2, 1, tzinfo=UTC)
-            ),
+            TimePeriod(since=dt(year=2024, month=1, day=1), until=dt(year=2024, month=2, day=1)),
         )
 
         assert 1 in result
@@ -200,9 +197,7 @@ class TestFetchReviews:
             "facebook",
             "react",
             [],
-            TimePeriod(
-                since=datetime(2024, 1, 1, tzinfo=UTC), until=datetime(2024, 2, 1, tzinfo=UTC)
-            ),
+            TimePeriod(since=dt(year=2024, month=1, day=1), until=dt(year=2024, month=2, day=1)),
         )
 
         assert result == {}

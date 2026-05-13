@@ -1,11 +1,9 @@
-from datetime import UTC, datetime
-
 from typer.testing import CliRunner
 
 from git_dev_metrics.cache import insert_prs, seal_month
 from git_dev_metrics.cli.app import app
 
-from .conftest import any_pr, approved_review
+from .conftest import any_pr, approved_review, dt
 
 runner = CliRunner()
 
@@ -14,27 +12,51 @@ def _seed_two_repos_apr(db_path) -> None:
     """3 merged PRs across 2 repos and 2 devs in April 2026."""
     repo_a = [
         any_pr(
-            number=11, user={"login": "alice"}, additions=120, deletions=30, changed_files=4,
-            created_at=datetime(2026, 4, 2, 9, 0, tzinfo=UTC),
-            merged_at=datetime(2026, 4, 3, 10, 0, tzinfo=UTC),
-            closed_at=datetime(2026, 4, 3, 10, 0, tzinfo=UTC),
-            reviews=[approved_review(login="bob", submitted_at=datetime(2026, 4, 2, 15, 0, tzinfo=UTC))],
+            number=11,
+            user={"login": "alice"},
+            additions=120,
+            deletions=30,
+            changed_files=4,
+            created_at=dt(year=2026, month=4, day=2, hour=9, minute=0),
+            merged_at=dt(year=2026, month=4, day=3, hour=10, minute=0),
+            closed_at=dt(year=2026, month=4, day=3, hour=10, minute=0),
+            reviews=[
+                approved_review(
+                    login="bob", submitted_at=dt(year=2026, month=4, day=2, hour=15, minute=0)
+                )
+            ],
         ),
         any_pr(
-            number=12, user={"login": "bob"}, additions=60, deletions=20, changed_files=3,
-            created_at=datetime(2026, 4, 10, 9, 0, tzinfo=UTC),
-            merged_at=datetime(2026, 4, 11, 11, 0, tzinfo=UTC),
-            closed_at=datetime(2026, 4, 11, 11, 0, tzinfo=UTC),
-            reviews=[approved_review(login="alice", submitted_at=datetime(2026, 4, 10, 18, 0, tzinfo=UTC))],
+            number=12,
+            user={"login": "bob"},
+            additions=60,
+            deletions=20,
+            changed_files=3,
+            created_at=dt(year=2026, month=4, day=10, hour=9, minute=0),
+            merged_at=dt(year=2026, month=4, day=11, hour=11, minute=0),
+            closed_at=dt(year=2026, month=4, day=11, hour=11, minute=0),
+            reviews=[
+                approved_review(
+                    login="alice", submitted_at=dt(year=2026, month=4, day=10, hour=18, minute=0)
+                )
+            ],
         ),
     ]
     repo_b = [
         any_pr(
-            number=21, user={"login": "alice"}, additions=40, deletions=10, changed_files=2,
-            created_at=datetime(2026, 4, 15, 9, 0, tzinfo=UTC),
-            merged_at=datetime(2026, 4, 16, 13, 0, tzinfo=UTC),
-            closed_at=datetime(2026, 4, 16, 13, 0, tzinfo=UTC),
-            reviews=[approved_review(login="bob", submitted_at=datetime(2026, 4, 15, 17, 0, tzinfo=UTC))],
+            number=21,
+            user={"login": "alice"},
+            additions=40,
+            deletions=10,
+            changed_files=2,
+            created_at=dt(year=2026, month=4, day=15, hour=9, minute=0),
+            merged_at=dt(year=2026, month=4, day=16, hour=13, minute=0),
+            closed_at=dt(year=2026, month=4, day=16, hour=13, minute=0),
+            reviews=[
+                approved_review(
+                    login="bob", submitted_at=dt(year=2026, month=4, day=15, hour=17, minute=0)
+                )
+            ],
         ),
     ]
     insert_prs(repo_a, "myorg", "repoA", 2026, 4, db_path=db_path)
