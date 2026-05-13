@@ -1,4 +1,4 @@
-from datetime import UTC, datetime
+from datetime import datetime
 from unittest.mock import Mock
 
 import pytest
@@ -8,7 +8,7 @@ from git_dev_metrics.cache import count_prs, is_sealed, seal_month
 from git_dev_metrics.cli.pull_wizard import pull_wizard
 from git_dev_metrics.models import Repository
 
-from .conftest import any_pr, approved_review
+from .conftest import any_pr, approved_review, dt
 
 
 def _three_prs(prefix: int) -> list:
@@ -17,8 +17,8 @@ def _three_prs(prefix: int) -> list:
             id=prefix + i,
             number=prefix + i,
             user={"login": f"dev-{i}"},
-            created_at=datetime(2026, 4, day, 8, 0, tzinfo=UTC),
-            merged_at=datetime(2026, 4, day, 16, 0, tzinfo=UTC),
+            created_at=dt(year=2026, month=4, day=day, hour=8, minute=0),
+            merged_at=dt(year=2026, month=4, day=day, hour=16, minute=0),
             reviews=[approved_review(login="reviewer")],
         )
         for i, day in enumerate((5, 12, 22))
@@ -36,9 +36,9 @@ class TestPullWizardMultiRepo:
         mocker.patch("git_dev_metrics.cli.pull_wizard.load_last_org", return_value=None)
         mocker.patch("git_dev_metrics.cli.pull_wizard.save_last_org")
         repos = [
-            _repo("myorg/repoA", private=False, pushed=datetime(2026, 4, 20, tzinfo=UTC)),
-            _repo("myorg/oldrepo", private=False, pushed=datetime(2025, 1, 1, tzinfo=UTC)),
-            _repo("myorg/repoB", private=True, pushed=datetime(2026, 4, 25, tzinfo=UTC)),
+            _repo("myorg/repoA", private=False, pushed=dt(year=2026, month=4, day=20)),
+            _repo("myorg/oldrepo", private=False, pushed=dt(year=2025, month=1, day=1)),
+            _repo("myorg/repoB", private=True, pushed=dt(year=2026, month=4, day=25)),
         ]
         captured_options: list[dict[str, str]] = []
 
@@ -54,7 +54,7 @@ class TestPullWizardMultiRepo:
             ask_org=lambda _last: "myorg",
             ask_month=lambda _choices: "2026-04",
             ask_repos=ask_repos,
-            clock=lambda: datetime(2026, 5, 12, tzinfo=UTC),
+            clock=lambda: dt(year=2026, month=5, day=12),
             fetch=fetch,
             fetch_repos=lambda _token, _org: repos,
             get_token=lambda: "fake",
@@ -82,8 +82,8 @@ class TestPullWizardSkipsSealedInBatch:
         mocker.patch("git_dev_metrics.cli.pull_wizard.load_last_org", return_value=None)
         mocker.patch("git_dev_metrics.cli.pull_wizard.save_last_org")
         repos = [
-            _repo("myorg/repoA", private=False, pushed=datetime(2026, 4, 20, tzinfo=UTC)),
-            _repo("myorg/repoB", private=False, pushed=datetime(2026, 4, 20, tzinfo=UTC)),
+            _repo("myorg/repoA", private=False, pushed=dt(year=2026, month=4, day=20)),
+            _repo("myorg/repoB", private=False, pushed=dt(year=2026, month=4, day=20)),
         ]
         fetch = Mock(return_value=_three_prs(200))
 
@@ -93,7 +93,7 @@ class TestPullWizardSkipsSealedInBatch:
             ask_org=lambda _last: "myorg",
             ask_month=lambda _choices: "2026-04",
             ask_repos=lambda _opts: ["myorg/repoA", "myorg/repoB"],
-            clock=lambda: datetime(2026, 5, 12, tzinfo=UTC),
+            clock=lambda: dt(year=2026, month=5, day=12),
             fetch=fetch,
             fetch_repos=lambda _token, _org: repos,
             get_token=lambda: "fake",
@@ -115,7 +115,7 @@ class TestPullWizardNoActiveRepos:
         db_path = tmp_path / "cache.db"
         mocker.patch("git_dev_metrics.cli.pull_wizard.load_last_org", return_value=None)
         mocker.patch("git_dev_metrics.cli.pull_wizard.save_last_org")
-        stale_only = [_repo("myorg/old", private=False, pushed=datetime(2025, 1, 1, tzinfo=UTC))]
+        stale_only = [_repo("myorg/old", private=False, pushed=dt(year=2025, month=1, day=1))]
 
         # Act
         with pytest.raises(typer.Exit) as exc:
@@ -124,7 +124,7 @@ class TestPullWizardNoActiveRepos:
                 ask_org=lambda _last: "myorg",
                 ask_month=lambda _choices: "2026-04",
                 ask_repos=Mock(side_effect=AssertionError("should not prompt for repos")),
-                clock=lambda: datetime(2026, 5, 12, tzinfo=UTC),
+                clock=lambda: dt(year=2026, month=5, day=12),
                 fetch=Mock(side_effect=AssertionError("should not fetch metrics")),
                 fetch_repos=lambda _token, _org: stale_only,
                 get_token=lambda: "fake",
@@ -154,7 +154,7 @@ class TestPullWizardMonthChoices:
                 ask_org=lambda _last: "myorg",
                 ask_month=ask_month,
                 ask_repos=Mock(side_effect=AssertionError("should not reach repos")),
-                clock=lambda: datetime(2026, 5, 12, tzinfo=UTC),
+                clock=lambda: dt(year=2026, month=5, day=12),
                 fetch=Mock(side_effect=AssertionError("should not fetch metrics")),
                 fetch_repos=Mock(side_effect=AssertionError("should not fetch repos")),
                 get_token=lambda: "fake",

@@ -1,8 +1,6 @@
-from datetime import UTC, datetime
-
 from git_dev_metrics.cache import insert_prs, load_prs
 
-from .conftest import any_pr, approved_review
+from .conftest import any_pr, approved_review, dt
 
 
 class TestLoadPrs:
@@ -17,7 +15,11 @@ class TestLoadPrs:
                 deletions=7,
                 changed_files=3,
                 commit_messages=["feat: a", "fix: b"],
-                reviews=[approved_review(login="bob", submitted_at=datetime(2026, 4, 2, 9, 0, tzinfo=UTC))],
+                reviews=[
+                    approved_review(
+                        login="bob", submitted_at=dt(year=2026, month=4, day=2, hour=9, minute=0)
+                    )
+                ],
             ),
             any_pr(id=2, number=12, user={"login": "carol"}, commit_messages=[], reviews=[]),
         ]

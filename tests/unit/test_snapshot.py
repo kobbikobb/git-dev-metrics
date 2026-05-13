@@ -1,17 +1,15 @@
 """Unit tests for MetricsSnapshot."""
 
-from datetime import UTC, datetime
-
 from git_dev_metrics.metrics import MetricsSnapshot
 from git_dev_metrics.utils import TimePeriod
 
-from .conftest import any_pr, approved_review
+from .conftest import any_pr, approved_review, dt
 
 
 def _period() -> TimePeriod:
     return TimePeriod(
-        since=datetime(2024, 1, 1, tzinfo=UTC),
-        until=datetime(2024, 1, 31, tzinfo=UTC),
+        since=dt(year=2024, month=1, day=1),
+        until=dt(year=2024, month=1, day=31),
     )
 
 
@@ -151,9 +149,9 @@ class TestSummary:
                     any_pr(
                         number=f"{login}-{i}",
                         user={"login": login},
-                        created_at=datetime(2024, 1, 1, 0, 0, tzinfo=UTC),
-                        merged_at=datetime(2024, 1, 2, 0, 0, tzinfo=UTC),
-                        reviews=[approved_review(datetime(2024, 1, 1, 6, 0, tzinfo=UTC))],
+                        created_at=dt(year=2024, month=1, day=1, hour=0, minute=0),
+                        merged_at=dt(year=2024, month=1, day=2, hour=0, minute=0),
+                        reviews=[approved_review(dt(year=2024, month=1, day=1, hour=6, minute=0))],
                         body="Co-Authored-By: Claude" if i < ai_count else "",
                     )
                 )
@@ -167,7 +165,11 @@ class TestSummary:
             any_pr(
                 number=i,
                 user={"login": "author"},
-                reviews=[approved_review(login=login, submitted_at=datetime(2024, 1, i, 0, 0, tzinfo=UTC))],
+                reviews=[
+                    approved_review(
+                        login=login, submitted_at=dt(year=2024, month=1, day=i, hour=0, minute=0)
+                    )
+                ],
             )
             for i, login in enumerate(["carol", "alice", "bob"], start=1)
         ]
@@ -183,9 +185,9 @@ class TestTeamAggregation:
             any_pr(
                 number=i,
                 user={"login": "kobbi"},
-                created_at=datetime(2024, 1, 1, 0, 0, tzinfo=UTC),
-                merged_at=datetime(2024, 1, 5 + i, 0, 0, tzinfo=UTC),
-                reviews=[approved_review(datetime(2024, 1, 1, 6, 0, tzinfo=UTC))],
+                created_at=dt(year=2024, month=1, day=1, hour=0, minute=0),
+                merged_at=dt(year=2024, month=1, day=5 + i, hour=0, minute=0),
+                reviews=[approved_review(dt(year=2024, month=1, day=1, hour=6, minute=0))],
             )
             for i in range(1, 4)
         ]
@@ -193,9 +195,9 @@ class TestTeamAggregation:
             any_pr(
                 number=10,
                 user={"login": "alice"},
-                created_at=datetime(2024, 1, 1, 0, 0, tzinfo=UTC),
-                merged_at=datetime(2024, 1, 1, 1, 0, tzinfo=UTC),
-                reviews=[approved_review(datetime(2024, 1, 1, 0, 30, tzinfo=UTC))],
+                created_at=dt(year=2024, month=1, day=1, hour=0, minute=0),
+                merged_at=dt(year=2024, month=1, day=1, hour=1, minute=0),
+                reviews=[approved_review(dt(year=2024, month=1, day=1, hour=0, minute=30))],
             )
         ]
 
@@ -211,10 +213,10 @@ class TestTeamAggregation:
             any_pr(
                 number=1,
                 user={"login": "dev"},
-                created_at=datetime(2024, 1, 1, 0, 0, tzinfo=UTC),
-                ready_for_review_at=datetime(2024, 1, 4, 0, 0, tzinfo=UTC),
-                merged_at=datetime(2024, 1, 5, 0, 0, tzinfo=UTC),
-                reviews=[approved_review(datetime(2024, 1, 4, 12, 0, tzinfo=UTC))],
+                created_at=dt(year=2024, month=1, day=1, hour=0, minute=0),
+                ready_for_review_at=dt(year=2024, month=1, day=4, hour=0, minute=0),
+                merged_at=dt(year=2024, month=1, day=5, hour=0, minute=0),
+                reviews=[approved_review(dt(year=2024, month=1, day=4, hour=12, minute=0))],
             )
         ]
 
@@ -230,9 +232,9 @@ class TestTeamAggregation:
                     any_pr(
                         number=f"{login}-{i}",
                         user={"login": login},
-                        created_at=datetime(2024, 1, 1, 0, 0, tzinfo=UTC),
-                        merged_at=datetime(2024, 1, 2, 0, 0, tzinfo=UTC),
-                        reviews=[approved_review(datetime(2024, 1, 1, 6, 0, tzinfo=UTC))],
+                        created_at=dt(year=2024, month=1, day=1, hour=0, minute=0),
+                        merged_at=dt(year=2024, month=1, day=2, hour=0, minute=0),
+                        reviews=[approved_review(dt(year=2024, month=1, day=1, hour=6, minute=0))],
                         body="Co-Authored-By: Claude" if i < ai_count else "",
                     )
                 )

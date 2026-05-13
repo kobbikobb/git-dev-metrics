@@ -1,6 +1,5 @@
 import json
 import re
-from datetime import UTC, datetime
 
 from freezegun import freeze_time
 from typer.testing import CliRunner
@@ -10,7 +9,7 @@ from git_dev_metrics.cli.app import app
 from git_dev_metrics.cli.trend_wizard import trend_wizard
 from git_dev_metrics.models import PullRequest
 
-from .conftest import any_pr, approved_review
+from .conftest import any_pr, approved_review, dt
 
 runner = CliRunner()
 
@@ -20,9 +19,11 @@ def _pr(pr_id: int, login: str, year: int, month: int, day: int) -> PullRequest:
         id=pr_id,
         number=pr_id,
         user={"login": login},
-        created_at=datetime(year, month, day, 8, 0, tzinfo=UTC),
-        merged_at=datetime(year, month, day, 18, 0, tzinfo=UTC),
-        reviews=[approved_review(submitted_at=datetime(year, month, day, 12, 0, tzinfo=UTC))],
+        created_at=dt(year=year, month=month, day=day, hour=8, minute=0),
+        merged_at=dt(year=year, month=month, day=day, hour=18, minute=0),
+        reviews=[
+            approved_review(submitted_at=dt(year=year, month=month, day=day, hour=12, minute=0))
+        ],
     )
 
 
@@ -73,8 +74,15 @@ class TestTrendFiltersLeavers:
         result = runner.invoke(
             app,
             [
-                "trend", "--from", "2026-02", "--to", "2026-04",
-                "--db", str(db_path), "--output", str(out),
+                "trend",
+                "--from",
+                "2026-02",
+                "--to",
+                "2026-04",
+                "--db",
+                str(db_path),
+                "--output",
+                str(out),
             ],
         )
 
@@ -99,8 +107,15 @@ class TestTrendCanvases:
         result = runner.invoke(
             app,
             [
-                "trend", "--from", "2026-02", "--to", "2026-04",
-                "--db", str(db_path), "--output", str(out),
+                "trend",
+                "--from",
+                "2026-02",
+                "--to",
+                "2026-04",
+                "--db",
+                str(db_path),
+                "--output",
+                str(out),
             ],
         )
 
@@ -122,11 +137,19 @@ class TestTrendAggregatesAllRepos:
         db_path = tmp_path / "cache.db"
         insert_prs(
             [_pr(101, "alice", 2026, 4, 5), _pr(102, "bob", 2026, 4, 6)],
-            "myorg", "repoA", 2026, 4, db_path=db_path,
+            "myorg",
+            "repoA",
+            2026,
+            4,
+            db_path=db_path,
         )
         insert_prs(
             [_pr(201, "alice", 2026, 4, 12), _pr(202, "alice", 2026, 4, 22)],
-            "myorg", "repoB", 2026, 4, db_path=db_path,
+            "myorg",
+            "repoB",
+            2026,
+            4,
+            db_path=db_path,
         )
         seal_month("myorg", "repoA", 2026, 4, db_path=db_path)
         seal_month("myorg", "repoB", 2026, 4, db_path=db_path)
@@ -136,8 +159,15 @@ class TestTrendAggregatesAllRepos:
         result = runner.invoke(
             app,
             [
-                "trend", "--from", "2026-04", "--to", "2026-04",
-                "--db", str(db_path), "--output", str(out),
+                "trend",
+                "--from",
+                "2026-04",
+                "--to",
+                "2026-04",
+                "--db",
+                str(db_path),
+                "--output",
+                str(out),
             ],
         )
 
@@ -194,8 +224,15 @@ class TestTrendOpensBrowser:
         result = runner.invoke(
             app,
             [
-                "trend", "--from", "2026-02", "--to", "2026-04",
-                "--db", str(db_path), "--output", str(out),
+                "trend",
+                "--from",
+                "2026-02",
+                "--to",
+                "2026-04",
+                "--db",
+                str(db_path),
+                "--output",
+                str(out),
             ],
         )
 
@@ -233,8 +270,15 @@ class TestTrendNoSyncedData:
         result = runner.invoke(
             app,
             [
-                "trend", "--from", "2026-04", "--to", "2026-04",
-                "--db", str(db_path), "--output", str(out),
+                "trend",
+                "--from",
+                "2026-04",
+                "--to",
+                "2026-04",
+                "--db",
+                str(db_path),
+                "--output",
+                str(out),
             ],
         )
 
