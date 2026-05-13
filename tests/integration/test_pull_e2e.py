@@ -87,7 +87,7 @@ class TestPullEndToEnd:
         assert by_number[101]["author_login"] == "alice"
         assert by_number[103]["author_login"] == "alice"
 
-    def test_should_chain_pull_then_report_then_clear(self, tmp_path, mocker):
+    def test_should_chain_pull_then_dashboard_then_clear(self, tmp_path, mocker):
         # Arrange
         db_path = tmp_path / "cache.db"
         raw = [
@@ -97,47 +97,35 @@ class TestPullEndToEnd:
         mapped = [_map_pull_request(pr) for pr in raw]
         mocker.patch("git_dev_metrics.cli.pull.get_github_token", return_value="fake-token")
         mocker.patch("git_dev_metrics.cli.pull_runner.fetch_repo_metrics", return_value=mapped)
-        report_out = tmp_path / "r.md"
+        mocker.patch("git_dev_metrics.cli._browser.webbrowser.open", return_value=False)
+        dashboard_out = tmp_path / "r.html"
 
         # Act
         pull_result = runner.invoke(
             app,
             [
-                "pull",
-                "--month",
-                "2026-04",
-                "--org",
-                "myorg",
-                "--repo",
-                "myrepo",
-                "--db",
-                str(db_path),
+                "pull", "--month", "2026-04",
+                "--org", "myorg", "--repo", "myrepo",
+                "--db", str(db_path),
             ],
         )
-        report_result = runner.invoke(
+        dashboard_result = runner.invoke(
             app,
             [
-                "report",
-                "--from",
-                "2026-04",
-                "--to",
-                "2026-04",
-                "--db",
-                str(db_path),
-                "--output",
-                str(report_out),
+                "dashboard", "--from", "2026-04", "--to", "2026-04",
+                "--db", str(db_path), "--output", str(dashboard_out),
             ],
         )
         clear_result = runner.invoke(app, ["clear", "--db", str(db_path), "--yes"])
 
         # Assert
         assert pull_result.exit_code == 0, pull_result.output
-        assert report_result.exit_code == 0, report_result.output
-        assert report_out.exists()
-        md = report_out.read_text()
-        assert "# Summary (2026-04-01 to 2026-05-01)" in md
-        assert "Total PRs" in md
-        assert "Median Cycle Time" in md
+        assert dashboard_result.exit_code == 0, dashboard_result.output
+        assert dashboard_out.exists()
+        html = dashboard_out.read_text().lower()
+        assert "<html" in html
+        assert "alice" in html
+        assert "bob" in html
         assert clear_result.exit_code == 0
         assert not db_path.exists()
 

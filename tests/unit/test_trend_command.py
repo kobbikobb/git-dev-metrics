@@ -172,7 +172,7 @@ class TestTrendCli:
 
 class TestTrendOpensBrowser:
     @freeze_time("2026-05-12")
-    def test_should_open_html_in_browser_by_default(self, tmp_path, _stub_webbrowser):
+    def test_should_open_html_in_browser_after_writing(self, tmp_path, _stub_webbrowser):
         # Arrange
         db_path = tmp_path / "cache.db"
         _seed_three_months(db_path)
@@ -191,27 +191,6 @@ class TestTrendOpensBrowser:
         # Assert
         assert result.exit_code == 0, result.output
         _stub_webbrowser.assert_called_once_with(out.resolve().as_uri())
-
-    @freeze_time("2026-05-12")
-    def test_should_not_open_when_no_open_flag(self, tmp_path, _stub_webbrowser):
-        # Arrange
-        db_path = tmp_path / "cache.db"
-        _seed_three_months(db_path)
-        out = tmp_path / "t.html"
-
-        # Act
-        result = runner.invoke(
-            app,
-            [
-                "trend", "--from", "2026-02", "--to", "2026-04",
-                "--org", "myorg", "--repo", "myrepo",
-                "--db", str(db_path), "--output", str(out), "--no-open",
-            ],
-        )
-
-        # Assert
-        assert result.exit_code == 0, result.output
-        _stub_webbrowser.assert_not_called()
 
     @freeze_time("2026-05-12")
     def test_should_open_html_in_wizard_flow(self, tmp_path, monkeypatch, _stub_webbrowser):
