@@ -78,6 +78,11 @@ max-complexity = 10  # Rule 2: max nesting/branching depth
 typeCheckingMode = "standard"
 pythonVersion = "3.14"
 
+[tool.vulture]
+paths = ["git_dev_metrics"]
+min_confidence = 80
+ignore_decorators = ["@app.callback", "@app.command"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-v --strict-markers"
