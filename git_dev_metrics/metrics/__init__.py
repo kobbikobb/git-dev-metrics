@@ -1,6 +1,6 @@
 """Metrics"""
 
-from .analyzer import get_combined_metrics, get_pull_request_metrics
+from .analyzer import build_combined_metrics_for_repos, build_combined_metrics_from_prs
 from .calculator import (
     calculate_avg_lines_per_pr,
     calculate_cycle_time,
@@ -12,13 +12,11 @@ from .calculator import (
     median,
 )
 from .health import calculate_dev_health_score, calculate_health_score
-from .printer import CompositePrinter, Printer, get_default_output_path
-from .printer.dev import ConsoleDevPrinter, FileDevPrinter
-from .printer.repo import FileRepoPrinter
+from .printer import ConsolePrinter, Printer
 
 __all__ = [
-    "get_pull_request_metrics",
-    "get_combined_metrics",
+    "build_combined_metrics_for_repos",
+    "build_combined_metrics_from_prs",
     "calculate_avg_lines_per_pr",
     "calculate_cycle_time",
     "calculate_pr_size",
@@ -29,10 +27,6 @@ __all__ = [
     "calculate_health_score",
     "calculate_dev_health_score",
     "median",
-    "get_default_output_path",
     "Printer",
-    "CompositePrinter",
-    "FileRepoPrinter",
-    "ConsoleDevPrinter",
-    "FileDevPrinter",
+    "ConsolePrinter",
 ]

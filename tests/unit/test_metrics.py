@@ -905,11 +905,17 @@ class TestCalculateAiPercentage:
         assert result == 50.0
 
 
+_JAN_2024 = TimePeriod(
+    since=datetime(2024, 1, 1, tzinfo=UTC),
+    until=datetime(2024, 1, 31, tzinfo=UTC),
+)
+
+
 class TestTeamAggregation:
     """Combined metrics aggregate per-dev medians for time-based team stats."""
 
-    def test_should_use_median_of_dev_medians_for_time_metrics(self, mocker):
-        from git_dev_metrics.metrics.analyzer import get_combined_metrics
+    def test_should_use_median_of_dev_medians_for_time_metrics(self):
+        from git_dev_metrics.metrics.analyzer import build_combined_metrics_for_repos
 
         # heavy author: 3 PRs with cycle ~ 100h
         # lean author: 1 PR with cycle ~ 1h
@@ -933,19 +939,8 @@ class TestTeamAggregation:
                 reviews=[approved_review("2024-01-01T00:30:00Z")],
             )
         ]
-        mocker.patch(
-            "git_dev_metrics.metrics.analyzer.fetch_repo_metrics",
-            return_value=heavy + lean,
-        )
-        mocker.patch(
-            "git_dev_metrics.metrics.analyzer.parse_time_period",
-            return_value=TimePeriod(
-                since=datetime(2024, 1, 1, tzinfo=UTC),
-                until=datetime(2024, 1, 31, tzinfo=UTC),
-            ),
-        )
 
-        result = get_combined_metrics(token="t", selected_repos=["org/repo"])
+        result = build_combined_metrics_for_repos({"org/repo": heavy + lean}, _JAN_2024)
 
         team = result["team_metrics"]
         kobbi_cycle = result["dev_metrics"]["kobbi"]["cycle_time"]
@@ -954,8 +949,8 @@ class TestTeamAggregation:
         assert team["cycle_time"] == round((kobbi_cycle + alice_cycle) / 2, 2)
         assert team["pr_count"] == 4  # counts stay sum-based
 
-    def test_should_keep_pickup_le_cycle_at_team_level(self, mocker):
-        from git_dev_metrics.metrics.analyzer import get_combined_metrics
+    def test_should_keep_pickup_le_cycle_at_team_level(self):
+        from git_dev_metrics.metrics.analyzer import build_combined_metrics_for_repos
 
         prs = [
             any_pr(
@@ -967,24 +962,15 @@ class TestTeamAggregation:
                 reviews=[approved_review("2024-01-04T12:00:00Z")],
             )
         ]
-        mocker.patch("git_dev_metrics.metrics.analyzer.fetch_repo_metrics", return_value=prs)
-        mocker.patch(
-            "git_dev_metrics.metrics.analyzer.parse_time_period",
-            return_value=TimePeriod(
-                since=datetime(2024, 1, 1, tzinfo=UTC),
-                until=datetime(2024, 1, 31, tzinfo=UTC),
-            ),
-        )
 
-        result = get_combined_metrics(token="t", selected_repos=["org/repo"])
+        result = build_combined_metrics_for_repos({"org/repo": prs}, _JAN_2024)
 
         assert result["team_metrics"]["pickup_time"] <= result["team_metrics"]["cycle_time"]
 
-    def test_should_use_mean_of_dev_rates_for_ai_adoption(self, mocker):
-        from git_dev_metrics.metrics.analyzer import get_combined_metrics
+    def test_should_use_mean_of_dev_rates_for_ai_adoption(self):
+        from git_dev_metrics.metrics.analyzer import build_combined_metrics_for_repos
 
-        # alice 100% AI, bob 40% AI -> mean 70, median 70 (only with 2 devs both
-        # match). Use 3 devs to differentiate: 100, 40, 40 -> mean 60, median 40.
+        # alice 100% AI, bob 40% AI, carol 40% AI -> mean 60, median 40.
         prs = []
         for login, count, ai_count in [("alice", 5, 5), ("bob", 5, 2), ("carol", 5, 2)]:
             for i in range(count):
@@ -998,16 +984,8 @@ class TestTeamAggregation:
                         body="Co-Authored-By: Claude" if i < ai_count else "",
                     )
                 )
-        mocker.patch("git_dev_metrics.metrics.analyzer.fetch_repo_metrics", return_value=prs)
-        mocker.patch(
-            "git_dev_metrics.metrics.analyzer.parse_time_period",
-            return_value=TimePeriod(
-                since=datetime(2024, 1, 1, tzinfo=UTC),
-                until=datetime(2024, 1, 31, tzinfo=UTC),
-            ),
-        )
 
-        result = get_combined_metrics(token="t", selected_repos=["org/repo"])
+        result = build_combined_metrics_for_repos({"org/repo": prs}, _JAN_2024)
 
         assert result["team_metrics"]["ai_percentage"] == 60.0
 
