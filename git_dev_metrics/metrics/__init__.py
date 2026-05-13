@@ -13,6 +13,7 @@ from .calculator import (
 )
 from .health import calculate_dev_health_score, calculate_health_score
 from .printer import ConsolePrinter, Printer
+from .snapshot import Band, MetricsSnapshot, Row, Summary
 
 __all__ = [
     "build_combined_metrics_for_repos",
@@ -29,4 +30,8 @@ __all__ = [
     "median",
     "Printer",
     "ConsolePrinter",
+    "Band",
+    "MetricsSnapshot",
+    "Row",
+    "Summary",
 ]
