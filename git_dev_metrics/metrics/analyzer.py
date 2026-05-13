@@ -1,6 +1,5 @@
-from ..github import fetch_repo_metrics
 from ..models import PullRequest
-from ..utils import TimePeriod, parse_time_period
+from ..utils import TimePeriod
 from .calculator import (
     calculate_ai_percentage,
     calculate_avg_lines_per_pr,
@@ -45,30 +44,6 @@ def _build_dev_metrics(devs: dict, period_days: int, reviews_given: dict) -> dic
             "ai_percentage": calculate_ai_percentage(dev_prs),
         }
         for dev, dev_prs in devs.items()
-    }
-
-
-def get_pull_request_metrics(token: str, org: str, repo: str, event_period: str = "30d") -> dict:
-    """Get development metrics for a repository over a specified time period."""
-    period = parse_time_period(event_period)
-    period_days = _period_days(period)
-    prs = fetch_repo_metrics(token, org, repo, period)
-
-    devs = group_prs_by_devs(prs)
-    reviews_given = calculate_reviews_given(prs)
-    dev_metrics = _build_dev_metrics(devs, period_days, reviews_given)
-
-    return {
-        "cycle_time": calculate_cycle_time(prs),
-        "pr_size": calculate_pr_size(prs),
-        "avg_lines_per_pr": calculate_avg_lines_per_pr(prs),
-        "pr_count": calculate_throughput(prs),
-        "pickup_time": calculate_pickup_time(prs),
-        "review_time": calculate_review_time(prs),
-        "prs_per_week": calculate_prs_per_week(prs, period_days),
-        "reviews_given": sum(reviews_given.values()),
-        "ai_percentage": calculate_ai_percentage(prs),
-        "dev_metrics": dev_metrics,
     }
 
 
@@ -127,22 +102,4 @@ def build_combined_metrics_for_repos(
     for full_name, prs in repo_prs.items():
         all_prs.extend(prs)
         repo_metrics[full_name] = _build_metrics(prs, period_days)
-    return _combine(repo_metrics, all_prs, period_days)
-
-
-def get_combined_metrics(token: str, selected_repos: list[str], event_period: str = "30d") -> dict:
-    """Get combined metrics for multiple repositories."""
-    period = parse_time_period(event_period)
-    period_days = _period_days(period)
-
-    all_prs: list = []
-    repo_metrics: dict = {}
-
-    for full_name in selected_repos:
-        org, name = full_name.split("/", 1)
-        prs = fetch_repo_metrics(token, org, name, period)
-
-        all_prs.extend(prs)
-        repo_metrics[full_name] = _build_metrics(prs, period_days)
-
     return _combine(repo_metrics, all_prs, period_days)
