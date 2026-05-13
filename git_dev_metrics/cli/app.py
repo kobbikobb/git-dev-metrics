@@ -1,9 +1,10 @@
 import typer
 
 from .clear import clear
+from .dashboard import dashboard
 from .logout import logout
 from .pull import pull
-from .report import report
+from .summary import summary
 from .trend import trend
 
 app = typer.Typer(help="Git development metrics CLI.")
@@ -17,7 +18,8 @@ def main(ctx: typer.Context) -> None:
 
 
 app.command()(clear)
+app.command()(dashboard)
 app.command()(logout)
 app.command()(pull)
-app.command()(report)
+app.command()(summary)
 app.command()(trend)

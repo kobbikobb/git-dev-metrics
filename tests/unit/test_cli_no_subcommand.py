@@ -19,11 +19,13 @@ class TestNoSubcommand:
         assert result.exit_code == 0
         assert "Usage:" in result.output
         assert "pull" in result.output
-        assert "report" in result.output
+        assert "summary" in result.output
+        assert "dashboard" in result.output
         assert "trend" in result.output
         assert "clear" in result.output
         assert "logout" in result.output
         assert "analyze" not in result.output
+        assert "report" not in result.output
         forbidden = "anon" + "ymize"
         assert forbidden not in result.output
 

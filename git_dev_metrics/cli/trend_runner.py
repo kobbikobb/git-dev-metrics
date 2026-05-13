@@ -26,9 +26,8 @@ def perform_trend(
     to_ym: YearMonth,
     output: Path | None,
     db_path: Path | None,
-    open_browser: bool = True,
 ) -> None:
-    """Shared core: validate range, verify each month sealed, build dataset, render HTML."""
+    """Validate range, verify each month sealed, build dataset, render HTML, open browser."""
     if to_ym < from_ym:
         typer.secho("--to must be >= --from.", fg=typer.colors.RED, err=True)
         raise typer.Exit(code=1)
@@ -46,5 +45,4 @@ def perform_trend(
     out_path = output or _default_output(org, repo, from_ym, to_ym)
     FileTrendPrinter(out_path).render(dataset, org, repo)
     typer.echo(f"Trend written to {out_path}.")
-    if open_browser:
-        open_in_browser(out_path)
+    open_in_browser(out_path)
