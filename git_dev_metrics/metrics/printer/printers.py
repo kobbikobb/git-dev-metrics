@@ -1,4 +1,4 @@
-from ..summary import build_summary
+from ..snapshot import MetricsSnapshot
 from .base import Printer
 from .dev import ConsoleDevPrinter
 
@@ -9,25 +9,28 @@ class ConsolePrinter(Printer):
     def __init__(self) -> None:
         self._dev_printer = ConsoleDevPrinter()
 
-    def print_combined_metrics(self, metrics: dict, period: str, date_range: str) -> None:
+    def print_combined_metrics(
+        self, snapshot: MetricsSnapshot, period: str, date_range: str
+    ) -> None:
         from rich.console import Console
         from rich.table import Table
 
         console = Console()
 
-        summary = build_summary(metrics)
+        team = snapshot.team
+        summary = snapshot.summary
         cells = [
-            ("Team Health", str(summary["team_health"])),
-            ("Total PRs", str(summary["total_prs"])),
-            ("Median Lines/PR", str(summary["median_lines_per_pr"])),
-            ("Median Cycle (h)", str(summary["median_cycle"])),
-            ("Median Pickup (h)", str(summary["median_pickup"])),
-            ("PRs/Week per Dev", str(summary["median_prs_per_week"])),
-            ("Total Reviews", str(summary["total_reviews"])),
-            ("AI Adoption", f"{summary['ai_adoption']}%"),
-            ("Review Ratio", f"{summary['review_ratio']}x"),
-            ("Top Reviewer", summary["top_reviewer"] or "—"),
-            ("Max Review Share", f"{summary['max_review_share']}%"),
+            ("Team Health", str(team.health)),
+            ("Total PRs", str(team.pr_count)),
+            ("Median Lines/PR", str(round(team.pr_size, 1))),
+            ("Median Cycle (h)", str(round(team.cycle_time, 1))),
+            ("Median Pickup (h)", str(round(team.pickup_time, 1))),
+            ("PRs/Week per Dev", str(round(team.prs_per_week, 2))),
+            ("Total Reviews", str(team.reviews_given)),
+            ("AI Adoption", f"{round(team.ai_percentage)}%"),
+            ("Review Ratio", f"{summary.review_ratio}x"),
+            ("Top Reviewer", summary.top_reviewer or "—"),
+            ("Max Review Share", f"{summary.max_review_share}%"),
         ]
 
         console.print()
@@ -45,7 +48,7 @@ class ConsolePrinter(Printer):
             console.print(table)
         console.print()
 
-        self._dev_printer.print_combined_metrics(metrics, period, date_range)
+        self._dev_printer.print_combined_metrics(snapshot, period, date_range)
 
 
 __all__ = ["ConsolePrinter", "Printer"]
