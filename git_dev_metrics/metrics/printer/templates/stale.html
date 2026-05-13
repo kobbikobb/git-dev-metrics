@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stale PRs</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --card: #1a1d27;
+    --border: #2a2d3a;
+    --text: #e1e4ed;
+    --muted: #8b8fa3;
+    --warn: #eab308;
+    --crit: #ef4444;
+    --ok: #22c55e;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg); color: var(--text); padding: 2rem;
+  }
+  .header { text-align: center; margin-bottom: 2rem; }
+  .header h1 { font-size: 1.5rem; letter-spacing: -0.02em; }
+  .header p { color: var(--muted); font-size: 0.875rem; margin-top: 0.25rem; }
+  .wrap { max-width: 1200px; margin: 0 auto; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+  th, td { text-align: left; padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--border); }
+  th { color: var(--muted); font-weight: 600; }
+  tr:last-child td { border-bottom: none; }
+  a { color: #6366f1; text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .age-warn { color: var(--warn); }
+  .age-crit { color: var(--crit); font-weight: 600; }
+  .badge { font-size: 0.7rem; padding: 0.1rem 0.4rem; border-radius: 4px; background: var(--border); color: var(--muted); }
+  .badge-approved { background: rgba(34,197,94,0.15); color: var(--ok); }
+  .empty { text-align: center; color: var(--muted); padding: 3rem; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="header">
+    <h1>Stale PRs</h1>
+    <p>{{ total }} open &gt; 7 days · avg age {{ "%.1f"|format(avg_age) }} days</p>
+  </div>
+  <div class="card">
+    {% if prs %}
+    <table>
+      <thead>
+        <tr>
+          <th>PR</th><th>Title</th><th>Repo</th><th>Author</th><th>Age</th><th>Flags</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for pr in prs %}
+        <tr>
+          <td><a href="{{ pr.url }}" target="_blank">#{{ pr.number }}</a></td>
+          <td>{{ pr.title }}</td>
+          <td>{{ pr.repo }}</td>
+          <td>{{ pr.author }}</td>
+          <td class="{% if pr.age_days >= 30 %}age-crit{% elif pr.age_days >= 14 %}age-warn{% endif %}">{{ "%.1f"|format(pr.age_days) }}d</td>
+          <td>
+            {% if pr.is_draft %}<span class="badge">draft</span>{% endif %}
+            {% if pr.is_approved %}<span class="badge badge-approved">approved</span>{% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="empty">No stale PRs.</div>
+    {% endif %}
+  </div>
+</div>
+</body>
+</html>
