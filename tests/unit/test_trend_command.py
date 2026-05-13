@@ -25,7 +25,7 @@ def _pr(pr_id: int, login: str, year: int, month: int, day: int) -> PullRequest:
     )
 
 
-def _seed_three_months(db_path) -> None:
+def _seed_three_months_one_repo(db_path) -> None:
     feb = [
         _pr(1, "alice", 2026, 2, 5),
         _pr(2, "alice", 2026, 2, 12),
@@ -65,26 +65,15 @@ class TestTrendFiltersLeavers:
     def test_should_render_active_devs_only_and_omit_leavers(self, tmp_path):
         # Arrange
         db_path = tmp_path / "cache.db"
-        _seed_three_months(db_path)
+        _seed_three_months_one_repo(db_path)
         out = tmp_path / "t.html"
 
         # Act
         result = runner.invoke(
             app,
             [
-                "trend",
-                "--from",
-                "2026-02",
-                "--to",
-                "2026-04",
-                "--org",
-                "myorg",
-                "--repo",
-                "myrepo",
-                "--db",
-                str(db_path),
-                "--output",
-                str(out),
+                "trend", "--from", "2026-02", "--to", "2026-04",
+                "--db", str(db_path), "--output", str(out),
             ],
         )
 
@@ -92,10 +81,8 @@ class TestTrendFiltersLeavers:
         assert result.exit_code == 0, result.output
         assert out.exists()
         content = out.read_text()
-        assert "alice" in content
-        assert "bob" in content
-        assert "charlie" not in content
         data = _data_block(content)
+        assert sorted(data["devs"]) == ["alice", "bob"]
         assert "charlie" not in data["devs"]
 
 
@@ -104,26 +91,15 @@ class TestTrendCanvases:
     def test_should_render_three_chart_canvases_with_cdn(self, tmp_path):
         # Arrange
         db_path = tmp_path / "cache.db"
-        _seed_three_months(db_path)
+        _seed_three_months_one_repo(db_path)
         out = tmp_path / "t.html"
 
         # Act
         result = runner.invoke(
             app,
             [
-                "trend",
-                "--from",
-                "2026-02",
-                "--to",
-                "2026-04",
-                "--org",
-                "myorg",
-                "--repo",
-                "myrepo",
-                "--db",
-                str(db_path),
-                "--output",
-                str(out),
+                "trend", "--from", "2026-02", "--to", "2026-04",
+                "--db", str(db_path), "--output", str(out),
             ],
         )
 
@@ -138,24 +114,59 @@ class TestTrendCanvases:
         assert "cdn.jsdelivr.net" in content or "unpkg.com" in content
 
 
+class TestTrendAggregatesAllRepos:
+    @freeze_time("2026-05-12")
+    def test_should_sum_pr_counts_across_every_synced_repo(self, tmp_path):
+        # Arrange
+        db_path = tmp_path / "cache.db"
+        insert_prs(
+            [_pr(101, "alice", 2026, 4, 5), _pr(102, "bob", 2026, 4, 6)],
+            "myorg", "repoA", 2026, 4, db_path=db_path,
+        )
+        insert_prs(
+            [_pr(201, "alice", 2026, 4, 12), _pr(202, "alice", 2026, 4, 22)],
+            "myorg", "repoB", 2026, 4, db_path=db_path,
+        )
+        seal_month("myorg", "repoA", 2026, 4, db_path=db_path)
+        seal_month("myorg", "repoB", 2026, 4, db_path=db_path)
+        out = tmp_path / "t.html"
+
+        # Act
+        result = runner.invoke(
+            app,
+            [
+                "trend", "--from", "2026-04", "--to", "2026-04",
+                "--db", str(db_path), "--output", str(out),
+            ],
+        )
+
+        # Assert
+        assert result.exit_code == 0, result.output
+        data = _data_block(out.read_text())
+        assert sorted(data["devs"]) == ["alice", "bob"]
+        alice_apr = next(r for r in data["rows"]["alice"] if r["month_key"] == "2026-04")
+        bob_apr = next(r for r in data["rows"]["bob"] if r["month_key"] == "2026-04")
+        assert alice_apr["pr_count"] == 3
+        assert bob_apr["pr_count"] == 1
+
+
 class TestTrendWizard:
     @freeze_time("2026-05-12")
     def test_should_render_default_output_from_wizard_picks(self, tmp_path, monkeypatch):
         # Arrange
         db_path = tmp_path / "cache.db"
-        _seed_three_months(db_path)
+        _seed_three_months_one_repo(db_path)
         monkeypatch.chdir(tmp_path)
 
         # Act
         trend_wizard(
             db_path=db_path,
-            ask_repo_pick=lambda _repos: ("myorg", "myrepo"),
             ask_from=lambda _months: (2026, 2),
             ask_to=lambda _months: (2026, 4),
         )
 
         # Assert
-        expected = tmp_path / "metrics_results" / "trend_myorg-myrepo_2026-02_2026-04.html"
+        expected = tmp_path / "metrics_results" / "trend_2026-02_2026-04.html"
         assert expected.exists()
 
 
@@ -175,7 +186,7 @@ class TestTrendOpensBrowser:
     def test_should_open_html_in_browser_after_writing(self, tmp_path, _stub_webbrowser):
         # Arrange
         db_path = tmp_path / "cache.db"
-        _seed_three_months(db_path)
+        _seed_three_months_one_repo(db_path)
         out = tmp_path / "t.html"
 
         # Act
@@ -183,7 +194,6 @@ class TestTrendOpensBrowser:
             app,
             [
                 "trend", "--from", "2026-02", "--to", "2026-04",
-                "--org", "myorg", "--repo", "myrepo",
                 "--db", str(db_path), "--output", str(out),
             ],
         )
@@ -196,51 +206,38 @@ class TestTrendOpensBrowser:
     def test_should_open_html_in_wizard_flow(self, tmp_path, monkeypatch, _stub_webbrowser):
         # Arrange
         db_path = tmp_path / "cache.db"
-        _seed_three_months(db_path)
+        _seed_three_months_one_repo(db_path)
         monkeypatch.chdir(tmp_path)
 
         # Act
         trend_wizard(
             db_path=db_path,
-            ask_repo_pick=lambda _repos: ("myorg", "myrepo"),
             ask_from=lambda _months: (2026, 2),
             ask_to=lambda _months: (2026, 4),
         )
 
         # Assert
-        expected = tmp_path / "metrics_results" / "trend_myorg-myrepo_2026-02_2026-04.html"
+        expected = tmp_path / "metrics_results" / "trend_2026-02_2026-04.html"
         _stub_webbrowser.assert_called_once_with(expected.resolve().as_uri())
 
 
-class TestTrendRefusesUnsealed:
+class TestTrendNoSyncedData:
     @freeze_time("2026-05-12")
-    def test_should_refuse_when_month_in_range_not_sealed(self, tmp_path):
+    def test_should_exit_when_no_synced_data_in_range(self, tmp_path):
         # Arrange
         db_path = tmp_path / "cache.db"
-        seal_month("myorg", "myrepo", 2026, 4, db_path=db_path)
         out = tmp_path / "t.html"
 
         # Act
         result = runner.invoke(
             app,
             [
-                "trend",
-                "--from",
-                "2026-04",
-                "--to",
-                "2026-05",
-                "--org",
-                "myorg",
-                "--repo",
-                "myrepo",
-                "--db",
-                str(db_path),
-                "--output",
-                str(out),
+                "trend", "--from", "2026-04", "--to", "2026-04",
+                "--db", str(db_path), "--output", str(out),
             ],
         )
 
         # Assert
         assert result.exit_code == 1
-        assert "May 2026 not sealed" in result.stderr
+        assert "No synced data" in result.stderr
         assert not out.exists()

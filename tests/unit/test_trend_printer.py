@@ -31,7 +31,7 @@ class TestFileTrendPrinter:
         output = tmp_path / "t.html"
 
         # Act
-        FileTrendPrinter(output).render(dataset, "myorg", "myrepo")
+        FileTrendPrinter(output).render(dataset)
 
         # Assert
         content = output.read_text()

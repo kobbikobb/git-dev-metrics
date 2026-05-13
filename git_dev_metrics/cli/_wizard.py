@@ -15,9 +15,7 @@ _STYLE = Style([("highlighted", "fg:#00b4d8 bold"), ("selected", "fg:#90e0ef")])
 
 def _prompt_months(months: list[YearMonth]) -> list[YearMonth]:
     items = [
-        questionary.Choice(
-            title=datetime(y, m, 1).strftime("%B %Y"), value=(y, m), checked=True
-        )
+        questionary.Choice(title=datetime(y, m, 1).strftime("%B %Y"), value=(y, m), checked=True)
         for y, m in months
     ]
     return (

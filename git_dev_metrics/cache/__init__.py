@@ -9,7 +9,13 @@ from .db import (
     query_prs,
     seal_month,
 )
-from .query import list_synced_months, load_all_repos_for_range, load_prs, load_prs_for_range
+from .query import (
+    list_synced_months,
+    load_all_repos_by_month,
+    load_all_repos_for_range,
+    load_prs,
+    load_prs_for_range,
+)
 
 __all__ = [
     "count_prs",
@@ -17,6 +23,7 @@ __all__ = [
     "insert_prs",
     "is_sealed",
     "list_synced_months",
+    "load_all_repos_by_month",
     "load_all_repos_for_range",
     "load_prs",
     "load_prs_for_range",

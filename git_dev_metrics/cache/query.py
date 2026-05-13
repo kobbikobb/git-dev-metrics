@@ -87,6 +87,20 @@ def load_all_repos_for_range(
     return out
 
 
+def load_all_repos_by_month(
+    months: list[tuple[int, int]],
+    db_path: Path | None = None,
+) -> dict[tuple[int, int], list[PullRequest]]:
+    """All cached PRs grouped by (year, month), aggregated across every sealed repo."""
+    wanted = set(months)
+    out: dict[tuple[int, int], list[PullRequest]] = {ym: [] for ym in months}
+    for org, repo, year, month in list_synced_months(db_path=db_path):
+        if (year, month) not in wanted:
+            continue
+        out[(year, month)].extend(load_prs(org, repo, year, month, db_path=db_path))
+    return out
+
+
 def list_synced_months(db_path: Path | None = None) -> list[tuple[str, str, int, int]]:
     """All sealed (org, repo, year, month) tuples, newest first."""
     conn = open_connection(db_path)
