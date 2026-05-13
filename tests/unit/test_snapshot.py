@@ -151,9 +151,9 @@ class TestSummary:
                     any_pr(
                         number=f"{login}-{i}",
                         user={"login": login},
-                        created_at="2024-01-01T00:00:00Z",
-                        merged_at="2024-01-02T00:00:00Z",
-                        reviews=[approved_review("2024-01-01T06:00:00Z")],
+                        created_at=datetime(2024, 1, 1, 0, 0, tzinfo=UTC),
+                        merged_at=datetime(2024, 1, 2, 0, 0, tzinfo=UTC),
+                        reviews=[approved_review(datetime(2024, 1, 1, 6, 0, tzinfo=UTC))],
                         body="Co-Authored-By: Claude" if i < ai_count else "",
                     )
                 )
@@ -167,7 +167,7 @@ class TestSummary:
             any_pr(
                 number=i,
                 user={"login": "author"},
-                reviews=[approved_review(login=login, submitted_at=f"2024-01-0{i}T00:00:00Z")],
+                reviews=[approved_review(login=login, submitted_at=datetime(2024, 1, i, 0, 0, tzinfo=UTC))],
             )
             for i, login in enumerate(["carol", "alice", "bob"], start=1)
         ]
@@ -183,9 +183,9 @@ class TestTeamAggregation:
             any_pr(
                 number=i,
                 user={"login": "kobbi"},
-                created_at="2024-01-01T00:00:00Z",
-                merged_at=f"2024-01-0{5 + i}T00:00:00Z",
-                reviews=[approved_review("2024-01-01T06:00:00Z")],
+                created_at=datetime(2024, 1, 1, 0, 0, tzinfo=UTC),
+                merged_at=datetime(2024, 1, 5 + i, 0, 0, tzinfo=UTC),
+                reviews=[approved_review(datetime(2024, 1, 1, 6, 0, tzinfo=UTC))],
             )
             for i in range(1, 4)
         ]
@@ -193,9 +193,9 @@ class TestTeamAggregation:
             any_pr(
                 number=10,
                 user={"login": "alice"},
-                created_at="2024-01-01T00:00:00Z",
-                merged_at="2024-01-01T01:00:00Z",
-                reviews=[approved_review("2024-01-01T00:30:00Z")],
+                created_at=datetime(2024, 1, 1, 0, 0, tzinfo=UTC),
+                merged_at=datetime(2024, 1, 1, 1, 0, tzinfo=UTC),
+                reviews=[approved_review(datetime(2024, 1, 1, 0, 30, tzinfo=UTC))],
             )
         ]
 
@@ -211,10 +211,10 @@ class TestTeamAggregation:
             any_pr(
                 number=1,
                 user={"login": "dev"},
-                created_at="2024-01-01T00:00:00Z",
-                ready_for_review_at="2024-01-04T00:00:00Z",
-                merged_at="2024-01-05T00:00:00Z",
-                reviews=[approved_review("2024-01-04T12:00:00Z")],
+                created_at=datetime(2024, 1, 1, 0, 0, tzinfo=UTC),
+                ready_for_review_at=datetime(2024, 1, 4, 0, 0, tzinfo=UTC),
+                merged_at=datetime(2024, 1, 5, 0, 0, tzinfo=UTC),
+                reviews=[approved_review(datetime(2024, 1, 4, 12, 0, tzinfo=UTC))],
             )
         ]
 
@@ -230,9 +230,9 @@ class TestTeamAggregation:
                     any_pr(
                         number=f"{login}-{i}",
                         user={"login": login},
-                        created_at="2024-01-01T00:00:00Z",
-                        merged_at="2024-01-02T00:00:00Z",
-                        reviews=[approved_review("2024-01-01T06:00:00Z")],
+                        created_at=datetime(2024, 1, 1, 0, 0, tzinfo=UTC),
+                        merged_at=datetime(2024, 1, 2, 0, 0, tzinfo=UTC),
+                        reviews=[approved_review(datetime(2024, 1, 1, 6, 0, tzinfo=UTC))],
                         body="Co-Authored-By: Claude" if i < ai_count else "",
                     )
                 )

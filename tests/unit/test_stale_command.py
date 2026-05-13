@@ -1,3 +1,5 @@
+from datetime import UTC, datetime
+
 from freezegun import freeze_time
 from typer.testing import CliRunner
 
@@ -7,7 +9,7 @@ from git_dev_metrics.cli.app import app
 runner = CliRunner()
 
 
-def _open_pr(number: int, login: str, created_at: str, is_draft: bool = False) -> dict:
+def _open_pr(number: int, login: str, created_at: datetime, is_draft: bool = False) -> dict:
     return {
         "number": number,
         "title": f"PR #{number}",
@@ -31,8 +33,8 @@ class TestStale:
 
         def fake_open_prs(_token, _org, repo, **_kwargs):
             if repo == "repoA":
-                return [_open_pr(1, "alice", "2026-04-01T08:00:00Z")]  # ~41d
-            return [_open_pr(2, "bob", "2026-05-01T08:00:00Z")]  # ~11d
+                return [_open_pr(1, "alice", datetime(2026, 4, 1, 8, 0, tzinfo=UTC))]  # ~41d
+            return [_open_pr(2, "bob", datetime(2026, 5, 1, 8, 0, tzinfo=UTC))]  # ~11d
 
         mocker.patch("git_dev_metrics.cli.stale.get_github_token", return_value="fake-token")
         mocker.patch("git_dev_metrics.cli.stale.fetch_open_prs", side_effect=fake_open_prs)
@@ -61,8 +63,8 @@ class TestStale:
         mocker.patch(
             "git_dev_metrics.cli.stale.fetch_open_prs",
             return_value=[
-                _open_pr(10, "young", "2026-05-01T08:00:00Z"),  # ~11d
-                _open_pr(11, "old", "2026-04-01T08:00:00Z"),  # ~41d
+                _open_pr(10, "young", datetime(2026, 5, 1, 8, 0, tzinfo=UTC)),  # ~11d
+                _open_pr(11, "old", datetime(2026, 4, 1, 8, 0, tzinfo=UTC)),  # ~41d
             ],
         )
         out = tmp_path / "stale.html"
@@ -86,7 +88,7 @@ class TestStale:
         mocker.patch("git_dev_metrics.cli.stale.get_github_token", return_value="fake-token")
         mocker.patch(
             "git_dev_metrics.cli.stale.fetch_open_prs",
-            return_value=[_open_pr(1, "alice", "2026-05-10T08:00:00Z")],  # ~2d, fresh
+            return_value=[_open_pr(1, "alice", datetime(2026, 5, 10, 8, 0, tzinfo=UTC))],  # ~2d, fresh
         )
         out = tmp_path / "stale.html"
 
@@ -118,7 +120,7 @@ class TestStale:
         mocker.patch("git_dev_metrics.cli.stale.get_github_token", return_value="fake-token")
         mocker.patch(
             "git_dev_metrics.cli.stale.fetch_open_prs",
-            return_value=[_open_pr(1, "alice", "2026-04-01T08:00:00Z")],
+            return_value=[_open_pr(1, "alice", datetime(2026, 4, 1, 8, 0, tzinfo=UTC))],
         )
 
         # Act

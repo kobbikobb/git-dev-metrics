@@ -82,9 +82,9 @@ def _map_pull_request(pr: dict) -> PullRequest:
 
 def _map_review(review: dict) -> Review:
     """Map GraphQL review response to internal model."""
-    return {  # type: ignore[return-value]
+    return {
         "user": {"login": _author_login(review.get("author"))},
-        "state": review.get("state"),
+        "state": review.get("state"),  # type: ignore[return-value]
         "submitted_at": _parse_datetime(review.get("submittedAt")),
     }
 
@@ -162,7 +162,7 @@ def _filter_and_map_pr(prs: list[dict], period: TimePeriod) -> list[PullRequest]
     for pr in prs:
         mapped = _map_pull_request(pr)
         merged_at = mapped["merged_at"]
-        if merged_at is None or merged_at < period.since or merged_at >= period.until:  # type: ignore[reportOperatorIssue]
+        if merged_at is None or merged_at < period.since or merged_at >= period.until:
             continue
 
         review_nodes = pr.get("reviews", {}).get("nodes", [])
@@ -211,7 +211,7 @@ def fetch_open_prs(token: str, org: str, repo: str, quiet: bool = False) -> list
             {
                 "number": number,
                 "title": title,
-                "created_at": pr.get("createdAt"),
+                "created_at": _parse_datetime(pr.get("createdAt")),
                 "merged_at": None,
                 "user": {"login": _author_login(pr.get("author"))},
                 "is_draft": pr.get("isDraft", False),

@@ -40,15 +40,6 @@ def calculate_ai_percentage(prs: list[PullRequest]) -> float:
     return round((ai_count / len(prs)) * 100, 1)
 
 
-def _to_datetime(value: str | datetime | None) -> datetime | None:
-    """Convert string or datetime to datetime object."""
-    if value is None:
-        return None
-    if isinstance(value, datetime):
-        return value
-    return datetime.fromisoformat(value.replace("Z", "+00:00"))
-
-
 def median(values: list[float | int]) -> float:
     """Return median of a list of values."""
     if not values:
@@ -72,19 +63,18 @@ def calculate_cycle_time(prs: list[PullRequest]) -> float:
 
     cycle_times = []
     for pr in prs:
-        created = _to_datetime(pr["created_at"])
-        first_commit = _to_datetime(pr.get("first_commit_at"))
-        ready_for_review = _to_datetime(pr.get("ready_for_review_at"))
-        merged = _to_datetime(pr["merged_at"])
-
+        created = pr["created_at"]
+        merged = pr["merged_at"]
         if created is None or merged is None:
             continue
         if _first_approval_at(pr) is None:
             continue
 
-        start_time = created
+        start_time: datetime = created
+        first_commit = pr.get("first_commit_at")
         if first_commit is not None and first_commit < created:
             start_time = first_commit
+        ready_for_review = pr.get("ready_for_review_at")
         if ready_for_review is not None and ready_for_review > start_time:
             start_time = ready_for_review
 
@@ -121,7 +111,7 @@ def calculate_throughput(prs: list[PullRequest]) -> int:
 def _first_approval_at(pr: PullRequest) -> datetime | None:
     for review in pr.get("reviews", []):
         if review.get("state") == "APPROVED":
-            return _to_datetime(review.get("submitted_at"))
+            return review.get("submitted_at")
     return None
 
 
@@ -132,12 +122,12 @@ def calculate_pickup_time(prs: list[PullRequest]) -> float:
 
     pickup_times = []
     for pr in prs:
-        created = _to_datetime(pr["created_at"])
-        ready_for_review = _to_datetime(pr.get("ready_for_review_at"))
+        created = pr["created_at"]
         first_approval = _first_approval_at(pr)
-        if not (created and first_approval):
+        if created is None or first_approval is None:
             continue
-        start_time = created
+        start_time: datetime = created
+        ready_for_review = pr.get("ready_for_review_at")
         if ready_for_review is not None and ready_for_review > start_time:
             start_time = ready_for_review
         pickup_times.append((first_approval - start_time).total_seconds() / 3600)
@@ -154,7 +144,7 @@ def calculate_review_time(prs: list[PullRequest]) -> float:
 
     review_times = []
     for pr in prs:
-        merged = _to_datetime(pr["merged_at"])
+        merged = pr["merged_at"]
         first_approval = _first_approval_at(pr)
         if merged and first_approval:
             review_times.append((merged - first_approval).total_seconds() / 3600)
@@ -205,20 +195,17 @@ STALE_PR_THRESHOLD_HOURS = 24 * 7  # 7 days
 
 
 def _calculate_age_hours(
-    created_at: str | datetime, clock: Callable[[], datetime] | None = None
+    created_at: datetime | None, clock: Callable[[], datetime] | None = None
 ) -> float:
     """Calculate age in hours from created_at to now."""
     from datetime import UTC, datetime
 
     now = clock() if clock else datetime.now(UTC)
-    parsed: datetime | None = (
-        _to_datetime(created_at) if isinstance(created_at, str) else created_at
-    )
-    if parsed is None:
+    if created_at is None:
         return 0.0
-    if parsed.tzinfo is None:
-        parsed = parsed.replace(tzinfo=UTC)
-    return (now - parsed).total_seconds() / 3600
+    if created_at.tzinfo is None:
+        created_at = created_at.replace(tzinfo=UTC)
+    return (now - created_at).total_seconds() / 3600
 
 
 def _is_stale_pr(

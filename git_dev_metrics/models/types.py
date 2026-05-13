@@ -13,14 +13,14 @@ class GitHubUser(TypedDict):
 
 
 class PullRequestInfo(TypedDict):
-    created_at: str
-    merged_at: str
+    created_at: datetime | None
+    merged_at: datetime | None
 
 
 class Review(TypedDict):
     user: GitHubUser
     state: str
-    submitted_at: str
+    submitted_at: datetime | None
 
 
 class PullRequest(PullRequestInfo):
@@ -29,7 +29,7 @@ class PullRequest(PullRequestInfo):
     state: str
     title: str
     user: GitHubUser
-    closed_at: str
+    closed_at: datetime | None
     additions: int
     deletions: int
     changed_files: int
@@ -43,8 +43,8 @@ class PullRequest(PullRequestInfo):
 class OpenPullRequest(TypedDict):
     number: int
     title: str
-    created_at: str | None
-    merged_at: str | None
+    created_at: datetime | None
+    merged_at: datetime | None
     user: GitHubUser
     is_draft: bool
     is_approved: bool

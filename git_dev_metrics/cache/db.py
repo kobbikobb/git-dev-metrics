@@ -67,12 +67,10 @@ def open_connection(db_path: Path | None = None) -> sqlite3.Connection:
     return conn
 
 
-def _iso(value: Any) -> str | None:
+def _iso(value: datetime | None) -> str | None:
     if value is None:
         return None
-    if isinstance(value, datetime):
-        return value.isoformat()
-    return str(value)
+    return value.isoformat()
 
 
 def _pr_row(pr: Mapping[str, Any], org: str, repo: str, year: int, month: int) -> tuple:

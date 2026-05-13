@@ -1,5 +1,6 @@
 import json
 import re
+from datetime import UTC, datetime
 
 from freezegun import freeze_time
 from typer.testing import CliRunner
@@ -19,9 +20,9 @@ def _pr(pr_id: int, login: str, year: int, month: int, day: int) -> PullRequest:
         id=pr_id,
         number=pr_id,
         user={"login": login},
-        created_at=f"{year:04d}-{month:02d}-{day:02d}T08:00:00Z",
-        merged_at=f"{year:04d}-{month:02d}-{day:02d}T18:00:00Z",
-        reviews=[approved_review(submitted_at=f"{year:04d}-{month:02d}-{day:02d}T12:00:00Z")],
+        created_at=datetime(year, month, day, 8, 0, tzinfo=UTC),
+        merged_at=datetime(year, month, day, 18, 0, tzinfo=UTC),
+        reviews=[approved_review(submitted_at=datetime(year, month, day, 12, 0, tzinfo=UTC))],
     )
 
 

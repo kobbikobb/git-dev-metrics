@@ -1,3 +1,5 @@
+from datetime import UTC, datetime
+
 from typer.testing import CliRunner
 
 from git_dev_metrics.cache import insert_prs, seal_month
@@ -12,23 +14,26 @@ def _seed_two_repos_apr(db_path) -> None:
     repo_a = [
         any_pr(
             number=11, user={"login": "alice"}, additions=120, deletions=30, changed_files=4,
-            created_at="2026-04-02T09:00:00Z", merged_at="2026-04-03T10:00:00Z",
-            closed_at="2026-04-03T10:00:00Z",
-            reviews=[approved_review(login="bob", submitted_at="2026-04-02T15:00:00Z")],
+            created_at=datetime(2026, 4, 2, 9, 0, tzinfo=UTC),
+            merged_at=datetime(2026, 4, 3, 10, 0, tzinfo=UTC),
+            closed_at=datetime(2026, 4, 3, 10, 0, tzinfo=UTC),
+            reviews=[approved_review(login="bob", submitted_at=datetime(2026, 4, 2, 15, 0, tzinfo=UTC))],
         ),
         any_pr(
             number=12, user={"login": "bob"}, additions=60, deletions=20, changed_files=3,
-            created_at="2026-04-10T09:00:00Z", merged_at="2026-04-11T11:00:00Z",
-            closed_at="2026-04-11T11:00:00Z",
-            reviews=[approved_review(login="alice", submitted_at="2026-04-10T18:00:00Z")],
+            created_at=datetime(2026, 4, 10, 9, 0, tzinfo=UTC),
+            merged_at=datetime(2026, 4, 11, 11, 0, tzinfo=UTC),
+            closed_at=datetime(2026, 4, 11, 11, 0, tzinfo=UTC),
+            reviews=[approved_review(login="alice", submitted_at=datetime(2026, 4, 10, 18, 0, tzinfo=UTC))],
         ),
     ]
     repo_b = [
         any_pr(
             number=21, user={"login": "alice"}, additions=40, deletions=10, changed_files=2,
-            created_at="2026-04-15T09:00:00Z", merged_at="2026-04-16T13:00:00Z",
-            closed_at="2026-04-16T13:00:00Z",
-            reviews=[approved_review(login="bob", submitted_at="2026-04-15T17:00:00Z")],
+            created_at=datetime(2026, 4, 15, 9, 0, tzinfo=UTC),
+            merged_at=datetime(2026, 4, 16, 13, 0, tzinfo=UTC),
+            closed_at=datetime(2026, 4, 16, 13, 0, tzinfo=UTC),
+            reviews=[approved_review(login="bob", submitted_at=datetime(2026, 4, 15, 17, 0, tzinfo=UTC))],
         ),
     ]
     insert_prs(repo_a, "myorg", "repoA", 2026, 4, db_path=db_path)
