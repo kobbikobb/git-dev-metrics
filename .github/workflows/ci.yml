@@ -49,6 +49,9 @@ jobs:
           uv run ruff check git_dev_metrics
           uv run ruff format --check git_dev_metrics
 
+      - name: Dead code check
+        run: uv run vulture
+
       - name: Type check
         run: uv run pyright
 
