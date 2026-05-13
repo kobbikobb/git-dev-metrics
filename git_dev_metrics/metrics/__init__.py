@@ -11,12 +11,14 @@ from .calculator import (
     median,
 )
 from .health import calculate_dev_health_score, calculate_health_score
+from .loader import InvalidRangeError, load_snapshot_for_months, load_snapshot_for_range
 from .printer import ConsolePrinter, Printer
 from .snapshot import Band, MetricsSnapshot, Row, Summary, band_color
 
 __all__ = [
     "Band",
     "ConsolePrinter",
+    "InvalidRangeError",
     "MetricsSnapshot",
     "Printer",
     "Row",
@@ -31,5 +33,7 @@ __all__ = [
     "calculate_prs_per_week",
     "calculate_review_time",
     "calculate_throughput",
+    "load_snapshot_for_months",
+    "load_snapshot_for_range",
     "median",
 ]
