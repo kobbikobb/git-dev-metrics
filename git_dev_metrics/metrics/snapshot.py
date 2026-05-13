@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from typing import Any, Literal
 
 from ..models import PullRequest
-from ..utils import TimePeriod
+from ..utils import TimePeriod, period_days
 from .calculator import (
     calculate_ai_percentage,
     calculate_avg_lines_per_pr,
@@ -91,17 +91,17 @@ class MetricsSnapshot:
         repo_prs: dict[str, list[PullRequest]],
         period: TimePeriod,
     ) -> MetricsSnapshot:
-        period_days = max(1, round((period.until - period.since).total_seconds() / 86400))
+        days = period_days(period)
         all_prs: list[PullRequest] = [pr for prs in repo_prs.values() for pr in prs]
         reviewer_counts = calculate_reviews_given(all_prs)
 
-        dev_raws = _dev_raws(all_prs, period_days, reviewer_counts)
+        dev_raws = _dev_raws(all_prs, days, reviewer_counts)
         devs = _rank(dev_raws, calculate_dev_health_score)
 
-        repo_raws = _active_repo_raws(repo_prs, period_days)
+        repo_raws = _active_repo_raws(repo_prs, days)
         repos = _rank(repo_raws, calculate_health_score)
 
-        team = _team_row(all_prs, period_days, dev_raws, devs, reviewer_counts)
+        team = _team_row(all_prs, days, dev_raws, devs, reviewer_counts)
 
         return cls(
             period=period,
@@ -113,7 +113,7 @@ class MetricsSnapshot:
         )
 
 
-def _row_dict(prs: list[PullRequest], period_days: int, reviews_given: int) -> dict[str, Any]:
+def _row_dict(prs: list[PullRequest], days: int, reviews_given: int) -> dict[str, Any]:
     return {
         "cycle_time": calculate_cycle_time(prs),
         "pr_size": calculate_pr_size(prs),
@@ -121,28 +121,28 @@ def _row_dict(prs: list[PullRequest], period_days: int, reviews_given: int) -> d
         "pr_count": calculate_throughput(prs),
         "pickup_time": calculate_pickup_time(prs),
         "review_time": calculate_review_time(prs),
-        "prs_per_week": calculate_prs_per_week(prs, period_days),
+        "prs_per_week": calculate_prs_per_week(prs, days),
         "reviews_given": reviews_given,
         "ai_percentage": calculate_ai_percentage(prs),
     }
 
 
 def _dev_raws(
-    all_prs: list[PullRequest], period_days: int, reviewer_counts: dict[str, int]
+    all_prs: list[PullRequest], days: int, reviewer_counts: dict[str, int]
 ) -> dict[str, dict[str, Any]]:
     return {
-        dev: _row_dict(dev_prs, period_days, reviewer_counts.get(dev, 0))
+        dev: _row_dict(dev_prs, days, reviewer_counts.get(dev, 0))
         for dev, dev_prs in group_prs_by_devs(all_prs).items()
     }
 
 
 def _active_repo_raws(
-    repo_prs: dict[str, list[PullRequest]], period_days: int
+    repo_prs: dict[str, list[PullRequest]], days: int
 ) -> dict[str, dict[str, Any]]:
     raws: dict[str, dict[str, Any]] = {}
     for name, prs in repo_prs.items():
         reviews_given = sum(calculate_reviews_given(prs).values())
-        raw = _row_dict(prs, period_days, reviews_given)
+        raw = _row_dict(prs, days, reviews_given)
         if raw["pr_count"] > 0:
             raws[name] = raw
     return raws
@@ -150,12 +150,12 @@ def _active_repo_raws(
 
 def _team_row(
     all_prs: list[PullRequest],
-    period_days: int,
+    days: int,
     dev_raws: dict[str, dict[str, Any]],
     devs: tuple[Row, ...],
     reviewer_counts: dict[str, int],
 ) -> Row:
-    raw = _row_dict(all_prs, period_days, sum(reviewer_counts.values()))
+    raw = _row_dict(all_prs, days, sum(reviewer_counts.values()))
     for key in _PER_DEV_AGGREGATED_KEYS:
         values = [m[key] for m in dev_raws.values() if m.get(key)]
         raw[key] = round(median(values), 2) if values else 0.0

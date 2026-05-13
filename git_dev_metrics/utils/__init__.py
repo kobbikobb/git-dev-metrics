@@ -7,6 +7,7 @@ from .date_utils import (
     month_range,
     parse_time_period,
     parse_year_month,
+    period_days,
     range_period,
 )
 
@@ -17,5 +18,6 @@ __all__ = [
     "month_range",
     "parse_time_period",
     "parse_year_month",
+    "period_days",
     "range_period",
 ]

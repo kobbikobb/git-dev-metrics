@@ -13,6 +13,11 @@ class TimePeriod:
             raise ValueError("since must be before until.")
 
 
+def period_days(period: TimePeriod) -> int:
+    """Whole days spanned by the TimePeriod (min 1). Source of truth for prs_per_week."""
+    return max(1, round((period.until - period.since).total_seconds() / 86400))
+
+
 def month_range(year: int, month: int) -> TimePeriod:
     """TimePeriod covering the calendar month [first 00:00 UTC, first of next 00:00 UTC)."""
     if not 1 <= month <= 12:

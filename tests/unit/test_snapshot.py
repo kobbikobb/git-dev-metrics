@@ -142,3 +142,101 @@ class TestSummary:
 
         assert snap.summary.top_reviewer == ""
         assert snap.summary.max_review_share == 0
+
+    def test_should_sort_ai_per_dev_ascending(self):
+        prs = []
+        for login, ai_count in [("alice", 5), ("bob", 2), ("carol", 4)]:
+            for i in range(5):
+                prs.append(
+                    any_pr(
+                        number=f"{login}-{i}",
+                        user={"login": login},
+                        created_at="2024-01-01T00:00:00Z",
+                        merged_at="2024-01-02T00:00:00Z",
+                        reviews=[approved_review("2024-01-01T06:00:00Z")],
+                        body="Co-Authored-By: Claude" if i < ai_count else "",
+                    )
+                )
+
+        snap = MetricsSnapshot.from_repo_prs({"org/r": prs}, _period())
+
+        assert list(snap.summary.ai_per_dev) == sorted(snap.summary.ai_per_dev)
+
+    def test_should_break_top_reviewer_ties_alphabetically(self):
+        prs = [
+            any_pr(
+                number=i,
+                user={"login": "author"},
+                reviews=[approved_review(login=login, submitted_at=f"2024-01-0{i}T00:00:00Z")],
+            )
+            for i, login in enumerate(["carol", "alice", "bob"], start=1)
+        ]
+
+        snap = MetricsSnapshot.from_repo_prs({"org/r": prs}, _period())
+
+        assert snap.summary.top_reviewer == "alice"
+
+
+class TestTeamAggregation:
+    def test_should_use_median_of_dev_medians_for_time_metrics(self):
+        heavy = [
+            any_pr(
+                number=i,
+                user={"login": "kobbi"},
+                created_at="2024-01-01T00:00:00Z",
+                merged_at=f"2024-01-0{5 + i}T00:00:00Z",
+                reviews=[approved_review("2024-01-01T06:00:00Z")],
+            )
+            for i in range(1, 4)
+        ]
+        lean = [
+            any_pr(
+                number=10,
+                user={"login": "alice"},
+                created_at="2024-01-01T00:00:00Z",
+                merged_at="2024-01-01T01:00:00Z",
+                reviews=[approved_review("2024-01-01T00:30:00Z")],
+            )
+        ]
+
+        snap = MetricsSnapshot.from_repo_prs({"org/repo": heavy + lean}, _period())
+
+        kobbi = next(d for d in snap.devs if d.name == "kobbi")
+        alice = next(d for d in snap.devs if d.name == "alice")
+        assert snap.team.cycle_time == round((kobbi.cycle_time + alice.cycle_time) / 2, 2)
+        assert snap.team.pr_count == 4
+
+    def test_should_keep_pickup_le_cycle_at_team_level(self):
+        prs = [
+            any_pr(
+                number=1,
+                user={"login": "dev"},
+                created_at="2024-01-01T00:00:00Z",
+                ready_for_review_at="2024-01-04T00:00:00Z",
+                merged_at="2024-01-05T00:00:00Z",
+                reviews=[approved_review("2024-01-04T12:00:00Z")],
+            )
+        ]
+
+        snap = MetricsSnapshot.from_repo_prs({"org/repo": prs}, _period())
+
+        assert snap.team.pickup_time <= snap.team.cycle_time
+
+    def test_should_use_mean_of_dev_rates_for_ai_adoption(self):
+        prs = []
+        for login, ai_count in [("alice", 5), ("bob", 2), ("carol", 2)]:
+            for i in range(5):
+                prs.append(
+                    any_pr(
+                        number=f"{login}-{i}",
+                        user={"login": login},
+                        created_at="2024-01-01T00:00:00Z",
+                        merged_at="2024-01-02T00:00:00Z",
+                        reviews=[approved_review("2024-01-01T06:00:00Z")],
+                        body="Co-Authored-By: Claude" if i < ai_count else "",
+                    )
+                )
+
+        snap = MetricsSnapshot.from_repo_prs({"org/repo": prs}, _period())
+
+        assert snap.team.ai_percentage == 60.0
