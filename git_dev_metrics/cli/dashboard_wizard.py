@@ -3,7 +3,7 @@ from pathlib import Path
 
 import typer
 
-from ._metrics import metrics_for_months
+from ..metrics.loader import load_snapshot_for_months
 from ._wizard import _prompt_months, pick_months
 from .dashboard_runner import write_and_open_dashboard
 
@@ -17,9 +17,12 @@ def dashboard_wizard(
 ) -> None:
     """Pick months from cache, render HTML dashboard, open in browser."""
     selected = pick_months(db_path, ask_months)
-    result = metrics_for_months(selected, db_path)
-    if result is None:
+    snapshot = load_snapshot_for_months(selected, db_path)
+    if snapshot is None:
         typer.secho("No PRs in selected months.", fg=typer.colors.RED, err=True)
         raise typer.Exit(code=1)
-    metrics, period_slug, date_range = result
-    write_and_open_dashboard(metrics, period_slug, date_range, output=None)
+    first, last = selected[0], selected[-1]
+    period_slug = f"{first[0]:04d}-{first[1]:02d}-to-{last[0]:04d}-{last[1]:02d}"
+    since = snapshot.period.since.strftime("%Y-%m-%d")
+    until = snapshot.period.until.strftime("%Y-%m-%d")
+    write_and_open_dashboard(snapshot, period_slug, f"{since} to {until}", output=None)
