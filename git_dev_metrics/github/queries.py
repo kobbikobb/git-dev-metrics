@@ -1,7 +1,12 @@
-from datetime import datetime
-
 from ..models import OpenPullRequest, PullRequest, Repository, Review
 from ..utils import TimePeriod
+from ._response_mapper import (
+    map_author_login,
+    map_datetime,
+    map_pull_request,
+    map_repository,
+    map_review,
+)
 from .graphql_client import execute_paginated_query, get_client
 from .graphql_queries import (
     OPEN_PRS_QUERY,
@@ -22,73 +27,6 @@ def _build_merged_prs_query(org: str, repo: str, period: TimePeriod) -> str:
     return f"repo:{org}/{repo} is:pr merged:{since}..{until}"
 
 
-def _author_login(author: dict | None) -> str:
-    """Extract login from author dict, default to 'unknown' if missing."""
-    return (author or {}).get("login") or "unknown"
-
-
-def _parse_datetime(dt_str: str | None) -> datetime | None:
-    """Parse ISO datetime string to datetime object."""
-    if not dt_str:
-        return None
-    try:
-        return datetime.fromisoformat(dt_str.replace("Z", "+00:00"))
-    except ValueError:
-        return None
-
-
-def _map_repository(repo: dict) -> Repository:
-    """Map GraphQL repository response to internal model."""
-    return {
-        "full_name": repo.get("nameWithOwner"),  # type: ignore[return-value]
-        "private": repo.get("isPrivate", False),
-        "last_pushed": _parse_datetime(repo.get("pushedAt")),
-    }
-
-
-def _map_pull_request(pr: dict) -> PullRequest:
-    """Map GraphQL PR response to internal model."""
-    commits = pr.get("commits", {}).get("nodes", [])
-    first_commit_date = None
-    if commits:
-        commit_data = commits[-1].get("commit", {})
-        committed_at = commit_data.get("committedDate")
-        first_commit_date = _parse_datetime(committed_at)
-
-    commit_messages = [msg for c in commits if (msg := (c.get("commit") or {}).get("message"))]
-
-    timeline_nodes = (pr.get("timelineItems") or {}).get("nodes") or []
-    ready_for_review = next(
-        (_parse_datetime(n.get("createdAt")) for n in timeline_nodes if n.get("createdAt")),
-        None,
-    )
-
-    return {  # type: ignore[return-value]
-        "number": pr.get("number"),
-        "title": pr.get("title"),
-        "created_at": _parse_datetime(pr.get("createdAt")),
-        "merged_at": _parse_datetime(pr.get("mergedAt")),
-        "additions": pr.get("additions", 0),
-        "deletions": pr.get("deletions", 0),
-        "changed_files": pr.get("changedFiles", 0),
-        "user": {"login": _author_login(pr.get("author"))},
-        "first_commit_at": first_commit_date,
-        "ready_for_review_at": ready_for_review,
-        "body": pr.get("body"),
-        "commit_messages": commit_messages,
-        "reviews": [],
-    }
-
-
-def _map_review(review: dict) -> Review:
-    """Map GraphQL review response to internal model."""
-    return {
-        "user": {"login": _author_login(review.get("author"))},
-        "state": review.get("state"),  # type: ignore[return-value]
-        "submitted_at": _parse_datetime(review.get("submittedAt")),
-    }
-
-
 def fetch_repositories(token: str) -> list[Repository]:
     """Fetch all repositories accessible with the given token."""
     client = get_client(token)
@@ -96,7 +34,7 @@ def fetch_repositories(token: str) -> list[Repository]:
         client, REPOSITORIES_QUERY, {"first": PAGE_SIZE}, "viewer.repositories"
     )
 
-    return [_map_repository(repo) for repo in repos if repo.get("nameWithOwner")]
+    return [map_repository(repo) for repo in repos if repo.get("nameWithOwner")]
 
 
 def fetch_org_repositories(token: str, org: str) -> list[Repository]:
@@ -109,7 +47,7 @@ def fetch_org_repositories(token: str, org: str) -> list[Repository]:
         "organization.repositories",
     )
 
-    return [_map_repository(repo) for repo in repos if repo.get("nameWithOwner")]
+    return [map_repository(repo) for repo in repos if repo.get("nameWithOwner")]
 
 
 def fetch_pull_requests(token: str, org: str, repo: str, period: TimePeriod) -> list[PullRequest]:
@@ -124,7 +62,7 @@ def fetch_pull_requests(token: str, org: str, repo: str, period: TimePeriod) -> 
         repo_id=f"{org}/{repo}",
     )
 
-    return [_map_pull_request(pr) for pr in prs if pr.get("mergedAt")]
+    return [map_pull_request(pr) for pr in prs if pr.get("mergedAt")]
 
 
 def fetch_reviews(
@@ -150,7 +88,7 @@ def fetch_reviews(
             continue
 
         reviews = pr.get("reviews", {}).get("nodes", [])
-        reviews_by_pr[pr_number] = [_map_review(r) for r in reviews]
+        reviews_by_pr[pr_number] = [map_review(r) for r in reviews]
 
     return reviews_by_pr
 
@@ -160,13 +98,13 @@ def _filter_and_map_pr(prs: list[dict], period: TimePeriod) -> list[PullRequest]
     mapped_prs: list[PullRequest] = []
 
     for pr in prs:
-        mapped = _map_pull_request(pr)
+        mapped = map_pull_request(pr)
         merged_at = mapped["merged_at"]
         if merged_at is None or merged_at < period.since or merged_at >= period.until:
             continue
 
         review_nodes = pr.get("reviews", {}).get("nodes", [])
-        mapped["reviews"] = [_map_review(r) for r in review_nodes]
+        mapped["reviews"] = [map_review(r) for r in review_nodes]
         mapped_prs.append(mapped)
 
     return mapped_prs
@@ -211,9 +149,9 @@ def fetch_open_prs(token: str, org: str, repo: str, quiet: bool = False) -> list
             {
                 "number": number,
                 "title": title,
-                "created_at": _parse_datetime(pr.get("createdAt")),
+                "created_at": map_datetime(pr.get("createdAt")),
                 "merged_at": None,
-                "user": {"login": _author_login(pr.get("author"))},
+                "user": {"login": map_author_login(pr.get("author"))},
                 "is_draft": pr.get("isDraft", False),
                 "is_approved": is_approved,
             }
