@@ -1,21 +1,8 @@
 from pathlib import Path
 
-from jinja2 import Environment, PackageLoader, select_autoescape
-
 from ..snapshot import MetricsSnapshot
+from ._html_templates import render_template
 from .base import Printer
-
-_ENV: Environment | None = None
-
-
-def _get_env() -> Environment:
-    global _ENV
-    if _ENV is None:
-        _ENV = Environment(
-            loader=PackageLoader("git_dev_metrics.metrics.printer", "templates"),
-            autoescape=select_autoescape(["html", "xml"]),
-        )
-    return _ENV
 
 
 def _devs_for_template(snapshot: MetricsSnapshot) -> list[dict]:
@@ -64,10 +51,8 @@ class FileHtmlPrinter(Printer):
     def print_combined_metrics(
         self, snapshot: MetricsSnapshot, period: str, date_range: str
     ) -> None:
-        env = _get_env()
-        template = env.get_template("dashboard.html")
-
-        html = template.render(
+        html = render_template(
+            "dashboard.html",
             devs=_devs_for_template(snapshot),
             summary=_summary_for_template(snapshot),
             period=period,

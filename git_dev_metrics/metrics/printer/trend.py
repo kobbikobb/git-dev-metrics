@@ -1,21 +1,8 @@
 from dataclasses import asdict
 from pathlib import Path
 
-from jinja2 import Environment, PackageLoader, select_autoescape
-
 from ..trend_calculator import TrendDataset
-
-_ENV: Environment | None = None
-
-
-def _get_env() -> Environment:
-    global _ENV
-    if _ENV is None:
-        _ENV = Environment(
-            loader=PackageLoader("git_dev_metrics.metrics.printer", "templates"),
-            autoescape=select_autoescape(["html", "xml"]),
-        )
-    return _ENV
+from ._html_templates import render_template
 
 
 def _to_dict(dataset: TrendDataset) -> dict:
@@ -33,9 +20,8 @@ class FileTrendPrinter:
         self._output_path = output_path
 
     def render(self, dataset: TrendDataset) -> None:
-        template = _get_env().get_template("trend.html")
         period_range = f"{dataset.months[0]} to {dataset.months[-1]}" if dataset.months else ""
-        html = template.render(period_range=period_range, dataset=_to_dict(dataset))
+        html = render_template("trend.html", period_range=period_range, dataset=_to_dict(dataset))
         self._output_path.parent.mkdir(parents=True, exist_ok=True)
         self._output_path.write_text(html)
 
