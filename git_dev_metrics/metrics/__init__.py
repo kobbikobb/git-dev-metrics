@@ -13,7 +13,21 @@ from .calculator import (
 from .health import calculate_dev_health_score, calculate_health_score
 from .loader import InvalidRangeError, load_snapshot_for_months, load_snapshot_for_range
 from .printer import ConsolePrinter, Printer
-from .snapshot import Band, MetricsSnapshot, Row, Summary, band_color
+from .snapshot import (
+    Band,
+    MetricsSnapshot,
+    Row,
+    Summary,
+    active_repo_raws,
+    band_color,
+    band_from_health,
+    build_summary,
+    dev_raws,
+    rank,
+    row_dict,
+    team_row,
+    to_row,
+)
 
 __all__ = [
     "Band",
@@ -23,7 +37,15 @@ __all__ = [
     "Printer",
     "Row",
     "Summary",
+    "active_repo_raws",
     "band_color",
+    "band_from_health",
+    "build_summary",
+    "dev_raws",
+    "rank",
+    "row_dict",
+    "team_row",
+    "to_row",
     "calculate_avg_lines_per_pr",
     "calculate_cycle_time",
     "calculate_dev_health_score",
