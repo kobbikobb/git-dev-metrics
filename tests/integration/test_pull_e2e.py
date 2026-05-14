@@ -1,6 +1,6 @@
 """End-to-end tests for the pull command: raw GraphQL → mapper → cache → report.
 
-These exist so a shape change in `_map_pull_request` (or anywhere it touches the
+These exist so a shape change in `map_pull_request` (or anywhere it touches the
 cache) breaks a test, not the next live `gdm pull`.
 """
 
@@ -8,7 +8,7 @@ from typer.testing import CliRunner
 
 from git_dev_metrics.cache import count_prs, is_sealed, query_prs
 from git_dev_metrics.cli.app import app
-from git_dev_metrics.github.queries import _map_pull_request
+from git_dev_metrics.github._response_mapper import map_pull_request
 
 runner = CliRunner()
 
@@ -57,7 +57,7 @@ class TestPullEndToEnd:
             _raw_pr(102, "bob", 12, []),
             _raw_pr(103, "alice", 22, [_raw_review("carol", 22), _raw_review("dave", 23)]),
         ]
-        mapped = [_map_pull_request(pr) for pr in raw]
+        mapped = [map_pull_request(pr) for pr in raw]
         mocker.patch("git_dev_metrics.cli.pull.get_github_token", return_value="fake-token")
         mocker.patch("git_dev_metrics.cli.pull_runner.fetch_repo_metrics", return_value=mapped)
 
@@ -94,7 +94,7 @@ class TestPullEndToEnd:
             _raw_pr(201, "alice", 3, [_raw_review("bob", 3)]),
             _raw_pr(202, "bob", 9, [_raw_review("alice", 9)]),
         ]
-        mapped = [_map_pull_request(pr) for pr in raw]
+        mapped = [map_pull_request(pr) for pr in raw]
         mocker.patch("git_dev_metrics.cli.pull.get_github_token", return_value="fake-token")
         mocker.patch("git_dev_metrics.cli.pull_runner.fetch_repo_metrics", return_value=mapped)
         mocker.patch("git_dev_metrics.cli._browser.webbrowser.open", return_value=False)
@@ -104,16 +104,29 @@ class TestPullEndToEnd:
         pull_result = runner.invoke(
             app,
             [
-                "pull", "--month", "2026-04",
-                "--org", "myorg", "--repo", "myrepo",
-                "--db", str(db_path),
+                "pull",
+                "--month",
+                "2026-04",
+                "--org",
+                "myorg",
+                "--repo",
+                "myrepo",
+                "--db",
+                str(db_path),
             ],
         )
         dashboard_result = runner.invoke(
             app,
             [
-                "dashboard", "--from", "2026-04", "--to", "2026-04",
-                "--db", str(db_path), "--output", str(dashboard_out),
+                "dashboard",
+                "--from",
+                "2026-04",
+                "--to",
+                "2026-04",
+                "--db",
+                str(db_path),
+                "--output",
+                str(dashboard_out),
             ],
         )
         clear_result = runner.invoke(app, ["clear", "--db", str(db_path), "--yes"])
@@ -147,7 +160,7 @@ class TestPullEndToEnd:
             "reviews": {"nodes": []},
             "timelineItems": {"nodes": []},
         }
-        mapped = [_map_pull_request(minimal)]
+        mapped = [map_pull_request(minimal)]
         mocker.patch("git_dev_metrics.cli.pull.get_github_token", return_value="fake-token")
         mocker.patch("git_dev_metrics.cli.pull_runner.fetch_repo_metrics", return_value=mapped)
 

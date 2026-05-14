@@ -1,5 +1,12 @@
 """Github auth and data fetching."""
 
+from ._response_mapper import (
+    map_author_login,
+    map_datetime,
+    map_pull_request,
+    map_repository,
+    map_review,
+)
 from .auth import get_github_token
 from .exceptions import (
     GitHubAPIError,
@@ -24,6 +31,7 @@ __all__ = [
     "GitHubAPIError",
     "GitHubRateLimitError",
     "GitHubNotFoundError",
+    "map_author_login",
     "get_github_token",
     "fetch_repositories",
     "fetch_org_repositories",
@@ -32,5 +40,9 @@ __all__ = [
     "fetch_repo_metrics",
     "fetch_open_prs",
     "load_last_org",
+    "map_pull_request",
+    "map_repository",
+    "map_review",
+    "map_datetime",
     "save_last_org",
 ]
