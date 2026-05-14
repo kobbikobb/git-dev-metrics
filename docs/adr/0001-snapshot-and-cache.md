@@ -1,5 +1,17 @@
-# Fetch once, snapshot and cache by month
+# Snapshot and cache by month
 
-We were fetching the same PR data repeatedly — every report re-queried the GitHub API. Since PR data for a closed month is immutable, we decided to pull each month once and seal it in a local cache. The `MetricsSnapshot` is computed upfront from cached PRs and is itself frozen. Callers never re-fetch or recompute.
+## Problem
 
-We intentionally deferred handling partial-month data: the current month is not fetched until it's complete. A future enhancement could track which days within a month have been fetched.
+Every report re-queried the GitHub API for the same PR data. Building older reports re-fetched months that hadn't changed since the last run.
+
+## Options
+
+Computing metrics on every read (rejected — wasteful for sealed periods, couples reports to API availability). Fetch-once, cache-and-seal (chosen).
+
+## Solution
+
+Pull each month's PRs once and seal them in local storage as an immutable snapshot. The `MetricsSnapshot` is computed upfront from cached PRs and is itself frozen. Callers never re-fetch or recompute for sealed months.
+
+## Consequences
+
+The current month is deferred until it's complete — we never fetch a partial month. Future work could track which days within a month have been fetched for incremental pulls.

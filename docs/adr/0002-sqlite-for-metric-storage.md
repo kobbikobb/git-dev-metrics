@@ -1,5 +1,17 @@
 # SQLite for metric storage
 
-We store sealed-month data in SQLite files. The schema is simple (three tables: `prs`, `reviews`, `sealed_months`) and accessed via raw SQL with `executemany`. No ORM.
+## Problem
 
-SQLite was chosen for zero-setup: no server, no config, ships with Python. The schema is deliberately flat — the data shape matches GitHub's API response shape. We can evaluate other stores (Postgres, Parquet files) in the future if the project outgrows SQLite.
+Needed a local store for sealed PR data that requires zero setup and ships with the language.
+
+## Options
+
+Postgres, Parquet files, or another store (deferred — can evaluate when the project outgrows SQLite). SQLite (chosen).
+
+## Solution
+
+SQLite with three tables (`prs`, `reviews`, `sealed_months`), accessed via raw SQL with `executemany`. No ORM. The schema is deliberately flat — it mirrors the GitHub API response shape.
+
+## Consequences
+
+Schema is tightly coupled to GitHub's response shape. If we later need a different query pattern (e.g., cross-repo analytics), migration to another store is possible without changing the cache-layer interface.

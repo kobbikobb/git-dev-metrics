@@ -1,13 +1,17 @@
 # {Title — noun phrase, not a question}
 
-{1–3 sentences: what's the context, what did we decide, and why. Capture the trade-off. If someone asks "why not the other thing?" the answer should be here.}
+## Problem
 
-*To deprecate this ADR, add a one-line note: `Deprecated by ADR-NNNN` or `Superseded by ADR-NNNN` at the top.*
+{What situation prompted this decision. What was the friction or gap.}
 
-## Considered Options
+## Options
 
-{Optional — only when the rejected alternatives are worth remembering. Describe the option and why it was rejected.}
+{Optional — alternatives considered and why they were rejected. Skip when the path was obvious.}
+
+## Solution
+
+{What we decided and why. Capture the trade-off rationale so nobody asks "why not the other thing" later.}
 
 ## Consequences
 
-{Optional — only when non-obvious downstream effects need to be called out.}
+{Downstream effects to watch for. Things that got harder, things deferred, future work unlocked.}

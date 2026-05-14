@@ -1,5 +1,17 @@
 # File-based reports over web application
 
-Reports are generated as static HTML files (dashboard, trend, stale) opened in the browser. No web server, no routing, no state management.
+## Problem
 
-This avoids the operational complexity of hosting a web app (deployment, auth, persistence). A web application is a viable future direction if the tool grows beyond single-user analysis, but for now static files deliver the same information with zero infrastructure.
+Needed a way to deliver reports (dashboard, trend, stale PRs) without operating infrastructure.
+
+## Options
+
+Web application (deferred — adds auth, deployment, persistence, routing overhead). Static HTML files (chosen).
+
+## Solution
+
+Generate static HTML files and open them in the browser. No web server, no routing, no state management. Jinja2 templates render the snapshot data directly to HTML.
+
+## Consequences
+
+No hosting infrastructure needed. Limited to single-user read-only reports. A web application is a viable future direction if the tool grows beyond individual analysis.
