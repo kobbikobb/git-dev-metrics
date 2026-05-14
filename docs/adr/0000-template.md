@@ -2,9 +2,7 @@
 
 {1–3 sentences: what's the context, what did we decide, and why. Capture the trade-off. If someone asks "why not the other thing?" the answer should be here.}
 
-## Status
-
-proposed | accepted | deprecated | superseded by ADR-NNNN
+*To deprecate this ADR, add a one-line note: `Deprecated by ADR-NNNN` or `Superseded by ADR-NNNN` at the top.*
 
 ## Considered Options
 
