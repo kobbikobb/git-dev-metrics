@@ -8,7 +8,7 @@ from ..cache import insert_prs, is_sealed, seal_month
 from ..github import get_github_token
 from ..github.queries import fetch_repo_metrics
 from ..models import PullRequest
-from ..utils.date_utils import month_range, parse_year_month, TimePeriod
+from ..utils.date_utils import TimePeriod, month_range, parse_year_month
 from .pull_wizard import pull_wizard
 
 
