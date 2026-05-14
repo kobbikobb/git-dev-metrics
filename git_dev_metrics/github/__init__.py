@@ -1,7 +1,6 @@
 """Github auth and data fetching."""
 
 from .auth import get_github_token
-from .auth_cache import load_last_org, save_last_org
 from .exceptions import (
     GitHubAPIError,
     GitHubAuthError,
@@ -9,6 +8,7 @@ from .exceptions import (
     GitHubNotFoundError,
     GitHubRateLimitError,
 )
+from .org_cache import load_last_org, save_last_org
 from .queries import (
     fetch_open_prs,
     fetch_org_repositories,
