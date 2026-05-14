@@ -9,9 +9,8 @@ from questionary import Style
 from ..cache import list_synced_months, load_all_repos_by_month
 from ..metrics.printer.trend import FileTrendPrinter
 from ..metrics.trend_calculator import build_trend_dataset
-from ..utils.date_utils import month_iter
+from ..utils.date_utils import month_iter, parse_year_month
 from ._browser import open_in_browser
-from ._month_arg import parse_month_arg
 
 YearMonth = tuple[int, int]
 
@@ -96,6 +95,15 @@ def _trend_wizard(
     _perform_trend(from_ym, to_ym, output=None, db_path=db_path)
 
 
+def _parse_month_arg(value: str, flag: str = "--month") -> tuple[int, int]:
+    """Parse a YYYY-MM CLI argument, exiting with a typer-styled error on bad input."""
+    try:
+        return parse_year_month(value)
+    except ValueError as e:
+        typer.secho(f"Invalid {flag} '{value}'; expected YYYY-MM.", fg=typer.colors.RED, err=True)
+        raise typer.Exit(code=1) from e
+
+
 def trend(
     from_: str | None = typer.Option(None, "--from", help="Start month, YYYY-MM"),
     to: str | None = typer.Option(None, "--to", help="End month, YYYY-MM"),
@@ -115,6 +123,6 @@ def trend(
         )
         raise typer.Exit(code=1)
 
-    from_ym = parse_month_arg(from_, "--from")
-    to_ym = parse_month_arg(to, "--to")
+    from_ym = _parse_month_arg(from_, "--from")
+    to_ym = _parse_month_arg(to, "--to")
     _perform_trend(from_ym, to_ym, output=output, db_path=db)
