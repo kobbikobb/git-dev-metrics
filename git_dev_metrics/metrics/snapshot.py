@@ -4,26 +4,17 @@ Built once via `MetricsSnapshot.from_repo_prs`. Printers consume snapshots;
 they do not recompute health, bands, sort orders, or aggregations.
 """
 
-from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any, Literal
+from typing import Literal
 
 from ..models import PullRequest
 from ..utils import TimePeriod, period_days
-from .calculator import (
-    calculate_ai_percentage,
-    calculate_avg_lines_per_pr,
-    calculate_cycle_time,
-    calculate_pickup_time,
-    calculate_pr_size,
-    calculate_prs_per_week,
-    calculate_review_time,
-    calculate_reviews_given,
-    calculate_throughput,
-    group_prs_by_devs,
-    median,
-)
+from ._dev_repo_metrics import active_repo_raws, dev_raws, row_dict
+from .calculator import calculate_reviews_given
 from .health import calculate_dev_health_score, calculate_health_score
+
+# Imports from _health_ranking must come after Row/Band definitions
+# to resolve circular dependency (_health_ranking imports Row/Band).
 
 Band = Literal["good", "ok", "bad"]
 
@@ -32,24 +23,6 @@ _BAND_COLOR: dict[Band, str] = {"good": "green", "ok": "yellow", "bad": "red"}
 
 def band_color(band: Band) -> str:
     return _BAND_COLOR[band]
-
-
-_PER_DEV_AGGREGATED_KEYS = (
-    "cycle_time",
-    "pickup_time",
-    "review_time",
-    "pr_size",
-    "avg_lines_per_pr",
-    "prs_per_week",
-)
-
-
-def _band(health: int) -> Band:
-    if health >= 80:
-        return "good"
-    if health >= 60:
-        return "ok"
-    return "bad"
 
 
 @dataclass(frozen=True)
@@ -76,6 +49,9 @@ class Summary:
     max_review_share: int
 
 
+from ._health_ranking import band_from_health, rank, team_row, to_row  # noqa: E402
+
+
 @dataclass(frozen=True)
 class MetricsSnapshot:
     period: TimePeriod
@@ -95,104 +71,25 @@ class MetricsSnapshot:
         all_prs: list[PullRequest] = [pr for prs in repo_prs.values() for pr in prs]
         reviewer_counts = calculate_reviews_given(all_prs)
 
-        dev_raws = _dev_raws(all_prs, days, reviewer_counts)
-        devs = _rank(dev_raws, calculate_dev_health_score)
+        dev_raw_data = dev_raws(all_prs, days, reviewer_counts)
+        devs = rank(dev_raw_data, calculate_dev_health_score)
 
-        repo_raws = _active_repo_raws(repo_prs, days)
-        repos = _rank(repo_raws, calculate_health_score)
+        repo_raw_data = active_repo_raws(repo_prs, days)
+        repos = rank(repo_raw_data, calculate_health_score)
 
-        team = _team_row(all_prs, days, dev_raws, devs, reviewer_counts)
+        team = team_row(all_prs, days, dev_raw_data, devs, reviewer_counts)
 
         return cls(
             period=period,
             team=team,
             devs=devs,
             repos=repos,
-            summary=_build_summary(devs, reviewer_counts, team),
+            summary=build_summary(devs, reviewer_counts, team),
             reviewer_counts=reviewer_counts,
         )
 
 
-def _row_dict(prs: list[PullRequest], days: int, reviews_given: int) -> dict[str, Any]:
-    return {
-        "cycle_time": calculate_cycle_time(prs),
-        "pr_size": calculate_pr_size(prs),
-        "avg_lines_per_pr": calculate_avg_lines_per_pr(prs),
-        "pr_count": calculate_throughput(prs),
-        "pickup_time": calculate_pickup_time(prs),
-        "review_time": calculate_review_time(prs),
-        "prs_per_week": calculate_prs_per_week(prs, days),
-        "reviews_given": reviews_given,
-        "ai_percentage": calculate_ai_percentage(prs),
-    }
-
-
-def _dev_raws(
-    all_prs: list[PullRequest], days: int, reviewer_counts: dict[str, int]
-) -> dict[str, dict[str, Any]]:
-    return {
-        dev: _row_dict(dev_prs, days, reviewer_counts.get(dev, 0))
-        for dev, dev_prs in group_prs_by_devs(all_prs).items()
-    }
-
-
-def _active_repo_raws(
-    repo_prs: dict[str, list[PullRequest]], days: int
-) -> dict[str, dict[str, Any]]:
-    raws: dict[str, dict[str, Any]] = {}
-    for name, prs in repo_prs.items():
-        reviews_given = sum(calculate_reviews_given(prs).values())
-        raw = _row_dict(prs, days, reviews_given)
-        if raw["pr_count"] > 0:
-            raws[name] = raw
-    return raws
-
-
-def _team_row(
-    all_prs: list[PullRequest],
-    days: int,
-    dev_raws: dict[str, dict[str, Any]],
-    devs: tuple[Row, ...],
-    reviewer_counts: dict[str, int],
-) -> Row:
-    raw = _row_dict(all_prs, days, sum(reviewer_counts.values()))
-    for key in _PER_DEV_AGGREGATED_KEYS:
-        values = [m[key] for m in dev_raws.values() if m.get(key)]
-        raw[key] = round(median(values), 2) if values else 0.0
-    ai_values = [m["ai_percentage"] for m in dev_raws.values()]
-    raw["ai_percentage"] = round(sum(ai_values) / len(ai_values), 1) if ai_values else 0.0
-    team_health = round(sum(r.health for r in devs) / len(devs)) if devs else 0
-    return _to_row("team", raw, team_health)
-
-
-def _rank(
-    raws: dict[str, dict[str, Any]],
-    health_fn: Callable[[dict[str, Any], list[dict[str, Any]]], int],
-) -> tuple[Row, ...]:
-    cohort = list(raws.values())
-    rows = [_to_row(name, m, health_fn(m, cohort)) for name, m in raws.items()]
-    rows.sort(key=lambda r: r.health, reverse=True)
-    return tuple(rows)
-
-
-def _to_row(name: str, m: dict[str, Any], health: int) -> Row:
-    return Row(
-        name=name,
-        pr_count=int(m.get("pr_count", 0)),
-        cycle_time=float(m.get("cycle_time", 0)),
-        pickup_time=float(m.get("pickup_time", 0)),
-        review_time=float(m.get("review_time", 0)),
-        pr_size=float(m.get("pr_size", 0)),
-        avg_lines_per_pr=float(m.get("avg_lines_per_pr", 0)),
-        prs_per_week=float(m.get("prs_per_week", 0)),
-        reviews_given=int(m.get("reviews_given", 0)),
-        ai_percentage=float(m.get("ai_percentage", 0)),
-        health=health,
-        band=_band(health),
-    )
-
-
-def _build_summary(
+def build_summary(
     devs: tuple[Row, ...],
     reviewer_counts: dict[str, int],
     team: Row,
@@ -216,4 +113,18 @@ def _build_summary(
     )
 
 
-__all__ = ["Band", "MetricsSnapshot", "Row", "Summary", "band_color"]
+__all__ = [
+    "Band",
+    "MetricsSnapshot",
+    "Row",
+    "Summary",
+    "active_repo_raws",
+    "band_color",
+    "band_from_health",
+    "build_summary",
+    "dev_raws",
+    "rank",
+    "row_dict",
+    "team_row",
+    "to_row",
+]
