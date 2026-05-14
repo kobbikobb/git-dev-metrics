@@ -6,7 +6,7 @@ from typer.testing import CliRunner
 
 from git_dev_metrics.cache import insert_prs, seal_month
 from git_dev_metrics.cli.app import app
-from git_dev_metrics.cli.trend_wizard import trend_wizard
+from git_dev_metrics.cli.trend import _trend_wizard as trend_wizard
 from git_dev_metrics.models import PullRequest
 
 from .conftest import any_pr, approved_review, dt
@@ -204,7 +204,7 @@ class TestTrendWizard:
 class TestTrendCli:
     def test_should_invoke_wizard_when_no_flags(self, tmp_path, mocker):
         db_path = tmp_path / "cache.db"
-        wizard = mocker.patch("git_dev_metrics.cli.trend.trend_wizard")
+        wizard = mocker.patch("git_dev_metrics.cli.trend._trend_wizard")
 
         result = runner.invoke(app, ["trend", "--db", str(db_path)])
 
