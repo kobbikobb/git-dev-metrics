@@ -2,7 +2,7 @@ import pytest
 import typer
 
 from git_dev_metrics.cache import insert_prs, seal_month
-from git_dev_metrics.cli.summary_wizard import summary_wizard
+from git_dev_metrics.cli.summary import _summary_wizard as summary_wizard
 
 from .conftest import any_pr, approved_review, dt
 

@@ -162,7 +162,7 @@ class TestDashboardFlagMode:
 class TestDashboardWizardDispatch:
     def test_should_invoke_wizard_when_no_flags(self, tmp_path, mocker):
         db_path = tmp_path / "cache.db"
-        wizard = mocker.patch("git_dev_metrics.cli.dashboard.dashboard_wizard")
+        wizard = mocker.patch("git_dev_metrics.cli.dashboard._dashboard_wizard")
 
         result = runner.invoke(app, ["dashboard", "--db", str(db_path)])
 

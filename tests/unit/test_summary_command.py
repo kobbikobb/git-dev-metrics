@@ -132,7 +132,7 @@ class TestSummaryFlagMode:
 class TestSummaryWizardDispatch:
     def test_should_invoke_wizard_when_no_flags(self, tmp_path, mocker):
         db_path = tmp_path / "cache.db"
-        wizard = mocker.patch("git_dev_metrics.cli.summary.summary_wizard")
+        wizard = mocker.patch("git_dev_metrics.cli.summary._summary_wizard")
 
         result = runner.invoke(app, ["summary", "--db", str(db_path)])
 

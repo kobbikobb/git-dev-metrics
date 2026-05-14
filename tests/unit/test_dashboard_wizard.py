@@ -2,7 +2,7 @@ import pytest
 import typer
 
 from git_dev_metrics.cache import insert_prs, seal_month
-from git_dev_metrics.cli.dashboard_wizard import dashboard_wizard
+from git_dev_metrics.cli.dashboard import _dashboard_wizard as dashboard_wizard
 
 from .conftest import any_pr, approved_review, dt
 
