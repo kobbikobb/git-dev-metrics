@@ -1,14 +1,41 @@
+from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path
 
 import typer
 
-from ..cache import is_sealed
+from ..cache import insert_prs, is_sealed, seal_month
 from ..github import get_github_token
-from ..utils.date_utils import month_range
-from ._month_arg import parse_month_arg
-from .pull_runner import fetch_and_seal_month
+from ..github.queries import fetch_repo_metrics
+from ..models import PullRequest
+from ..utils.date_utils import month_range, parse_year_month, TimePeriod
 from .pull_wizard import pull_wizard
+
+
+def _parse_month_arg(value: str, flag: str = "--month") -> tuple[int, int]:
+    """Parse a YYYY-MM CLI argument, exiting with a typer-styled error on bad input."""
+    try:
+        return parse_year_month(value)
+    except ValueError as e:
+        typer.secho(f"Invalid {flag} '{value}'; expected YYYY-MM.", fg=typer.colors.RED, err=True)
+        raise typer.Exit(code=1) from e
+
+
+def _fetch_and_seal_month(
+    org: str,
+    repo: str,
+    year: int,
+    month: int,
+    period: TimePeriod,
+    token: str,
+    db_path: Path | None,
+    fetch: Callable[..., list[PullRequest]] | None = None,
+) -> int:
+    """Fetch a month of PRs for one repo, upsert into the cache, seal it, return PR count."""
+    prs = (fetch or fetch_repo_metrics)(token, org, repo, period)
+    insert_prs(prs, org, repo, year, month, db_path=db_path)
+    seal_month(org, repo, year, month, db_path=db_path)
+    return len(prs)
 
 
 def pull(
@@ -30,7 +57,7 @@ def pull(
         )
         raise typer.Exit(code=1)
 
-    year, month_num = parse_month_arg(month)
+    year, month_num = _parse_month_arg(month)
     period = month_range(year, month_num)
 
     if period.until > datetime.now(UTC):
@@ -46,6 +73,6 @@ def pull(
         raise typer.Exit(code=1)
 
     token = get_github_token()
-    n = fetch_and_seal_month(org, repo, year, month_num, period, token, db)
+    n = _fetch_and_seal_month(org, repo, year, month_num, period, token, db)
 
     typer.echo(f"Pulled {n} PRs for {org}/{repo} {month}.")

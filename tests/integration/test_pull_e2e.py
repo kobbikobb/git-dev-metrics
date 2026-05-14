@@ -59,7 +59,7 @@ class TestPullEndToEnd:
         ]
         mapped = [_map_pull_request(pr) for pr in raw]
         mocker.patch("git_dev_metrics.cli.pull.get_github_token", return_value="fake-token")
-        mocker.patch("git_dev_metrics.cli.pull_runner.fetch_repo_metrics", return_value=mapped)
+        mocker.patch("git_dev_metrics.cli.pull.fetch_repo_metrics", return_value=mapped)
 
         # Act
         result = runner.invoke(
@@ -96,7 +96,7 @@ class TestPullEndToEnd:
         ]
         mapped = [_map_pull_request(pr) for pr in raw]
         mocker.patch("git_dev_metrics.cli.pull.get_github_token", return_value="fake-token")
-        mocker.patch("git_dev_metrics.cli.pull_runner.fetch_repo_metrics", return_value=mapped)
+        mocker.patch("git_dev_metrics.cli.pull.fetch_repo_metrics", return_value=mapped)
         mocker.patch("git_dev_metrics.cli._browser.webbrowser.open", return_value=False)
         dashboard_out = tmp_path / "r.html"
 
@@ -149,7 +149,7 @@ class TestPullEndToEnd:
         }
         mapped = [_map_pull_request(minimal)]
         mocker.patch("git_dev_metrics.cli.pull.get_github_token", return_value="fake-token")
-        mocker.patch("git_dev_metrics.cli.pull_runner.fetch_repo_metrics", return_value=mapped)
+        mocker.patch("git_dev_metrics.cli.pull.fetch_repo_metrics", return_value=mapped)
 
         # Act
         result = runner.invoke(

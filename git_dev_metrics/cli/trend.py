@@ -2,9 +2,17 @@ from pathlib import Path
 
 import typer
 
-from ._month_arg import parse_month_arg
+from ..utils.date_utils import parse_year_month
 from .trend_runner import perform_trend
 from .trend_wizard import trend_wizard
+
+
+def _parse_month_arg(value: str, flag: str = "--month") -> tuple[int, int]:
+    try:
+        return parse_year_month(value)
+    except ValueError as e:
+        typer.secho(f"Invalid {flag} '{value}'; expected YYYY-MM.", fg=typer.colors.RED, err=True)
+        raise typer.Exit(code=1) from e
 
 
 def trend(
@@ -26,6 +34,6 @@ def trend(
         )
         raise typer.Exit(code=1)
 
-    from_ym = parse_month_arg(from_, "--from")
-    to_ym = parse_month_arg(to, "--to")
+    from_ym = _parse_month_arg(from_, "--from")
+    to_ym = _parse_month_arg(to, "--to")
     perform_trend(from_ym, to_ym, output=output, db_path=db)
