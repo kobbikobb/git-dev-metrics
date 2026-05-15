@@ -2,28 +2,28 @@ from datetime import UTC, datetime
 
 from git_dev_metrics.github._response_mapper import (
     map_author_login,
-    map_datetime,
     map_pull_request,
     map_repository,
     map_review,
 )
+from git_dev_metrics.utils.date_utils import parse_iso_datetime
 
 from ..conftest import dt
 
 
-class TestMapDatetime:
+class TestParseIsoDatetime:
     def test_should_parse_iso_string(self) -> None:
-        result = map_datetime("2024-01-01T12:00:00Z")
+        result = parse_iso_datetime("2024-01-01T12:00:00Z")
         assert result == datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC)
 
     def test_should_return_none_for_none(self) -> None:
-        assert map_datetime(None) is None
+        assert parse_iso_datetime(None) is None
 
     def test_should_return_none_for_empty_string(self) -> None:
-        assert map_datetime("") is None
+        assert parse_iso_datetime("") is None
 
     def test_should_return_none_for_invalid_string(self) -> None:
-        assert map_datetime("not-a-date") is None
+        assert parse_iso_datetime("not-a-date") is None
 
 
 class TestMapAuthorLogin:

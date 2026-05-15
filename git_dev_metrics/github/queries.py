@@ -1,8 +1,8 @@
 from ..models import OpenPullRequest, PullRequest, Repository, Review
 from ..utils import TimePeriod
+from ..utils.date_utils import parse_iso_datetime
 from ._response_mapper import (
     map_author_login,
-    map_datetime,
     map_pull_request,
     map_repository,
     map_review,
@@ -149,7 +149,7 @@ def fetch_open_prs(token: str, org: str, repo: str, quiet: bool = False) -> list
             {
                 "number": number,
                 "title": title,
-                "created_at": map_datetime(pr.get("createdAt")),
+                "created_at": parse_iso_datetime(pr.get("createdAt")),
                 "merged_at": None,
                 "user": {"login": map_author_login(pr.get("author"))},
                 "is_draft": pr.get("isDraft", False),
