@@ -3,8 +3,8 @@ from pathlib import Path
 import typer
 
 from ...metrics.loader import InvalidRangeError, load_snapshot_for_range
-from ...utils.date_utils import format_date_range
 from ..runners.dashboard_runner import write_and_open_dashboard
+from ..utils._date_formatter import format_date_range
 from ..wizards.dashboard_wizard import dashboard_wizard
 
 

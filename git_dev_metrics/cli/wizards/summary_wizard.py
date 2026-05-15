@@ -5,7 +5,7 @@ import typer
 
 from ...metrics.loader import load_snapshot_for_months
 from ...metrics.printer import ConsolePrinter
-from ...utils.date_utils import format_date_range
+from ..utils._date_formatter import format_date_range
 from ._wizard import _prompt_months, pick_months
 
 YearMonth = tuple[int, int]
