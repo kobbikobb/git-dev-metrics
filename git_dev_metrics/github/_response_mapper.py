@@ -1,5 +1,5 @@
 from ..models import PullRequest, Repository, Review
-from ..models._mapping import pull_request_from_dict, review_from_dict
+from ..utils._mapping import pull_request_from_dict, review_from_dict
 from ..utils.date_utils import parse_iso_datetime
 
 

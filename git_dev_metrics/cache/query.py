@@ -4,7 +4,7 @@ from collections import defaultdict
 from pathlib import Path
 
 from ..models import PullRequest, Review
-from ..models._mapping import pull_request_from_dict, review_from_dict
+from ..utils._mapping import pull_request_from_dict, review_from_dict
 from .db import open_connection
 
 

@@ -1,8 +1,8 @@
 from collections.abc import Mapping
 from typing import Any
 
-from ..utils.date_utils import parse_iso_datetime
-from .types import PullRequest, Review
+from ..models import PullRequest, Review
+from .date_utils import parse_iso_datetime
 
 
 def pull_request_from_dict(data: Mapping[str, Any], reviews: list[Review]) -> PullRequest:
