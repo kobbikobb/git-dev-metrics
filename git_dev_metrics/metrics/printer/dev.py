@@ -1,4 +1,5 @@
-from ..snapshot import MetricsSnapshot, band_color
+from .._rows import band_color
+from ..snapshot import MetricsSnapshot
 
 DEV_COLUMNS = [
     "Dev",

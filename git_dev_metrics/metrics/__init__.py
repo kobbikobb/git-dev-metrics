@@ -1,5 +1,7 @@
 """Metrics"""
 
+from ._health_ranking import band_from_health
+from ._rows import Band, Row, Summary, band_color
 from .calculator import (
     calculate_avg_lines_per_pr,
     calculate_cycle_time,
@@ -13,15 +15,7 @@ from .calculator import (
 from .health import calculate_dev_health_score, calculate_health_score
 from .loader import InvalidRangeError, load_snapshot_for_months, load_snapshot_for_range
 from .printer import ConsolePrinter, Printer
-from .snapshot import (
-    Band,
-    MetricsSnapshot,
-    Row,
-    Summary,
-    band_color,
-    band_from_health,
-    build_summary,
-)
+from .snapshot import MetricsSnapshot, build_summary
 
 __all__ = [
     "Band",
