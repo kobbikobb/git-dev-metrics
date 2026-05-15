@@ -1,6 +1,6 @@
 import re
 from dataclasses import dataclass
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 
 
 @dataclass
@@ -63,25 +63,3 @@ def parse_year_month(value: str) -> tuple[int, int]:
     if not m or not 1 <= int(m.group(2)) <= 12:
         raise ValueError(f"Expected YYYY-MM, got {value!r}")
     return int(m.group(1)), int(m.group(2))
-
-
-def parse_time_period(event_period: str) -> TimePeriod:
-    """Parse time period string and return a TimePeriod."""
-    if event_period == "last_month":
-        return get_last_month()
-
-    if m := _YEAR_MONTH_RE.match(event_period):
-        return month_range(int(m.group(1)), int(m.group(2)))
-
-    period_map = {
-        "1d": timedelta(days=1),
-        "7d": timedelta(days=7),
-        "30d": timedelta(days=30),
-        "90d": timedelta(days=90),
-        "180d": timedelta(days=180),
-    }
-    if event_period not in period_map:
-        raise ValueError(f"Unsupported period: {event_period}")
-
-    now = datetime.now(UTC)
-    return TimePeriod(since=now - period_map[event_period], until=now)
