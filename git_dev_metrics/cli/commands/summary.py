@@ -4,7 +4,7 @@ import typer
 
 from ...metrics.loader import InvalidRangeError, load_snapshot_for_range
 from ...metrics.printer import ConsolePrinter
-from ...utils.date_utils import format_date_range
+from ..utils._date_formatter import format_date_range
 from ..wizards.summary_wizard import summary_wizard
 
 
