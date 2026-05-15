@@ -15,7 +15,7 @@ from .calculator import (
 )
 
 
-def row_dict(prs: list[PullRequest], days: int, reviews_given: int) -> dict[str, Any]:
+def compute_metrics_dict(prs: list[PullRequest], days: int, reviews_given: int) -> dict[str, Any]:
     return {
         "cycle_time": calculate_cycle_time(prs),
         "pr_size": calculate_pr_size(prs),
@@ -29,22 +29,22 @@ def row_dict(prs: list[PullRequest], days: int, reviews_given: int) -> dict[str,
     }
 
 
-def dev_raws(
+def compute_dev_metrics(
     all_prs: list[PullRequest], days: int, reviewer_counts: dict[str, int]
 ) -> dict[str, dict[str, Any]]:
     return {
-        dev: row_dict(dev_prs, days, reviewer_counts.get(dev, 0))
+        dev: compute_metrics_dict(dev_prs, days, reviewer_counts.get(dev, 0))
         for dev, dev_prs in group_prs_by_devs(all_prs).items()
     }
 
 
-def active_repo_raws(
+def compute_repo_metrics(
     repo_prs: dict[str, list[PullRequest]], days: int
 ) -> dict[str, dict[str, Any]]:
     raws: dict[str, dict[str, Any]] = {}
     for name, prs in repo_prs.items():
         reviews_given = sum(calculate_reviews_given(prs).values())
-        raw = row_dict(prs, days, reviews_given)
+        raw = compute_metrics_dict(prs, days, reviews_given)
         if raw["pr_count"] > 0:
             raws[name] = raw
     return raws
