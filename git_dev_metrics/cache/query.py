@@ -1,27 +1,18 @@
 import json
 import sqlite3
 from collections import defaultdict
-from datetime import datetime
 from pathlib import Path
 
 from ..models import PullRequest, Review
+from ..utils.date_utils import parse_iso_datetime
 from .db import open_connection
-
-
-def _parse_datetime(value: str | None) -> datetime | None:
-    if not value:
-        return None
-    try:
-        return datetime.fromisoformat(value.replace("Z", "+00:00"))
-    except ValueError:
-        return None
 
 
 def _review(row: sqlite3.Row) -> Review:
     return {
         "user": {"login": row["user_login"] or ""},
         "state": row["state"] or "",
-        "submitted_at": _parse_datetime(row["submitted_at"]),
+        "submitted_at": parse_iso_datetime(row["submitted_at"]),
     }
 
 
@@ -31,14 +22,14 @@ def _pr(row: sqlite3.Row, reviews: list[Review]) -> PullRequest:
         "state": row["state"] or "",
         "title": row["title"] or "",
         "user": {"login": row["author_login"] or ""},
-        "created_at": _parse_datetime(row["created_at"]),
-        "merged_at": _parse_datetime(row["merged_at"]),
-        "closed_at": _parse_datetime(row["closed_at"]),
+        "created_at": parse_iso_datetime(row["created_at"]),
+        "merged_at": parse_iso_datetime(row["merged_at"]),
+        "closed_at": parse_iso_datetime(row["closed_at"]),
         "additions": row["additions"] or 0,
         "deletions": row["deletions"] or 0,
         "changed_files": row["changed_files"] or 0,
-        "first_commit_at": _parse_datetime(row["first_commit_at"]),
-        "ready_for_review_at": _parse_datetime(row["ready_for_review_at"]),
+        "first_commit_at": parse_iso_datetime(row["first_commit_at"]),
+        "ready_for_review_at": parse_iso_datetime(row["ready_for_review_at"]),
         "body": row["body"],
         "commit_messages": json.loads(row["commit_messages_json"] or "[]"),
         "reviews": reviews,

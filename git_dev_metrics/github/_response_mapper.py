@@ -1,16 +1,12 @@
 from datetime import datetime
 
 from ..models import PullRequest, Repository, Review
+from ..utils.date_utils import parse_iso_datetime
 
 
 def map_datetime(dt_str: str | None) -> datetime | None:
     """Parse ISO datetime string to datetime object."""
-    if not dt_str:
-        return None
-    try:
-        return datetime.fromisoformat(dt_str.replace("Z", "+00:00"))
-    except ValueError:
-        return None
+    return parse_iso_datetime(dt_str)
 
 
 def map_author_login(author: dict | None) -> str:
