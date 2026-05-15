@@ -2,7 +2,6 @@
 
 from ._response_mapper import (
     map_author_login,
-    map_datetime,
     map_pull_request,
     map_repository,
     map_review,
@@ -43,6 +42,5 @@ __all__ = [
     "map_pull_request",
     "map_repository",
     "map_review",
-    "map_datetime",
     "save_last_org",
 ]
