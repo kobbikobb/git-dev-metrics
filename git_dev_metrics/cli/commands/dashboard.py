@@ -3,7 +3,7 @@ from pathlib import Path
 import typer
 
 from ...metrics.loader import InvalidRangeError, load_snapshot_for_range
-from ..runners._snapshot_runner import format_date_range, format_period_slug
+from ..runners._snapshot_format import format_date_range, format_period_slug
 from ..runners.dashboard_runner import write_and_open_dashboard
 from ..wizards.dashboard_wizard import dashboard_wizard
 

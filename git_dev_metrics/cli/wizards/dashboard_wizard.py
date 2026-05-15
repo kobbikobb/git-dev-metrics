@@ -4,7 +4,7 @@ from pathlib import Path
 import typer
 
 from ...metrics.loader import load_snapshot_for_months
-from ..runners._snapshot_runner import format_date_range, format_period_slug
+from ..runners._snapshot_format import format_date_range, format_period_slug
 from ..runners.dashboard_runner import write_and_open_dashboard
 from ._wizard import _prompt_months, pick_months
 
