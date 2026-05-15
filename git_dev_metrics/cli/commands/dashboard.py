@@ -39,7 +39,4 @@ def dashboard(
         )
         raise typer.Exit(code=1)
 
-    period_slug = f"{from_}-to-{to}"
-    since = snapshot.period.since.strftime("%Y-%m-%d")
-    until = snapshot.period.until.strftime("%Y-%m-%d")
-    write_and_open_dashboard(snapshot, period_slug, f"{since} to {until}", output)
+    write_and_open_dashboard(snapshot, output, flag_from=from_, flag_to=to)
