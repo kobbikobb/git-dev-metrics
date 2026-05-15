@@ -3,7 +3,7 @@ from pathlib import Path
 import typer
 
 from ...metrics.loader import InvalidRangeError, load_snapshot_for_range
-from ...utils._snapshot_format import format_date_range, format_period_slug
+from ...utils.date_utils import format_date_range
 from ..runners.dashboard_runner import write_and_open_dashboard
 from ..wizards.dashboard_wizard import dashboard_wizard
 
@@ -41,5 +41,5 @@ def dashboard(
         raise typer.Exit(code=1)
 
     write_and_open_dashboard(
-        snapshot, format_period_slug(from_, to), format_date_range(snapshot), output
+        snapshot, f"{from_}-to-{to}", format_date_range(snapshot.period), output
     )

@@ -4,7 +4,7 @@ import typer
 
 from ...metrics.loader import InvalidRangeError, load_snapshot_for_range
 from ...metrics.printer import ConsolePrinter
-from ...utils._snapshot_format import format_date_range, format_period_slug
+from ...utils.date_utils import format_date_range
 from ..wizards.summary_wizard import summary_wizard
 
 
@@ -40,5 +40,5 @@ def summary(
         raise typer.Exit(code=1)
 
     ConsolePrinter().print_combined_metrics(
-        snapshot, format_period_slug(from_, to), format_date_range(snapshot)
+        snapshot, f"{from_}-to-{to}", format_date_range(snapshot.period)
     )

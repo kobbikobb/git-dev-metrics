@@ -73,3 +73,9 @@ def parse_year_month(value: str) -> tuple[int, int]:
     if not m or not 1 <= int(m.group(2)) <= 12:
         raise ValueError(f"Expected YYYY-MM, got {value!r}")
     return int(m.group(1)), int(m.group(2))
+
+
+def format_date_range(period: TimePeriod) -> str:
+    since = period.since.strftime("%Y-%m-%d")
+    until = period.until.strftime("%Y-%m-%d")
+    return f"{since} to {until}"
