@@ -57,6 +57,16 @@ def get_last_month() -> TimePeriod:
 _YEAR_MONTH_RE = re.compile(r"^(\d{4})-(\d{2})$")
 
 
+def parse_iso_datetime(dt_str: str | None) -> datetime | None:
+    """Parse ISO-8601 datetime string to datetime. Returns None for falsy or malformed input."""
+    if not dt_str:
+        return None
+    try:
+        return datetime.fromisoformat(dt_str.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+
+
 def parse_year_month(value: str) -> tuple[int, int]:
     """Parse "YYYY-MM" into (year, month). Raises ValueError on malformed input."""
     m = _YEAR_MONTH_RE.match(value)
