@@ -5,55 +5,14 @@ they do not recompute health, bands, sort orders, or aggregations.
 """
 
 from dataclasses import dataclass
-from typing import Literal
 
 from ..models import PullRequest
 from ..utils import TimePeriod, period_days
 from ._dev_repo_metrics import compute_dev_metrics, compute_repo_metrics
+from ._health_ranking import band_from_health, compute_team_row, rank_rows
+from ._rows import Row, Summary
 from .calculator import calculate_reviews_given
 from .health import calculate_dev_health_score, calculate_health_score
-
-# Imports from _health_ranking must come after Row/Band definitions
-# to resolve circular dependency (_health_ranking imports Row/Band).
-
-Band = Literal["good", "ok", "bad"]
-
-_BAND_COLOR: dict[Band, str] = {"good": "green", "ok": "yellow", "bad": "red"}
-
-
-def band_color(band: Band) -> str:
-    return _BAND_COLOR[band]
-
-
-@dataclass(frozen=True)
-class Row:
-    name: str
-    pr_count: int
-    cycle_time: float
-    pickup_time: float
-    review_time: float
-    pr_size: float
-    avg_lines_per_pr: float
-    prs_per_week: float
-    reviews_given: int
-    ai_percentage: float
-    health: int
-    band: Band
-
-
-@dataclass(frozen=True)
-class Summary:
-    ai_per_dev: tuple[int, ...]
-    review_ratio: float
-    top_reviewer: str
-    max_review_share: int
-
-
-from ._health_ranking import (  # noqa: E402
-    band_from_health,
-    compute_team_row,
-    rank_rows,
-)
 
 
 @dataclass(frozen=True)
@@ -118,11 +77,7 @@ def build_summary(
 
 
 __all__ = [
-    "Band",
     "MetricsSnapshot",
-    "Row",
-    "Summary",
-    "band_color",
     "band_from_health",
     "build_summary",
 ]

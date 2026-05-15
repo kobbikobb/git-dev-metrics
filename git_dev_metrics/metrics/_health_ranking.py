@@ -3,8 +3,8 @@ from typing import Any
 
 from ..models import PullRequest
 from ._dev_repo_metrics import compute_metrics_dict
+from ._rows import Band, Row
 from .calculator import median
-from .snapshot import Band, Row
 
 _PER_DEV_AGGREGATED_KEYS = (
     "cycle_time",
