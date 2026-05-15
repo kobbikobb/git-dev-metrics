@@ -17,6 +17,7 @@ dist/
 .vscode/
 .idea/
 *.swp
+.DS_Store
 
 # AI
 .serena
