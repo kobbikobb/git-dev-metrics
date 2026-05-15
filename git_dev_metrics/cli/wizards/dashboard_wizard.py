@@ -4,6 +4,7 @@ from pathlib import Path
 import typer
 
 from ...metrics.loader import load_snapshot_for_months
+from ..runners._snapshot_runner import format_date_range, format_period_slug
 from ..runners.dashboard_runner import write_and_open_dashboard
 from ._wizard import _prompt_months, pick_months
 
@@ -22,7 +23,7 @@ def dashboard_wizard(
         typer.secho("No PRs in selected months.", fg=typer.colors.RED, err=True)
         raise typer.Exit(code=1)
     first, last = selected[0], selected[-1]
-    period_slug = f"{first[0]:04d}-{first[1]:02d}-to-{last[0]:04d}-{last[1]:02d}"
-    since = snapshot.period.since.strftime("%Y-%m-%d")
-    until = snapshot.period.until.strftime("%Y-%m-%d")
-    write_and_open_dashboard(snapshot, period_slug, f"{since} to {until}", output=None)
+    period_slug = format_period_slug(
+        f"{first[0]:04d}-{first[1]:02d}", f"{last[0]:04d}-{last[1]:02d}"
+    )
+    write_and_open_dashboard(snapshot, period_slug, format_date_range(snapshot), output=None)
