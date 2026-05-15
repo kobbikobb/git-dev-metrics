@@ -4,36 +4,39 @@ from collections import defaultdict
 from pathlib import Path
 
 from ..models import PullRequest, Review
-from ..utils.date_utils import parse_iso_datetime
+from ..models._mapping import pull_request_from_dict, review_from_dict
 from .db import open_connection
 
 
 def _review(row: sqlite3.Row) -> Review:
-    return {
-        "user": {"login": row["user_login"] or ""},
-        "state": row["state"] or "",
-        "submitted_at": parse_iso_datetime(row["submitted_at"]),
-    }
+    return review_from_dict(
+        {
+            "author_login": row["user_login"],
+            "state": row["state"],
+            "submitted_at": row["submitted_at"],
+        }
+    )
 
 
 def _pr(row: sqlite3.Row, reviews: list[Review]) -> PullRequest:
-    return {  # type: ignore[return-value]
-        "number": row["number"],
-        "state": row["state"] or "",
-        "title": row["title"] or "",
-        "user": {"login": row["author_login"] or ""},
-        "created_at": parse_iso_datetime(row["created_at"]),
-        "merged_at": parse_iso_datetime(row["merged_at"]),
-        "closed_at": parse_iso_datetime(row["closed_at"]),
-        "additions": row["additions"] or 0,
-        "deletions": row["deletions"] or 0,
-        "changed_files": row["changed_files"] or 0,
-        "first_commit_at": parse_iso_datetime(row["first_commit_at"]),
-        "ready_for_review_at": parse_iso_datetime(row["ready_for_review_at"]),
-        "body": row["body"],
-        "commit_messages": json.loads(row["commit_messages_json"] or "[]"),
-        "reviews": reviews,
-    }
+    return pull_request_from_dict(
+        {
+            "number": row["number"],
+            "title": row["title"],
+            "author_login": row["author_login"],
+            "created_at": row["created_at"],
+            "merged_at": row["merged_at"],
+            "closed_at": row["closed_at"],
+            "additions": row["additions"],
+            "deletions": row["deletions"],
+            "changed_files": row["changed_files"],
+            "first_commit_at": row["first_commit_at"],
+            "ready_for_review_at": row["ready_for_review_at"],
+            "body": row["body"],
+            "commit_messages": json.loads(row["commit_messages_json"] or "[]"),
+        },
+        reviews,
+    )
 
 
 def load_prs(
