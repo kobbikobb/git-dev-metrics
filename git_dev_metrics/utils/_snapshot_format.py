@@ -1,4 +1,4 @@
-from ...metrics import MetricsSnapshot
+from ..metrics import MetricsSnapshot
 
 
 def format_period_slug(a: str, b: str) -> str:
