@@ -2,7 +2,7 @@ from collections.abc import Callable
 from typing import Any
 
 from ..models import PullRequest
-from ._dev_repo_metrics import row_dict
+from ._dev_repo_metrics import compute_metrics_dict
 from .calculator import median
 from .snapshot import Band, Row
 
@@ -24,7 +24,7 @@ def band_from_health(health: int) -> Band:
     return "bad"
 
 
-def to_row(name: str, m: dict[str, Any], health: int) -> Row:
+def dict_to_row(name: str, m: dict[str, Any], health: int) -> Row:
     return Row(
         name=name,
         pr_count=int(m.get("pr_count", 0)),
@@ -41,28 +41,28 @@ def to_row(name: str, m: dict[str, Any], health: int) -> Row:
     )
 
 
-def rank(
+def rank_rows(
     raws: dict[str, dict[str, Any]],
     health_fn: Callable[[dict[str, Any], list[dict[str, Any]]], int],
 ) -> tuple[Row, ...]:
     cohort = list(raws.values())
-    rows = [to_row(name, m, health_fn(m, cohort)) for name, m in raws.items()]
+    rows = [dict_to_row(name, m, health_fn(m, cohort)) for name, m in raws.items()]
     rows.sort(key=lambda r: r.health, reverse=True)
     return tuple(rows)
 
 
-def team_row(
+def compute_team_row(
     all_prs: list[PullRequest],
     days: int,
     dev_raws: dict[str, dict[str, Any]],
     devs: tuple[Row, ...],
     reviewer_counts: dict[str, int],
 ) -> Row:
-    raw = row_dict(all_prs, days, sum(reviewer_counts.values()))
+    raw = compute_metrics_dict(all_prs, days, sum(reviewer_counts.values()))
     for key in _PER_DEV_AGGREGATED_KEYS:
         values = [m[key] for m in dev_raws.values() if m.get(key)]
         raw[key] = round(median(values), 2) if values else 0.0
     ai_values = [m["ai_percentage"] for m in dev_raws.values()]
     raw["ai_percentage"] = round(sum(ai_values) / len(ai_values), 1) if ai_values else 0.0
     team_health = round(sum(r.health for r in devs) / len(devs)) if devs else 0
-    return to_row("team", raw, team_health)
+    return dict_to_row("team", raw, team_health)

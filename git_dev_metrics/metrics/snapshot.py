@@ -9,7 +9,7 @@ from typing import Literal
 
 from ..models import PullRequest
 from ..utils import TimePeriod, period_days
-from ._dev_repo_metrics import active_repo_raws, dev_raws, row_dict
+from ._dev_repo_metrics import compute_dev_metrics, compute_repo_metrics
 from .calculator import calculate_reviews_given
 from .health import calculate_dev_health_score, calculate_health_score
 
@@ -49,7 +49,11 @@ class Summary:
     max_review_share: int
 
 
-from ._health_ranking import band_from_health, rank, team_row, to_row  # noqa: E402
+from ._health_ranking import (  # noqa: E402
+    band_from_health,
+    compute_team_row,
+    rank_rows,
+)
 
 
 @dataclass(frozen=True)
@@ -71,13 +75,13 @@ class MetricsSnapshot:
         all_prs: list[PullRequest] = [pr for prs in repo_prs.values() for pr in prs]
         reviewer_counts = calculate_reviews_given(all_prs)
 
-        dev_raw_data = dev_raws(all_prs, days, reviewer_counts)
-        devs = rank(dev_raw_data, calculate_dev_health_score)
+        dev_raw_data = compute_dev_metrics(all_prs, days, reviewer_counts)
+        devs = rank_rows(dev_raw_data, calculate_dev_health_score)
 
-        repo_raw_data = active_repo_raws(repo_prs, days)
-        repos = rank(repo_raw_data, calculate_health_score)
+        repo_raw_data = compute_repo_metrics(repo_prs, days)
+        repos = rank_rows(repo_raw_data, calculate_health_score)
 
-        team = team_row(all_prs, days, dev_raw_data, devs, reviewer_counts)
+        team = compute_team_row(all_prs, days, dev_raw_data, devs, reviewer_counts)
 
         return cls(
             period=period,
@@ -118,13 +122,7 @@ __all__ = [
     "MetricsSnapshot",
     "Row",
     "Summary",
-    "active_repo_raws",
     "band_color",
     "band_from_health",
     "build_summary",
-    "dev_raws",
-    "rank",
-    "row_dict",
-    "team_row",
-    "to_row",
 ]
