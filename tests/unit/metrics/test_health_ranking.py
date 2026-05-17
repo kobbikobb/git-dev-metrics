@@ -1,8 +1,9 @@
 from git_dev_metrics.metrics._health_ranking import (
     band_from_health,
-    dict_to_row,
     rank_rows,
+    raw_to_row,
 )
+from git_dev_metrics.metrics._rows import RawMetrics
 
 
 class TestBandFromHealth:
@@ -19,36 +20,64 @@ class TestBandFromHealth:
         assert band_from_health(59) == "bad"
 
 
-class TestDictToRow:
+class TestRawToRow:
     def test_should_build_row_with_health_and_band(self) -> None:
-        row = dict_to_row("alice", {"pr_count": 5, "cycle_time": 12.5}, 85)
+        row = raw_to_row(
+            "alice",
+            RawMetrics(
+                pr_count=5,
+                cycle_time=12.5,
+                pickup_time=0,
+                review_time=0,
+                pr_size=0,
+                avg_lines_per_pr=0,
+                prs_per_week=0,
+                reviews_given=0,
+                ai_percentage=0,
+            ),
+            85,
+        )
         assert row.name == "alice"
         assert row.pr_count == 5
         assert row.cycle_time == 12.5
         assert row.health == 85
         assert row.band == "good"
 
-    def test_should_default_missing_fields(self) -> None:
-        row = dict_to_row("bob", {}, 0)
+    def test_should_default_zero_fields(self) -> None:
+        row = raw_to_row(
+            "bob",
+            RawMetrics(
+                pr_count=0,
+                cycle_time=0,
+                pickup_time=0,
+                review_time=0,
+                pr_size=0,
+                avg_lines_per_pr=0,
+                prs_per_week=0,
+                reviews_given=0,
+                ai_percentage=0,
+            ),
+            0,
+        )
         assert row.pr_count == 0
         assert row.cycle_time == 0.0
         assert row.reviews_given == 0
         assert row.band == "bad"
 
-    def test_should_cast_types(self) -> None:
-        row = dict_to_row(
+    def test_should_build_full_row(self) -> None:
+        row = raw_to_row(
             "carol",
-            {
-                "pr_count": "3",
-                "cycle_time": "10.5",
-                "pickup_time": "2.0",
-                "review_time": "5.0",
-                "pr_size": "50",
-                "avg_lines_per_pr": "100.0",
-                "prs_per_week": "1.5",
-                "reviews_given": "7",
-                "ai_percentage": "40.0",
-            },
+            RawMetrics(
+                pr_count=3,
+                cycle_time=10.5,
+                pickup_time=2.0,
+                review_time=5.0,
+                pr_size=50,
+                avg_lines_per_pr=100.0,
+                prs_per_week=1.5,
+                reviews_given=7,
+                ai_percentage=40.0,
+            ),
             75,
         )
         assert row.pr_count == 3
@@ -65,8 +94,42 @@ class TestDictToRow:
 
 class TestRankRows:
     def test_should_sort_by_health_descending(self) -> None:
-        raws = {"a": {"pr_count": 1}, "b": {"pr_count": 3}, "c": {"pr_count": 2}}
-        result = rank_rows(raws, lambda m, _: m["pr_count"] * 10)
+        raws = {
+            "a": RawMetrics(
+                pr_count=1,
+                cycle_time=0,
+                pickup_time=0,
+                review_time=0,
+                pr_size=0,
+                avg_lines_per_pr=0,
+                prs_per_week=0,
+                reviews_given=0,
+                ai_percentage=0,
+            ),
+            "b": RawMetrics(
+                pr_count=3,
+                cycle_time=0,
+                pickup_time=0,
+                review_time=0,
+                pr_size=0,
+                avg_lines_per_pr=0,
+                prs_per_week=0,
+                reviews_given=0,
+                ai_percentage=0,
+            ),
+            "c": RawMetrics(
+                pr_count=2,
+                cycle_time=0,
+                pickup_time=0,
+                review_time=0,
+                pr_size=0,
+                avg_lines_per_pr=0,
+                prs_per_week=0,
+                reviews_given=0,
+                ai_percentage=0,
+            ),
+        }
+        result = rank_rows(raws, lambda m, _: m.pr_count * 10)
         assert [r.name for r in result] == ["b", "c", "a"]
         assert result[0].health == 30
         assert result[2].health == 10

@@ -40,7 +40,9 @@ class TestStale:
                 ]  # ~41d
             return [_open_pr(2, "bob", dt(year=2026, month=5, day=1, hour=8, minute=0))]  # ~11d
 
-        mocker.patch("git_dev_metrics.cli.commands.stale.get_github_token", return_value="fake-token")
+        mocker.patch(
+            "git_dev_metrics.cli.commands.stale.get_github_token", return_value="fake-token"
+        )
         mocker.patch("git_dev_metrics.cli.commands.stale.fetch_open_prs", side_effect=fake_open_prs)
         out = tmp_path / "stale.html"
 
@@ -63,7 +65,9 @@ class TestStale:
         db_path = tmp_path / "cache.db"
         seal_month("myorg", "repoA", 2026, 4, db_path=db_path)
 
-        mocker.patch("git_dev_metrics.cli.commands.stale.get_github_token", return_value="fake-token")
+        mocker.patch(
+            "git_dev_metrics.cli.commands.stale.get_github_token", return_value="fake-token"
+        )
         mocker.patch(
             "git_dev_metrics.cli.commands.stale.fetch_open_prs",
             return_value=[
@@ -89,7 +93,9 @@ class TestStale:
         db_path = tmp_path / "cache.db"
         seal_month("myorg", "repoA", 2026, 4, db_path=db_path)
 
-        mocker.patch("git_dev_metrics.cli.commands.stale.get_github_token", return_value="fake-token")
+        mocker.patch(
+            "git_dev_metrics.cli.commands.stale.get_github_token", return_value="fake-token"
+        )
         mocker.patch(
             "git_dev_metrics.cli.commands.stale.fetch_open_prs",
             return_value=[
@@ -123,7 +129,9 @@ class TestStale:
         seal_month("myorg", "repoA", 2026, 4, db_path=db_path)
         monkeypatch.chdir(tmp_path)
 
-        mocker.patch("git_dev_metrics.cli.commands.stale.get_github_token", return_value="fake-token")
+        mocker.patch(
+            "git_dev_metrics.cli.commands.stale.get_github_token", return_value="fake-token"
+        )
         mocker.patch(
             "git_dev_metrics.cli.commands.stale.fetch_open_prs",
             return_value=[_open_pr(1, "alice", dt(year=2026, month=4, day=1, hour=8, minute=0))],

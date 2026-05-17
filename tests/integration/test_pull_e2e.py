@@ -58,8 +58,12 @@ class TestPullEndToEnd:
             _raw_pr(103, "alice", 22, [_raw_review("carol", 22), _raw_review("dave", 23)]),
         ]
         mapped = [map_pull_request(pr) for pr in raw]
-        mocker.patch("git_dev_metrics.cli.commands.pull.get_github_token", return_value="fake-token")
-        mocker.patch("git_dev_metrics.cli.runners.pull_runner.fetch_repo_metrics", return_value=mapped)
+        mocker.patch(
+            "git_dev_metrics.cli.commands.pull.get_github_token", return_value="fake-token"
+        )
+        mocker.patch(
+            "git_dev_metrics.cli.runners.pull_runner.fetch_repo_metrics", return_value=mapped
+        )
 
         # Act
         result = runner.invoke(
@@ -95,8 +99,12 @@ class TestPullEndToEnd:
             _raw_pr(202, "bob", 9, [_raw_review("alice", 9)]),
         ]
         mapped = [map_pull_request(pr) for pr in raw]
-        mocker.patch("git_dev_metrics.cli.commands.pull.get_github_token", return_value="fake-token")
-        mocker.patch("git_dev_metrics.cli.runners.pull_runner.fetch_repo_metrics", return_value=mapped)
+        mocker.patch(
+            "git_dev_metrics.cli.commands.pull.get_github_token", return_value="fake-token"
+        )
+        mocker.patch(
+            "git_dev_metrics.cli.runners.pull_runner.fetch_repo_metrics", return_value=mapped
+        )
         mocker.patch("git_dev_metrics.cli._browser.webbrowser.open", return_value=False)
         dashboard_out = tmp_path / "r.html"
 
@@ -161,8 +169,12 @@ class TestPullEndToEnd:
             "timelineItems": {"nodes": []},
         }
         mapped = [map_pull_request(minimal)]
-        mocker.patch("git_dev_metrics.cli.commands.pull.get_github_token", return_value="fake-token")
-        mocker.patch("git_dev_metrics.cli.runners.pull_runner.fetch_repo_metrics", return_value=mapped)
+        mocker.patch(
+            "git_dev_metrics.cli.commands.pull.get_github_token", return_value="fake-token"
+        )
+        mocker.patch(
+            "git_dev_metrics.cli.runners.pull_runner.fetch_repo_metrics", return_value=mapped
+        )
 
         # Act
         result = runner.invoke(
