@@ -1,4 +1,4 @@
-from ._rows import RawMetrics
+from ._raw_metrics import RawMetrics
 
 TEAM_WEIGHTS = {
     "throughput": 0.25,

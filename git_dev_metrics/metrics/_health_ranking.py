@@ -2,7 +2,8 @@ from collections.abc import Callable
 
 from ..models import PullRequest
 from ._dev_repo_metrics import compute_raw
-from ._rows import Band, RawMetrics, Row
+from ._raw_metrics import RawMetrics
+from ._rows import Band, Row
 from .calculator import median
 
 _PER_DEV_AGGREGATED_KEYS = (

@@ -5,7 +5,7 @@ from datetime import datetime
 
 from ..constants import is_bot_login
 from ..models import OpenPullRequest, PullRequest
-from ._rows import StalePr
+from ._stale_pr import StalePr
 
 AI_TRAILER_PATTERNS = [
     r"Co-Authored-By:",

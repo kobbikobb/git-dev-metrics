@@ -777,7 +777,7 @@ class TestSummarizeStalePrs:
         assert summarize_stale_prs([]) == (0, 0.0)
 
     def test_should_compute_count_and_mean_age(self):
-        from git_dev_metrics.metrics._rows import StalePr
+        from git_dev_metrics.metrics._stale_pr import StalePr
         from git_dev_metrics.metrics.calculator import summarize_stale_prs
 
         prs = [
