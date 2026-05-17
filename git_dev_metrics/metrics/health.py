@@ -1,4 +1,4 @@
-from typing import Any
+from ._rows import RawMetrics
 
 TEAM_WEIGHTS = {
     "throughput": 0.25,
@@ -48,7 +48,7 @@ def _time_score(value: float, bands: tuple[int, int, int, int]) -> float:
 def _citizenship_score(
     reviews_given: int,
     pr_count: int,
-    all_metrics: list[dict[str, Any]] | None = None,
+    all_metrics: list[RawMetrics] | None = None,
 ) -> float:
     """50% ratio + 50% absolute. Absolute scaled vs team max so prolific authors
     aren't penalized for not maintaining 2x review ratio at high PR volume."""
@@ -59,7 +59,7 @@ def _citizenship_score(
     ratio_score = min(100.0, ratio * 50)
 
     if all_metrics:
-        max_reviews = max((m.get("reviews_given", 0) for m in all_metrics), default=0)
+        max_reviews = max((m.reviews_given for m in all_metrics), default=0)
         absolute_score = (reviews_given / max_reviews * 100) if max_reviews > 0 else 0.0
     else:
         absolute_score = min(100.0, reviews_given / 100 * 100)
@@ -67,19 +67,17 @@ def _citizenship_score(
     return 0.5 * ratio_score + 0.5 * absolute_score
 
 
-def calculate_health_score(
-    metrics: dict[str, Any], all_metrics: list[dict[str, Any]] | None = None
-) -> int:
+def calculate_health_score(metrics: RawMetrics, all_metrics: list[RawMetrics] | None = None) -> int:
     """Team/repo composite 0-100. Includes pickup time (team responsiveness)."""
-    pr_count = metrics.get("pr_count", 0)
+    pr_count = metrics.pr_count
     if pr_count == 0:
         return 0
 
     components = {
-        "throughput": _throughput_score(metrics.get("prs_per_week", 0)),
-        "speed": _time_score(metrics.get("cycle_time", 0), CYCLE_BANDS),
-        "pickup": _time_score(metrics.get("pickup_time", 0), PICKUP_BANDS),
-        "citizenship": _citizenship_score(metrics.get("reviews_given", 0), pr_count, all_metrics),
+        "throughput": _throughput_score(metrics.prs_per_week),
+        "speed": _time_score(metrics.cycle_time, CYCLE_BANDS),
+        "pickup": _time_score(metrics.pickup_time, PICKUP_BANDS),
+        "citizenship": _citizenship_score(metrics.reviews_given, pr_count, all_metrics),
     }
 
     score = sum(TEAM_WEIGHTS[k] * v for k, v in components.items())
@@ -87,17 +85,17 @@ def calculate_health_score(
 
 
 def calculate_dev_health_score(
-    metrics: dict[str, Any], all_metrics: list[dict[str, Any]] | None = None
+    metrics: RawMetrics, all_metrics: list[RawMetrics] | None = None
 ) -> int:
     """Per-developer composite 0-100. Excludes pickup time (reviewer behavior, not author)."""
-    pr_count = metrics.get("pr_count", 0)
+    pr_count = metrics.pr_count
     if pr_count == 0:
         return 0
 
     components = {
-        "throughput": _throughput_score(metrics.get("prs_per_week", 0)),
-        "speed": _time_score(metrics.get("cycle_time", 0), CYCLE_BANDS),
-        "citizenship": _citizenship_score(metrics.get("reviews_given", 0), pr_count, all_metrics),
+        "throughput": _throughput_score(metrics.prs_per_week),
+        "speed": _time_score(metrics.cycle_time, CYCLE_BANDS),
+        "citizenship": _citizenship_score(metrics.reviews_given, pr_count, all_metrics),
     }
 
     score = sum(DEV_WEIGHTS[k] * v for k, v in components.items())

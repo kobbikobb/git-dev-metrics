@@ -15,9 +15,24 @@ def _period() -> TimePeriod:
 
 
 def _row_with_health(health: int):
-    from git_dev_metrics.metrics._health_ranking import dict_to_row as _dict_to_row
+    from git_dev_metrics.metrics._health_ranking import raw_to_row as _raw_to_row
+    from git_dev_metrics.metrics._rows import RawMetrics
 
-    return _dict_to_row("x", {"pr_count": 1}, health)
+    return _raw_to_row(
+        "x",
+        RawMetrics(
+            pr_count=1,
+            cycle_time=0,
+            pickup_time=0,
+            review_time=0,
+            pr_size=0,
+            avg_lines_per_pr=0,
+            prs_per_week=0,
+            reviews_given=0,
+            ai_percentage=0,
+        ),
+        health,
+    )
 
 
 class TestFromRepoPrs:

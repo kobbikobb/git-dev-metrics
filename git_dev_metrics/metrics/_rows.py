@@ -16,6 +16,19 @@ def band_color(band: Band) -> str:
 
 
 @dataclass(frozen=True)
+class RawMetrics:
+    cycle_time: float
+    pickup_time: float
+    review_time: float
+    pr_size: float
+    avg_lines_per_pr: float
+    pr_count: int
+    prs_per_week: float
+    reviews_given: int
+    ai_percentage: float
+
+
+@dataclass(frozen=True)
 class Row:
     name: str
     pr_count: int

@@ -30,7 +30,9 @@ class TestPull:
     def test_should_write_prs_and_seal_month(self, tmp_path, mocker):
         db_path = tmp_path / "cache.db"
         prs = _ten_prs_for_april()
-        mocker.patch("git_dev_metrics.cli.commands.pull.get_github_token", return_value="fake-token")
+        mocker.patch(
+            "git_dev_metrics.cli.commands.pull.get_github_token", return_value="fake-token"
+        )
         mocker.patch("git_dev_metrics.cli.runners.pull_runner.fetch_repo_metrics", return_value=prs)
 
         result = runner.invoke(
@@ -61,8 +63,12 @@ class TestPull:
     @freeze_time("2026-05-12")
     def test_should_refuse_incomplete_current_month(self, tmp_path, mocker):
         db_path = tmp_path / "cache.db"
-        mocker.patch("git_dev_metrics.cli.commands.pull.get_github_token", return_value="fake-token")
-        fetch = mocker.patch("git_dev_metrics.cli.runners.pull_runner.fetch_repo_metrics", return_value=[])
+        mocker.patch(
+            "git_dev_metrics.cli.commands.pull.get_github_token", return_value="fake-token"
+        )
+        fetch = mocker.patch(
+            "git_dev_metrics.cli.runners.pull_runner.fetch_repo_metrics", return_value=[]
+        )
 
         result = runner.invoke(
             app,
@@ -97,8 +103,12 @@ class TestPull:
     def test_should_refuse_already_sealed_month(self, tmp_path, mocker):
         db_path = tmp_path / "cache.db"
         seal_month("myorg", "myrepo", 2026, 4, db_path=db_path)
-        mocker.patch("git_dev_metrics.cli.commands.pull.get_github_token", return_value="fake-token")
-        fetch = mocker.patch("git_dev_metrics.cli.runners.pull_runner.fetch_repo_metrics", return_value=[])
+        mocker.patch(
+            "git_dev_metrics.cli.commands.pull.get_github_token", return_value="fake-token"
+        )
+        fetch = mocker.patch(
+            "git_dev_metrics.cli.runners.pull_runner.fetch_repo_metrics", return_value=[]
+        )
 
         result = runner.invoke(
             app,
