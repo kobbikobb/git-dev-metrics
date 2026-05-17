@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from datetime import datetime
+from typing import TypedDict
 
 from ..constants import is_bot_login
 from ..models import PullRequest
@@ -8,6 +9,14 @@ from .calculator import calculate_ai_percentage, calculate_cycle_time
 
 @dataclass(frozen=True)
 class DevMonthRow:
+    month_label: str
+    month_key: str
+    pr_count: int
+    cycle_hours: float
+    ai_pct: float
+
+
+class DevMonthDict(TypedDict):
     month_label: str
     month_key: str
     pr_count: int

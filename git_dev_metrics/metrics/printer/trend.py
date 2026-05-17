@@ -2,31 +2,21 @@ from dataclasses import asdict
 from pathlib import Path
 from typing import TypedDict
 
-from ..trend_calculator import TrendDataset
+from ..trend_calculator import DevMonthDict, TrendDataset
 from ._html_templates import render_template
-
-
-class _DevMonthDict(TypedDict):
-    month_label: str
-    month_key: str
-    pr_count: int
-    cycle_hours: float
-    ai_pct: float
 
 
 class _TrendData(TypedDict):
     months: list[str]
     devs: list[str]
-    rows: dict[str, list[_DevMonthDict]]
+    rows: dict[str, list[DevMonthDict]]
 
 
 def _to_dict(dataset: TrendDataset) -> _TrendData:
     return _TrendData(
         months=dataset.months,
         devs=dataset.devs,
-        rows={
-            dev: [_DevMonthDict(**asdict(r)) for r in rows] for dev, rows in dataset.rows.items()
-        },
+        rows={dev: [DevMonthDict(**asdict(r)) for r in rows] for dev, rows in dataset.rows.items()},
     )
 
 
