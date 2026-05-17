@@ -16,7 +16,7 @@ def _period() -> TimePeriod:
 
 def _row_with_health(health: int):
     from git_dev_metrics.metrics._health_ranking import raw_to_row as _raw_to_row
-    from git_dev_metrics.metrics._rows import RawMetrics
+    from git_dev_metrics.metrics._raw_metrics import RawMetrics
 
     return _raw_to_row(
         "x",

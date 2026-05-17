@@ -3,7 +3,7 @@ from git_dev_metrics.metrics._health_ranking import (
     rank_rows,
     raw_to_row,
 )
-from git_dev_metrics.metrics._rows import RawMetrics
+from git_dev_metrics.metrics._raw_metrics import RawMetrics
 
 
 class TestBandFromHealth:

@@ -1,5 +1,5 @@
 from ..models import PullRequest
-from ._rows import RawMetrics
+from ._raw_metrics import RawMetrics
 from .calculator import (
     calculate_ai_percentage,
     calculate_avg_lines_per_pr,
