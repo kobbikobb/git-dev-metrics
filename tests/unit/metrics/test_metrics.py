@@ -687,8 +687,6 @@ class TestGroupPrsByDevsBotExclusion:
 
 
 class TestGetStalePrs:
-    """Test cases for get_stale_prs function."""
-
     def test_should_return_empty_for_empty_list(self):
         from git_dev_metrics.metrics.calculator import get_stale_prs
 
@@ -736,10 +734,10 @@ class TestGetStalePrs:
         )
         result = get_stale_prs(prs, "myrepo", lambda: now)
         assert len(result) == 1
-        assert result[0]["number"] == 1
-        assert result[0]["author"] == "alice"
-        assert result[0]["repo"] == "myrepo"
-        assert result[0]["age_hours"] > 24 * 7  # More than 7 days
+        assert result[0].number == 1
+        assert result[0].author == "alice"
+        assert result[0].repo == "myrepo"
+        assert result[0].age_hours > 24 * 7
 
     def test_should_sort_by_age_oldest_first(self):
         from datetime import UTC, datetime, timedelta
@@ -767,9 +765,46 @@ class TestGetStalePrs:
             ],
         )
         result = get_stale_prs(prs, "myrepo", lambda: now)
-        assert result[0]["number"] == 2  # Older first
-        assert result[1]["number"] == 1
-        assert result[0]["repo"] == "myrepo"
+        assert result[0].number == 2
+        assert result[1].number == 1
+        assert result[0].repo == "myrepo"
+
+
+class TestSummarizeStalePrs:
+    def test_should_return_zero_for_empty_list(self):
+        from git_dev_metrics.metrics.calculator import summarize_stale_prs
+
+        assert summarize_stale_prs([]) == (0, 0.0)
+
+    def test_should_compute_count_and_mean_age(self):
+        from git_dev_metrics.metrics._rows import StalePr
+        from git_dev_metrics.metrics.calculator import summarize_stale_prs
+
+        prs = [
+            StalePr(
+                number=1,
+                title="a",
+                author="x",
+                repo="r",
+                age_hours=480,
+                age_days=20.0,
+                is_draft=False,
+                is_approved=False,
+                url="",
+            ),
+            StalePr(
+                number=2,
+                title="b",
+                author="y",
+                repo="r",
+                age_hours=240,
+                age_days=10.0,
+                is_draft=False,
+                is_approved=False,
+                url="",
+            ),
+        ]
+        assert summarize_stale_prs(prs) == (2, 15.0)
 
 
 class TestIsAiCoauthored:
