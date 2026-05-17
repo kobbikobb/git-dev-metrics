@@ -45,6 +45,19 @@ class Row:
 
 
 @dataclass(frozen=True)
+class StalePr:
+    number: int
+    title: str
+    author: str | None
+    repo: str
+    age_hours: float
+    age_days: float
+    is_draft: bool
+    is_approved: bool
+    url: str
+
+
+@dataclass(frozen=True)
 class Summary:
     ai_per_dev: tuple[int, ...]
     review_ratio: float
