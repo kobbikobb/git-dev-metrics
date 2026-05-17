@@ -16,8 +16,7 @@ from ...github import (
 )
 from ...github.queries import fetch_repo_metrics
 from ...models import PullRequest, Repository
-from ...utils.date_utils import TimePeriod, month_range
-from .._month_arg import parse_month_arg
+from ...utils.date_utils import TimePeriod, month_range, parse_year_month
 from ..runners.pull_runner import fetch_and_seal_month
 from .prompts import prompt_org_name, prompt_repo_selection
 
@@ -78,7 +77,11 @@ def pull_wizard(
     picked = ask_month(_candidate_months(clock()))
     if not picked:
         raise typer.Exit(code=1)
-    year, month_num = parse_month_arg(picked)
+    try:
+        year, month_num = parse_year_month(picked)
+    except ValueError:
+        typer.secho(f"Invalid month '{picked}'; expected YYYY-MM.", fg=typer.colors.RED, err=True)
+        raise typer.Exit(code=1) from None
     period = month_range(year, month_num)
     if period.until > clock():
         typer.secho(f"Month {picked} is incomplete; cannot seal.", fg=typer.colors.RED, err=True)

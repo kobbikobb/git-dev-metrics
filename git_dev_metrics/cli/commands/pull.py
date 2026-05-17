@@ -5,8 +5,7 @@ import typer
 
 from ...cache import is_sealed
 from ...github import get_github_token
-from ...utils.date_utils import month_range
-from .._month_arg import parse_month_arg
+from ...utils.date_utils import month_range, parse_year_month
 from ..runners.pull_runner import fetch_and_seal_month
 from ..wizards.pull_wizard import pull_wizard
 
@@ -30,7 +29,11 @@ def pull(
         )
         raise typer.Exit(code=1)
 
-    year, month_num = parse_month_arg(month)
+    try:
+        year, month_num = parse_year_month(month)
+    except ValueError:
+        typer.secho(f"Invalid --month '{month}'; expected YYYY-MM.", fg=typer.colors.RED, err=True)
+        raise typer.Exit(code=1) from None
     period = month_range(year, month_num)
 
     if period.until > datetime.now(UTC):

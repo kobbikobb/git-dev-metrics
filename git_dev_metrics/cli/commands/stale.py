@@ -1,3 +1,4 @@
+import webbrowser
 from datetime import datetime
 from pathlib import Path
 
@@ -8,7 +9,6 @@ from ...github import fetch_open_prs, get_github_token
 from ...metrics._stale_pr import StalePr
 from ...metrics.calculator import get_stale_prs
 from ...metrics.printer.stale import FileStaleHtmlPrinter
-from .._browser import open_in_browser
 
 
 def _default_output() -> Path:
@@ -35,4 +35,4 @@ def stale(
     out = (output or _default_output()).with_suffix(".html")
     FileStaleHtmlPrinter(out).render(all_stale)
     typer.echo(f"Stale written to {out}.")
-    open_in_browser(out)
+    webbrowser.open(out.resolve().as_uri())

@@ -1,3 +1,4 @@
+import webbrowser
 from datetime import datetime
 from pathlib import Path
 
@@ -5,7 +6,6 @@ import typer
 
 from ...metrics import MetricsSnapshot
 from ...metrics.printer.html import FileHtmlPrinter
-from .._browser import open_in_browser
 
 
 def _default_output(period_slug: str) -> Path:
@@ -19,4 +19,4 @@ def write_and_open_dashboard(
     out = (output or _default_output(period_slug)).with_suffix(".html")
     FileHtmlPrinter(out).print_combined_metrics(snapshot, period_slug, date_range)
     typer.echo(f"Dashboard written to {out}.")
-    open_in_browser(out)
+    webbrowser.open(out.resolve().as_uri())

@@ -1,3 +1,4 @@
+import webbrowser
 from pathlib import Path
 
 import typer
@@ -6,7 +7,6 @@ from ...cache import load_all_repos_by_month
 from ...metrics.printer.trend import FileTrendPrinter
 from ...metrics.trend_calculator import build_trend_dataset
 from ...utils.date_utils import month_iter
-from .._browser import open_in_browser
 
 YearMonth = tuple[int, int]
 
@@ -43,4 +43,4 @@ def perform_trend(
     out_path = output or _default_output(from_ym, to_ym)
     FileTrendPrinter(out_path).render(dataset)
     typer.echo(f"Trend written to {out_path}.")
-    open_in_browser(out_path)
+    webbrowser.open(out_path.resolve().as_uri())
