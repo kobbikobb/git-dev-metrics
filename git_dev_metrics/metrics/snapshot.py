@@ -9,8 +9,8 @@ from dataclasses import dataclass
 from ..models import PullRequest
 from ..utils import TimePeriod, period_days
 from ._dev_repo_metrics import compute_dev_metrics, compute_raw, compute_repo_metrics
-from ._health_ranking import band_from_health, rank_rows, raw_to_row
 from ._raw_metrics import RawMetrics
+from ._row_factory import band_from_health, rank_rows, raw_to_row
 from ._rows import Row, Summary
 from .calculator import calculate_reviews_given, median
 from .health import calculate_dev_health_score, calculate_health_score
