@@ -28,12 +28,12 @@ def trend(
 
     try:
         from_ym = parse_year_month(from_)
-    except ValueError:
+    except ValueError as e:
         typer.secho(f"Invalid --from '{from_}'; expected YYYY-MM.", fg=typer.colors.RED, err=True)
-        raise typer.Exit(code=1) from None
+        raise typer.Exit(code=1) from e
     try:
         to_ym = parse_year_month(to)
-    except ValueError:
+    except ValueError as e:
         typer.secho(f"Invalid --to '{to}'; expected YYYY-MM.", fg=typer.colors.RED, err=True)
-        raise typer.Exit(code=1) from None
+        raise typer.Exit(code=1) from e
     perform_trend(from_ym, to_ym, output=output, db_path=db)

@@ -105,6 +105,7 @@ class TestPullEndToEnd:
         mocker.patch(
             "git_dev_metrics.cli.runners.pull_runner.fetch_repo_metrics", return_value=mapped
         )
+        mocker.patch("webbrowser.open")
         dashboard_out = tmp_path / "r.html"
 
         # Act

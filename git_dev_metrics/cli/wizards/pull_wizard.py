@@ -79,9 +79,9 @@ def pull_wizard(
         raise typer.Exit(code=1)
     try:
         year, month_num = parse_year_month(picked)
-    except ValueError:
+    except ValueError as e:
         typer.secho(f"Invalid month '{picked}'; expected YYYY-MM.", fg=typer.colors.RED, err=True)
-        raise typer.Exit(code=1) from None
+        raise typer.Exit(code=1) from e
     period = month_range(year, month_num)
     if period.until > clock():
         typer.secho(f"Month {picked} is incomplete; cannot seal.", fg=typer.colors.RED, err=True)

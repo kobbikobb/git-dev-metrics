@@ -31,9 +31,9 @@ def pull(
 
     try:
         year, month_num = parse_year_month(month)
-    except ValueError:
+    except ValueError as e:
         typer.secho(f"Invalid --month '{month}'; expected YYYY-MM.", fg=typer.colors.RED, err=True)
-        raise typer.Exit(code=1) from None
+        raise typer.Exit(code=1) from e
     period = month_range(year, month_num)
 
     if period.until > datetime.now(UTC):
