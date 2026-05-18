@@ -688,7 +688,7 @@ class TestGroupPrsByDevsBotExclusion:
 
 class TestGetStalePrs:
     def test_should_return_empty_for_empty_list(self):
-        from git_dev_metrics.metrics.calculator import get_stale_prs
+        from git_dev_metrics.metrics._stale_pr import get_stale_prs
 
         result = get_stale_prs([], "myrepo")
         assert result == []
@@ -696,7 +696,7 @@ class TestGetStalePrs:
     def test_should_return_fresh_prs(self):
         from datetime import UTC, datetime, timedelta
 
-        from git_dev_metrics.metrics.calculator import get_stale_prs
+        from git_dev_metrics.metrics._stale_pr import get_stale_prs
 
         now = datetime.now(UTC)
         prs = cast(
@@ -717,7 +717,7 @@ class TestGetStalePrs:
     def test_should_identify_stale_prs(self):
         from datetime import UTC, datetime, timedelta
 
-        from git_dev_metrics.metrics.calculator import get_stale_prs
+        from git_dev_metrics.metrics._stale_pr import get_stale_prs
 
         now = datetime.now(UTC)
         prs = cast(
@@ -742,7 +742,7 @@ class TestGetStalePrs:
     def test_should_sort_by_age_oldest_first(self):
         from datetime import UTC, datetime, timedelta
 
-        from git_dev_metrics.metrics.calculator import get_stale_prs
+        from git_dev_metrics.metrics._stale_pr import get_stale_prs
 
         now = datetime.now(UTC)
         prs = cast(
@@ -772,13 +772,12 @@ class TestGetStalePrs:
 
 class TestSummarizeStalePrs:
     def test_should_return_zero_for_empty_list(self):
-        from git_dev_metrics.metrics.calculator import summarize_stale_prs
+        from git_dev_metrics.metrics._stale_pr import summarize_stale_prs
 
         assert summarize_stale_prs([]) == (0, 0.0)
 
     def test_should_compute_count_and_mean_age(self):
-        from git_dev_metrics.metrics._stale_pr import StalePr
-        from git_dev_metrics.metrics.calculator import summarize_stale_prs
+        from git_dev_metrics.metrics._stale_pr import StalePr, summarize_stale_prs
 
         prs = [
             StalePr(
