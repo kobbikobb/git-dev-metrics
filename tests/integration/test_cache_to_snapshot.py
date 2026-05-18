@@ -6,7 +6,7 @@ JSON blobs) preserves enough shape that the metrics pipeline produces correct Ro
 
 from datetime import UTC, datetime
 
-from git_dev_metrics.cache import insert_prs, load_all_repos_for_range, seal_month
+from git_dev_metrics.cache import Cache
 from git_dev_metrics.metrics.snapshot import MetricsSnapshot
 from git_dev_metrics.utils.date_utils import month_range
 
@@ -61,13 +61,14 @@ class TestCacheToSnapshotRoundTrip:
             _pr(103, "alice", 20, additions=50, deletions=25, changed_files=3),
         ]
 
-        insert_prs(prs_repo1, "myorg", "repo1", 2026, 4, db_path=db_path)
-        seal_month("myorg", "repo1", 2026, 4, db_path=db_path)
-        insert_prs(prs_repo2, "myorg", "repo2", 2026, 4, db_path=db_path)
-        seal_month("myorg", "repo2", 2026, 4, db_path=db_path)
+        cache = Cache(db_path)
+        cache.store_prs(prs_repo1, "myorg", "repo1", 2026, 4)
+        cache.seal_month("myorg", "repo1", 2026, 4)
+        cache.store_prs(prs_repo2, "myorg", "repo2", 2026, 4)
+        cache.seal_month("myorg", "repo2", 2026, 4)
 
         # Act
-        repo_prs = load_all_repos_for_range([(2026, 4)], db_path=db_path)
+        repo_prs = cache.load_all_repos_for_range([(2026, 4)])
         snapshot = MetricsSnapshot.from_repo_prs(repo_prs, month_range(2026, 4))
 
         # Assert

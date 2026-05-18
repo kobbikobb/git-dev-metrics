@@ -2,7 +2,7 @@ from pathlib import Path
 
 import typer
 
-from ...cache import load_all_repos_by_month
+from ...cache import Cache
 from ...metrics.printer.trend import FileTrendPrinter
 from ...metrics.trend_calculator import build_trend_dataset
 from ...utils.date_utils import month_iter
@@ -30,7 +30,7 @@ def perform_trend(
         raise typer.Exit(code=1)
 
     months = month_iter(from_ym, to_ym)
-    prs_per_month = load_all_repos_by_month(months, db_path=db_path)
+    prs_per_month = Cache(db_path).load_all_repos_by_month(months)
     if not any(prs_per_month.values()):
         typer.secho(
             "No synced data for selected range. Run pull first.",

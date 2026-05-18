@@ -3,7 +3,7 @@ from pathlib import Path
 
 import typer
 
-from ...cache import list_synced_months
+from ...cache import Cache
 from ...github import fetch_open_prs, get_github_token
 from ...metrics._stale_pr import StalePr, get_stale_prs
 from ...metrics.printer.stale import FileStaleHtmlPrinter
@@ -19,7 +19,7 @@ def stale(
     output: Path | None = typer.Option(None, "--output", help="Output HTML path"),
     db: Path | None = typer.Option(None, "--db", help="Override cache database path"),
 ) -> None:
-    repos = sorted({(org, repo) for org, repo, *_ in list_synced_months(db_path=db)})
+    repos = sorted({(org, repo) for org, repo, *_ in Cache(db).list_synced_months()})
     if not repos:
         typer.secho("No repos in cache — run pull first.", fg=typer.colors.RED, err=True)
         raise typer.Exit(code=1)

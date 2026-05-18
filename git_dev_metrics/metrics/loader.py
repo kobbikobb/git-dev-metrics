@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from ..cache import load_all_repos_for_range
+from ..cache import Cache
 from ..utils.date_utils import month_iter, parse_year_month, range_period
 from .snapshot import MetricsSnapshot
 
@@ -12,7 +12,7 @@ class InvalidRangeError(ValueError):
 def load_snapshot_for_months(
     months: list[tuple[int, int]], db_path: Path | None
 ) -> MetricsSnapshot | None:
-    repo_prs = load_all_repos_for_range(months, db_path=db_path)
+    repo_prs = Cache(db_path).load_all_repos_for_range(months)
     if not repo_prs:
         return None
     period = range_period(months[0], months[-1])

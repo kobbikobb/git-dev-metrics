@@ -14,10 +14,10 @@ YearMonth = tuple[int, int]
 def dashboard_wizard(
     db_path: Path | None = None,
     *,
-    ask_months: Callable[[list[YearMonth]], list[YearMonth]] = _prompt_months,
+    ask_months: Callable[[list[YearMonth]], list[YearMonth]] | None = None,
 ) -> None:
     """Pick months from cache, render HTML dashboard, open in browser."""
-    selected = pick_months(db_path, ask_months)
+    selected = pick_months(db_path, ask_months or _prompt_months)
     snapshot = load_snapshot_for_months(selected, db_path)
     if snapshot is None:
         typer.secho("No PRs in selected months.", fg=typer.colors.RED, err=True)

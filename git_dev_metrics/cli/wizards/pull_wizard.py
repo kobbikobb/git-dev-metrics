@@ -6,7 +6,7 @@ import questionary
 import typer
 from questionary import Style
 
-from ...cache import is_sealed
+from ...cache import Cache
 from ...github import (
     fetch_org_repositories,
     fetch_repositories,
@@ -111,7 +111,7 @@ def _pull_each(
     skipped = 0
     for full_name in selected:
         org, repo = full_name.split("/", 1)
-        if is_sealed(org, repo, year, month_num, db_path=db_path):
+        if Cache(db_path).is_sealed(org, repo, year, month_num):
             typer.echo(f"Skipped {full_name}: already sealed.")
             skipped += 1
             continue

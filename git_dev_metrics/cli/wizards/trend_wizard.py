@@ -6,7 +6,7 @@ import questionary
 import typer
 from questionary import Style
 
-from ...cache import list_synced_months
+from ...cache import Cache
 from ..runners.trend_runner import perform_trend
 
 YearMonth = tuple[int, int]
@@ -40,7 +40,7 @@ def trend_wizard(
     ask_to: Callable[[list[YearMonth]], YearMonth | None] = _prompt_to,
 ) -> None:
     """Pick from/to months across the union of synced months; render aggregated trend HTML."""
-    synced = list_synced_months(db_path=db_path)
+    synced = Cache(db_path).list_synced_months()
     if not synced:
         typer.secho("No synced months — run pull first.", fg=typer.colors.RED, err=True)
         raise typer.Exit(code=1)
