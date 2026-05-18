@@ -5,11 +5,9 @@ JSON blobs) preserves enough shape that the metrics pipeline produces correct Ro
 """
 
 from datetime import UTC, datetime
-from typing import cast
 
 from git_dev_metrics.cache import insert_prs, load_all_repos_for_range, seal_month
 from git_dev_metrics.metrics.snapshot import MetricsSnapshot
-from git_dev_metrics.models import PullRequest, Review
 from git_dev_metrics.utils.date_utils import month_range
 
 
@@ -22,7 +20,7 @@ def _pr(
     changed_files: int = 5,
     reviews: list[dict] | None = None,
     state: str = "merged",
-) -> PullRequest:
+) -> dict:
     return {
         "id": number,
         "number": number,
@@ -39,7 +37,7 @@ def _pr(
         "ready_for_review_at": datetime(2026, 4, merged_day, 7, 0, 0, tzinfo=UTC),
         "body": f"Body for #{number}",
         "commit_messages": [f"feat: change for #{number}"],
-        "reviews": cast("list[Review]", reviews or []),
+        "reviews": reviews or [],
     }
 
 
@@ -53,8 +51,8 @@ def _review(login: str, day: int) -> dict:
 
 class TestCacheToSnapshotRoundTrip:
     def test_should_compute_row_values_after_cache_round_trip(self, tmp_path):
+        # Arrange
         db_path = tmp_path / "cache.db"
-
         prs_repo1 = [
             _pr(101, "alice", 5, reviews=[_review("bob", 5)]),
             _pr(102, "bob", 12),
@@ -68,9 +66,11 @@ class TestCacheToSnapshotRoundTrip:
         insert_prs(prs_repo2, "myorg", "repo2", 2026, 4, db_path=db_path)
         seal_month("myorg", "repo2", 2026, 4, db_path=db_path)
 
+        # Act
         repo_prs = load_all_repos_for_range([(2026, 4)], db_path=db_path)
         snapshot = MetricsSnapshot.from_repo_prs(repo_prs, month_range(2026, 4))
 
+        # Assert
         dev_rows = {r.name: r for r in snapshot.devs}
         assert set(dev_rows) == {"alice", "bob"}
         assert dev_rows["alice"].pr_count == 2
