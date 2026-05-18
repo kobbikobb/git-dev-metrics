@@ -3,8 +3,8 @@
 from dataclasses import dataclass
 
 from ..models import PullRequest
+from ._ai_detection import calculate_ai_percentage
 from .calculator import (
-    calculate_ai_percentage,
     calculate_avg_lines_per_pr,
     calculate_cycle_time,
     calculate_pickup_time,
