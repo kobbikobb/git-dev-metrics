@@ -1,4 +1,4 @@
-"""Shared row types used by snapshot and health ranking.
+"""Shared row types used across the metrics pipeline.
 
 Leaf module — no dependencies within the metrics package.
 """
@@ -13,6 +13,19 @@ _BAND_COLOR: dict[Band, str] = {"good": "green", "ok": "yellow", "bad": "red"}
 
 def band_color(band: Band) -> str:
     return _BAND_COLOR[band]
+
+
+@dataclass(frozen=True)
+class RawMetrics:
+    cycle_time: float
+    pickup_time: float
+    review_time: float
+    pr_size: float
+    avg_lines_per_pr: float
+    pr_count: int
+    prs_per_week: float
+    reviews_given: int
+    ai_percentage: float
 
 
 @dataclass(frozen=True)

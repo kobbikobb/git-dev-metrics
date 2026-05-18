@@ -4,16 +4,97 @@ Built once via `MetricsSnapshot.from_repo_prs`. Printers consume snapshots;
 they do not recompute health, bands, sort orders, or aggregations.
 """
 
+from collections.abc import Callable
 from dataclasses import dataclass
 
 from ..models import PullRequest
 from ..utils import TimePeriod, period_days
-from ._dev_repo_metrics import compute_dev_metrics, compute_raw, compute_repo_metrics
-from ._raw_metrics import RawMetrics
-from ._row_factory import band_from_health, rank_rows, raw_to_row
-from ._rows import Row, Summary
-from .calculator import calculate_reviews_given, median
+from ._ai_detection import calculate_ai_percentage
+from ._rows import Band, RawMetrics, Row, Summary
+from .calculator import (
+    calculate_avg_lines_per_pr,
+    calculate_cycle_time,
+    calculate_pickup_time,
+    calculate_pr_size,
+    calculate_prs_per_week,
+    calculate_review_time,
+    calculate_reviews_given,
+    calculate_throughput,
+    group_prs_by_devs,
+    median,
+)
 from .health import calculate_dev_health_score, calculate_health_score
+
+
+def compute_raw(prs: list[PullRequest], days: int, reviews_given: int) -> RawMetrics:
+    return RawMetrics(
+        cycle_time=calculate_cycle_time(prs),
+        pr_size=calculate_pr_size(prs),
+        avg_lines_per_pr=calculate_avg_lines_per_pr(prs),
+        pr_count=calculate_throughput(prs),
+        pickup_time=calculate_pickup_time(prs),
+        review_time=calculate_review_time(prs),
+        prs_per_week=calculate_prs_per_week(prs, days),
+        reviews_given=reviews_given,
+        ai_percentage=calculate_ai_percentage(prs),
+    )
+
+
+def compute_dev_metrics(
+    all_prs: list[PullRequest], days: int, reviewer_counts: dict[str, int]
+) -> dict[str, RawMetrics]:
+    return {
+        dev: compute_raw(dev_prs, days, reviewer_counts.get(dev, 0))
+        for dev, dev_prs in group_prs_by_devs(all_prs).items()
+    }
+
+
+def compute_repo_metrics(
+    repo_prs: dict[str, list[PullRequest]], days: int
+) -> dict[str, RawMetrics]:
+    raws: dict[str, RawMetrics] = {}
+    for name, prs in repo_prs.items():
+        reviews_given = sum(calculate_reviews_given(prs).values())
+        raw = compute_raw(prs, days, reviews_given)
+        if raw.pr_count > 0:
+            raws[name] = raw
+    return raws
+
+
+def band_from_health(health: int) -> Band:
+    if health >= 80:
+        return "good"
+    if health >= 60:
+        return "ok"
+    return "bad"
+
+
+def raw_to_row(name: str, raw: RawMetrics, health: int) -> Row:
+    return Row(
+        name=name,
+        pr_count=raw.pr_count,
+        cycle_time=raw.cycle_time,
+        pickup_time=raw.pickup_time,
+        review_time=raw.review_time,
+        pr_size=raw.pr_size,
+        avg_lines_per_pr=raw.avg_lines_per_pr,
+        prs_per_week=raw.prs_per_week,
+        reviews_given=raw.reviews_given,
+        ai_percentage=raw.ai_percentage,
+        health=health,
+        band=band_from_health(health),
+    )
+
+
+def rank_rows(
+    raws: dict[str, RawMetrics],
+    health_fn: Callable[[RawMetrics, list[RawMetrics]], int],
+) -> tuple[Row, ...]:
+    cohort = list(raws.values())
+    rows = [raw_to_row(name, m, health_fn(m, cohort)) for name, m in raws.items()]
+    rows.sort(key=lambda r: r.health, reverse=True)
+    return tuple(rows)
+
 
 _PER_DEV_AGGREGATED_KEYS = (
     "cycle_time",
