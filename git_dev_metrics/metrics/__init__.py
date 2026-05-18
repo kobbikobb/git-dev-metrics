@@ -1,6 +1,6 @@
 """Metrics"""
 
-from ._health_ranking import band_from_health
+from ._row_factory import band_from_health
 from ._rows import Band, Row, Summary, band_color
 from .calculator import (
     calculate_avg_lines_per_pr,

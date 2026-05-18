@@ -1,9 +1,9 @@
-from git_dev_metrics.metrics._health_ranking import (
+from git_dev_metrics.metrics._raw_metrics import RawMetrics
+from git_dev_metrics.metrics._row_factory import (
     band_from_health,
     rank_rows,
     raw_to_row,
 )
-from git_dev_metrics.metrics._raw_metrics import RawMetrics
 
 
 class TestBandFromHealth:
