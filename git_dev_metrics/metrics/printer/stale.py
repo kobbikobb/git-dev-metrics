@@ -1,7 +1,6 @@
 from pathlib import Path
 
-from .._stale_pr import StalePr
-from ..calculator import summarize_stale_prs
+from .._stale_pr import StalePr, summarize_stale_prs
 from ._html_templates import render_template
 
 

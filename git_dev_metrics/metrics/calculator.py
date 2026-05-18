@@ -1,11 +1,9 @@
 import re
 from collections import defaultdict
-from collections.abc import Callable
 from datetime import datetime
 
 from ..constants import is_bot_login
-from ..models import OpenPullRequest, PullRequest
-from ._stale_pr import StalePr
+from ..models import PullRequest
 
 AI_TRAILER_PATTERNS = [
     r"Co-Authored-By:",
@@ -190,58 +188,3 @@ def calculate_reviews_given(prs: list[PullRequest]) -> dict[str, int]:
             reviewer_counts[reviewer] = reviewer_counts.get(reviewer, 0) + 1
 
     return reviewer_counts
-
-
-STALE_PR_THRESHOLD_HOURS = 24 * 7  # 7 days
-
-
-def _calculate_age_hours(
-    created_at: datetime | None, clock: Callable[[], datetime] | None = None
-) -> float:
-    """Calculate age in hours from created_at to now."""
-    from datetime import UTC, datetime
-
-    now = clock() if clock else datetime.now(UTC)
-    if created_at is None:
-        return 0.0
-    if created_at.tzinfo is None:
-        created_at = created_at.replace(tzinfo=UTC)
-    return (now - created_at).total_seconds() / 3600
-
-
-def _is_stale_pr(
-    pr: OpenPullRequest, repo: str, clock: Callable[[], datetime] | None = None
-) -> StalePr | None:
-    created = pr.get("created_at")
-    if created is None:
-        return None
-
-    age_hours = _calculate_age_hours(created, clock)
-    if age_hours > STALE_PR_THRESHOLD_HOURS:
-        number = pr.get("number")
-        return StalePr(
-            number=number if number is not None else 0,
-            title=pr.get("title") or "",
-            author=pr.get("user", {}).get("login"),
-            repo=repo,
-            age_hours=round(age_hours, 1),
-            age_days=round(age_hours / 24, 1),
-            is_draft=pr.get("is_draft", False),
-            is_approved=pr.get("is_approved", False),
-            url=f"https://github.com/{repo}/pull/{number}",
-        )
-    return None
-
-
-def get_stale_prs(
-    prs: list[OpenPullRequest], repo: str = "", clock: Callable[[], datetime] | None = None
-) -> list[StalePr]:
-    stale = [p for p in (_is_stale_pr(pr, repo, clock) for pr in prs) if p]
-    stale.sort(key=lambda x: x.age_hours, reverse=True)
-    return stale
-
-
-def summarize_stale_prs(stale_prs: list[StalePr]) -> tuple[int, float]:
-    total = len(stale_prs)
-    avg_age = sum(pr.age_days for pr in stale_prs) / total if stale_prs else 0.0
-    return total, round(avg_age, 1)

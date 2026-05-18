@@ -5,8 +5,7 @@ import typer
 
 from ...cache import list_synced_months
 from ...github import fetch_open_prs, get_github_token
-from ...metrics._stale_pr import StalePr
-from ...metrics.calculator import get_stale_prs
+from ...metrics._stale_pr import StalePr, get_stale_prs
 from ...metrics.printer.stale import FileStaleHtmlPrinter
 from .._browser import open_in_browser
 
