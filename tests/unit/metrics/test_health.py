@@ -1,4 +1,4 @@
-from git_dev_metrics.metrics._raw_metrics import RawMetrics
+from git_dev_metrics.metrics._rows import RawMetrics
 from git_dev_metrics.metrics.health import (
     _citizenship_score,
     _throughput_score,
