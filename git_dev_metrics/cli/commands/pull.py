@@ -3,7 +3,7 @@ from pathlib import Path
 
 import typer
 
-from ...cache import is_sealed
+from ...cache import Cache
 from ...github import get_github_token
 from ...utils.date_utils import month_range
 from .._month_arg import parse_month_arg
@@ -37,7 +37,7 @@ def pull(
         typer.secho(f"Month {month} is incomplete; cannot seal.", fg=typer.colors.RED, err=True)
         raise typer.Exit(code=1)
 
-    if is_sealed(org, repo, year, month_num, db_path=db):
+    if Cache(db).is_sealed(org, repo, year, month_num):
         typer.secho(
             f"Month {month} for {org}/{repo} is already sealed.",
             fg=typer.colors.RED,

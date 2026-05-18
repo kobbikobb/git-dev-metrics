@@ -1,8 +1,8 @@
 """SQLite cache for sealed PR/review data."""
 
+from .cache import Cache, default_db_path
 from .db import (
     count_prs,
-    default_db_path,
     insert_prs,
     is_sealed,
     open_connection,
@@ -18,6 +18,7 @@ from .query import (
 )
 
 __all__ = [
+    "Cache",
     "count_prs",
     "default_db_path",
     "insert_prs",
