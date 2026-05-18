@@ -4,7 +4,8 @@ from typing import TypedDict
 
 from ..constants import is_bot_login
 from ..models import PullRequest
-from .calculator import calculate_ai_percentage, calculate_cycle_time
+from ._ai_detection import calculate_ai_percentage
+from .calculator import calculate_cycle_time
 
 
 @dataclass(frozen=True)
