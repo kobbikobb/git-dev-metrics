@@ -4,7 +4,7 @@ import re
 from freezegun import freeze_time
 from typer.testing import CliRunner
 
-from git_dev_metrics.cache import insert_prs, seal_month
+from git_dev_metrics.cache import Cache
 from git_dev_metrics.cli.app import app
 from git_dev_metrics.cli.wizards.trend_wizard import trend_wizard
 from git_dev_metrics.models import PullRequest
@@ -28,6 +28,7 @@ def _pr(pr_id: int, login: str, year: int, month: int, day: int) -> PullRequest:
 
 
 def _seed_three_months_one_repo(db_path) -> None:
+    cache = Cache(db_path)
     feb = [
         _pr(1, "alice", 2026, 2, 5),
         _pr(2, "alice", 2026, 2, 12),
@@ -48,12 +49,12 @@ def _seed_three_months_one_repo(db_path) -> None:
         _pr(13, "bob", 2026, 4, 8),
         _pr(14, "bob", 2026, 4, 18),
     ]
-    insert_prs(feb, "myorg", "myrepo", 2026, 2, db_path=db_path)
-    insert_prs(mar, "myorg", "myrepo", 2026, 3, db_path=db_path)
-    insert_prs(apr, "myorg", "myrepo", 2026, 4, db_path=db_path)
-    seal_month("myorg", "myrepo", 2026, 2, db_path=db_path)
-    seal_month("myorg", "myrepo", 2026, 3, db_path=db_path)
-    seal_month("myorg", "myrepo", 2026, 4, db_path=db_path)
+    cache.store_prs(feb, "myorg", "myrepo", 2026, 2)
+    cache.store_prs(mar, "myorg", "myrepo", 2026, 3)
+    cache.store_prs(apr, "myorg", "myrepo", 2026, 4)
+    cache.seal_month("myorg", "myrepo", 2026, 2)
+    cache.seal_month("myorg", "myrepo", 2026, 3)
+    cache.seal_month("myorg", "myrepo", 2026, 4)
 
 
 def _data_block(html: str) -> dict:
@@ -135,24 +136,22 @@ class TestTrendAggregatesAllRepos:
     def test_should_sum_pr_counts_across_every_synced_repo(self, tmp_path):
         # Arrange
         db_path = tmp_path / "cache.db"
-        insert_prs(
+        Cache(db_path).store_prs(
             [_pr(101, "alice", 2026, 4, 5), _pr(102, "bob", 2026, 4, 6)],
             "myorg",
             "repoA",
             2026,
             4,
-            db_path=db_path,
         )
-        insert_prs(
+        Cache(db_path).store_prs(
             [_pr(201, "alice", 2026, 4, 12), _pr(202, "alice", 2026, 4, 22)],
             "myorg",
             "repoB",
             2026,
             4,
-            db_path=db_path,
         )
-        seal_month("myorg", "repoA", 2026, 4, db_path=db_path)
-        seal_month("myorg", "repoB", 2026, 4, db_path=db_path)
+        Cache(db_path).seal_month("myorg", "repoA", 2026, 4)
+        Cache(db_path).seal_month("myorg", "repoB", 2026, 4)
         out = tmp_path / "t.html"
 
         # Act

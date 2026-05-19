@@ -4,7 +4,7 @@ from unittest.mock import Mock
 import pytest
 import typer
 
-from git_dev_metrics.cache import count_prs, is_sealed, seal_month
+from git_dev_metrics.cache import Cache
 from git_dev_metrics.cli.wizards.pull_wizard import pull_wizard
 from git_dev_metrics.models import Repository
 
@@ -67,10 +67,11 @@ class TestPullWizardMultiRepo:
         assert "myorg/oldrepo" not in options
         assert options["myorg/repoA"] == "Public"
         assert options["myorg/repoB"] == "Private"
-        assert is_sealed("myorg", "repoA", 2026, 4, db_path=db_path)
-        assert is_sealed("myorg", "repoB", 2026, 4, db_path=db_path)
-        assert count_prs("myorg", "repoA", 2026, 4, db_path=db_path) == 3
-        assert count_prs("myorg", "repoB", 2026, 4, db_path=db_path) == 3
+        cache = Cache(db_path)
+        assert cache.is_sealed("myorg", "repoA", 2026, 4)
+        assert cache.is_sealed("myorg", "repoB", 2026, 4)
+        assert cache.count_prs("myorg", "repoA", 2026, 4) == 3
+        assert cache.count_prs("myorg", "repoB", 2026, 4) == 3
         assert fetch.call_count == 2
 
 
@@ -78,7 +79,7 @@ class TestPullWizardSkipsSealedInBatch:
     def test_should_skip_already_sealed_repo_and_pull_rest(self, tmp_path, mocker, capsys):
         # Arrange
         db_path = tmp_path / "cache.db"
-        seal_month("myorg", "repoA", 2026, 4, db_path=db_path)
+        Cache(db_path).seal_month("myorg", "repoA", 2026, 4)
         mocker.patch("git_dev_metrics.cli.wizards.pull_wizard.load_last_org", return_value=None)
         mocker.patch("git_dev_metrics.cli.wizards.pull_wizard.save_last_org")
         repos = [
@@ -104,8 +105,9 @@ class TestPullWizardSkipsSealedInBatch:
         assert "Skipped myorg/repoA: already sealed." in out
         assert "Pulled 3 PRs for myorg/repoB." in out
         assert "Pulled 1, skipped 1." in out
-        assert count_prs("myorg", "repoA", 2026, 4, db_path=db_path) == 0
-        assert count_prs("myorg", "repoB", 2026, 4, db_path=db_path) == 3
+        cache = Cache(db_path)
+        assert cache.count_prs("myorg", "repoA", 2026, 4) == 0
+        assert cache.count_prs("myorg", "repoB", 2026, 4) == 3
         assert fetch.call_count == 1
 
 

@@ -1,7 +1,7 @@
 from freezegun import freeze_time
 from typer.testing import CliRunner
 
-from git_dev_metrics.cache import count_prs, seal_month
+from git_dev_metrics.cache import Cache
 from git_dev_metrics.cli.app import app
 
 from ..conftest import any_pr, approved_review, dt
@@ -51,13 +51,9 @@ class TestPull:
         )
 
         assert result.exit_code == 0
-        assert count_prs("myorg", "myrepo", 2026, 4, db_path=db_path) == 10
-        from git_dev_metrics.cache import is_sealed, open_connection
-
-        assert is_sealed("myorg", "myrepo", 2026, 4, db_path=db_path)
-        conn = open_connection(db_path)
-        review_count = conn.execute("SELECT COUNT(*) AS n FROM reviews").fetchone()["n"]
-        conn.close()
+        assert Cache(db_path).count_prs("myorg", "myrepo", 2026, 4) == 10
+        assert Cache(db_path).is_sealed("myorg", "myrepo", 2026, 4)
+        review_count = Cache(db_path).conn.execute("SELECT COUNT(*) AS n FROM reviews").fetchone()["n"]
         assert review_count > 0
 
     @freeze_time("2026-05-12")
@@ -88,7 +84,7 @@ class TestPull:
         assert result.exit_code == 1
         assert "incomplete" in result.stderr
         fetch.assert_not_called()
-        assert count_prs("myorg", "myrepo", 2026, 5, db_path=db_path) == 0
+        assert Cache(db_path).count_prs("myorg", "myrepo", 2026, 5) == 0
 
     def test_should_invoke_wizard_when_no_flags(self, tmp_path, mocker):
         db_path = tmp_path / "cache.db"
@@ -102,7 +98,7 @@ class TestPull:
     @freeze_time("2026-05-12")
     def test_should_refuse_already_sealed_month(self, tmp_path, mocker):
         db_path = tmp_path / "cache.db"
-        seal_month("myorg", "myrepo", 2026, 4, db_path=db_path)
+        Cache(db_path).seal_month("myorg", "myrepo", 2026, 4)
         mocker.patch(
             "git_dev_metrics.cli.commands.pull.get_github_token", return_value="fake-token"
         )
@@ -128,4 +124,4 @@ class TestPull:
         assert result.exit_code == 1
         assert "already sealed" in result.stderr
         fetch.assert_not_called()
-        assert count_prs("myorg", "myrepo", 2026, 4, db_path=db_path) == 0
+        assert Cache(db_path).count_prs("myorg", "myrepo", 2026, 4) == 0

@@ -1,16 +1,17 @@
 import pytest
 import typer
 
-from git_dev_metrics.cache import insert_prs, seal_month
+from git_dev_metrics.cache import Cache
 from git_dev_metrics.cli.wizards.summary_wizard import summary_wizard
 
 from ..conftest import any_pr, approved_review, dt
 
 
 def _seed_feb_mar_apr(db_path) -> None:
+    cache = Cache(db_path)
     for org, repo in (("myorg", "repoA"), ("myorg", "repoB")):
         for year, month, day in ((2026, 2, 5), (2026, 3, 7), (2026, 4, 9)):
-            insert_prs(
+            cache.store_prs(
                 [
                     any_pr(
                         number=year * 100 + month,
@@ -28,9 +29,8 @@ def _seed_feb_mar_apr(db_path) -> None:
                 repo,
                 year,
                 month,
-                db_path=db_path,
             )
-            seal_month(org, repo, year, month, db_path=db_path)
+            cache.seal_month(org, repo, year, month)
 
 
 class TestSummaryWizardRenders:

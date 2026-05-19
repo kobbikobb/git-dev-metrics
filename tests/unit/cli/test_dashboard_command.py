@@ -1,6 +1,6 @@
 from typer.testing import CliRunner
 
-from git_dev_metrics.cache import insert_prs, seal_month
+from git_dev_metrics.cache import Cache
 from git_dev_metrics.cli.app import app
 
 from ..conftest import any_pr, approved_review, dt
@@ -58,10 +58,11 @@ def _seed_two_repos_apr(db_path) -> None:
             ],
         ),
     ]
-    insert_prs(repo_a, "myorg", "repoA", 2026, 4, db_path=db_path)
-    insert_prs(repo_b, "myorg", "repoB", 2026, 4, db_path=db_path)
-    seal_month("myorg", "repoA", 2026, 4, db_path=db_path)
-    seal_month("myorg", "repoB", 2026, 4, db_path=db_path)
+    cache = Cache(db_path)
+    cache.store_prs(repo_a, "myorg", "repoA", 2026, 4)
+    cache.store_prs(repo_b, "myorg", "repoB", 2026, 4)
+    cache.seal_month("myorg", "repoA", 2026, 4)
+    cache.seal_month("myorg", "repoB", 2026, 4)
 
 
 class TestDashboardFlagMode:

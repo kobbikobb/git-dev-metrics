@@ -1,13 +1,6 @@
 import json
 
-from git_dev_metrics.cache import (
-    count_prs,
-    insert_prs,
-    is_sealed,
-    open_connection,
-    query_prs,
-    seal_month,
-)
+from git_dev_metrics.cache import Cache
 
 from ..conftest import any_pr, approved_review, dt
 
@@ -25,15 +18,14 @@ class TestInsertPrs:
             ),
         ]
 
-        insert_prs(prs, "myorg", "myrepo", 2026, 4, db_path=db_path)
+        cache = Cache(db_path)
+        cache.store_prs(prs, "myorg", "myrepo", 2026, 4)
 
-        rows = query_prs("myorg", "myrepo", 2026, 4, db_path=db_path)
+        rows = cache.query_prs("myorg", "myrepo", 2026, 4)
         assert {row["number"] for row in rows} == {1, 2}
         commits = next(row["commit_messages_json"] for row in rows if row["number"] == 1)
         assert json.loads(commits) == ["msg-1"]
-        conn = open_connection(db_path)
-        reviews = conn.execute("SELECT * FROM reviews").fetchall()
-        conn.close()
+        reviews = cache.conn.execute("SELECT * FROM reviews").fetchall()
         assert [r["user_login"] for r in reviews] == ["reviewer-x"]
 
     def test_should_insert_pr_in_real_mapper_shape(self, tmp_path):
@@ -56,10 +48,11 @@ class TestInsertPrs:
         }
 
         # Act
-        insert_prs([pr_from_mapper], "myorg", "myrepo", 2026, 4, db_path=db_path)
+        cache = Cache(db_path)
+        cache.store_prs([pr_from_mapper], "myorg", "myrepo", 2026, 4)
 
         # Assert
-        rows = query_prs("myorg", "myrepo", 2026, 4, db_path=db_path)
+        rows = cache.query_prs("myorg", "myrepo", 2026, 4)
         assert len(rows) == 1
         assert rows[0]["number"] == 42
         assert rows[0]["author_login"] == "alice"
@@ -68,16 +61,16 @@ class TestInsertPrs:
 
     def test_should_replace_existing_pr_on_reinsert(self, tmp_path):
         # Arrange
-        db_path = tmp_path / "cache.db"
+        cache = Cache(tmp_path / "cache.db")
         first = any_pr(number=7, title="first", additions=10)
         second = any_pr(number=7, title="second", additions=99)
 
         # Act
-        insert_prs([first], "myorg", "myrepo", 2026, 4, db_path=db_path)
-        insert_prs([second], "myorg", "myrepo", 2026, 4, db_path=db_path)
+        cache.store_prs([first], "myorg", "myrepo", 2026, 4)
+        cache.store_prs([second], "myorg", "myrepo", 2026, 4)
 
         # Assert
-        rows = query_prs("myorg", "myrepo", 2026, 4, db_path=db_path)
+        rows = cache.query_prs("myorg", "myrepo", 2026, 4)
         assert len(rows) == 1
         assert rows[0]["title"] == "second"
         assert rows[0]["additions"] == 99
@@ -98,12 +91,11 @@ class TestInsertPrs:
         )
 
         # Act
-        insert_prs([pr], "myorg", "myrepo", 2026, 4, db_path=db_path)
+        cache = Cache(db_path)
+        cache.store_prs([pr], "myorg", "myrepo", 2026, 4)
 
         # Assert
-        conn = open_connection(db_path)
-        review_rows = conn.execute("SELECT * FROM reviews WHERE pr_number = ?", (5,)).fetchall()
-        conn.close()
+        review_rows = cache.conn.execute("SELECT * FROM reviews WHERE pr_number = ?", (5,)).fetchall()
         assert len(review_rows) == 2
         assert {r["user_login"] for r in review_rows} == {"bob", "carol"}
 
@@ -112,22 +104,22 @@ class TestSealing:
     def test_should_record_seal_for_repo_month(self, tmp_path):
         db_path = tmp_path / "cache.db"
 
-        seal_month("myorg", "myrepo", 2026, 4, db_path=db_path)
+        cache = Cache(db_path)
+        cache.seal_month("myorg", "myrepo", 2026, 4)
 
-        assert is_sealed("myorg", "myrepo", 2026, 4, db_path=db_path) is True
-        assert is_sealed("myorg", "myrepo", 2026, 5, db_path=db_path) is False
+        assert cache.is_sealed("myorg", "myrepo", 2026, 4) is True
+        assert cache.is_sealed("myorg", "myrepo", 2026, 5) is False
 
     def test_should_count_prs_for_scope(self, tmp_path):
-        db_path = tmp_path / "cache.db"
-        insert_prs(
+        cache = Cache(tmp_path / "cache.db")
+        cache.store_prs(
             [any_pr(number=10), any_pr(number=11)],
             "myorg",
             "myrepo",
             2026,
             4,
-            db_path=db_path,
         )
 
-        result = count_prs("myorg", "myrepo", 2026, 4, db_path=db_path)
+        result = cache.count_prs("myorg", "myrepo", 2026, 4)
 
         assert result == 2

@@ -6,7 +6,7 @@ cache) breaks a test, not the next live `gdm pull`.
 
 from typer.testing import CliRunner
 
-from git_dev_metrics.cache import count_prs, is_sealed, query_prs
+from git_dev_metrics.cache import Cache
 from git_dev_metrics.cli.app import app
 from git_dev_metrics.github._response_mapper import map_pull_request
 
@@ -83,9 +83,10 @@ class TestPullEndToEnd:
 
         # Assert
         assert result.exit_code == 0, result.output
-        assert is_sealed("myorg", "myrepo", 2026, 4, db_path=db_path)
-        assert count_prs("myorg", "myrepo", 2026, 4, db_path=db_path) == 3
-        rows = query_prs("myorg", "myrepo", 2026, 4, db_path=db_path)
+        cache = Cache(db_path)
+        assert cache.is_sealed("myorg", "myrepo", 2026, 4)
+        assert cache.count_prs("myorg", "myrepo", 2026, 4) == 3
+        rows = cache.query_prs("myorg", "myrepo", 2026, 4)
         by_number = {row["number"]: row for row in rows}
         assert set(by_number) == {101, 102, 103}
         assert by_number[101]["author_login"] == "alice"
@@ -194,7 +195,7 @@ class TestPullEndToEnd:
 
         # Assert
         assert result.exit_code == 0, result.output
-        rows = query_prs("myorg", "myrepo", 2026, 4, db_path=db_path)
+        rows = Cache(db_path).query_prs("myorg", "myrepo", 2026, 4)
         assert len(rows) == 1
         assert rows[0]["number"] == 999
         assert rows[0]["author_login"] == "unknown"

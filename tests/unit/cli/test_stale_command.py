@@ -3,7 +3,7 @@ from datetime import datetime
 from freezegun import freeze_time
 from typer.testing import CliRunner
 
-from git_dev_metrics.cache import seal_month
+from git_dev_metrics.cache import Cache
 from git_dev_metrics.cli.app import app
 
 from ..conftest import dt
@@ -30,8 +30,8 @@ class TestStale:
     ):
         # Arrange
         db_path = tmp_path / "cache.db"
-        seal_month("myorg", "repoA", 2026, 4, db_path=db_path)
-        seal_month("myorg", "repoB", 2026, 4, db_path=db_path)
+        Cache(db_path).seal_month("myorg", "repoA", 2026, 4)
+        Cache(db_path).seal_month("myorg", "repoB", 2026, 4)
 
         def fake_open_prs(_token, _org, repo, **_kwargs):
             if repo == "repoA":
@@ -63,7 +63,7 @@ class TestStale:
     def test_should_sort_oldest_first(self, tmp_path, mocker):
         # Arrange
         db_path = tmp_path / "cache.db"
-        seal_month("myorg", "repoA", 2026, 4, db_path=db_path)
+        Cache(db_path).seal_month("myorg", "repoA", 2026, 4)
 
         mocker.patch(
             "git_dev_metrics.cli.commands.stale.get_github_token", return_value="fake-token"
@@ -91,7 +91,7 @@ class TestStale:
     def test_should_render_empty_state_when_no_stale_prs(self, tmp_path, mocker):
         # Arrange
         db_path = tmp_path / "cache.db"
-        seal_month("myorg", "repoA", 2026, 4, db_path=db_path)
+        Cache(db_path).seal_month("myorg", "repoA", 2026, 4)
 
         mocker.patch(
             "git_dev_metrics.cli.commands.stale.get_github_token", return_value="fake-token"
@@ -126,7 +126,7 @@ class TestStale:
     def test_should_write_default_path_when_no_output(self, tmp_path, monkeypatch, mocker):
         # Arrange
         db_path = tmp_path / "cache.db"
-        seal_month("myorg", "repoA", 2026, 4, db_path=db_path)
+        Cache(db_path).seal_month("myorg", "repoA", 2026, 4)
         monkeypatch.chdir(tmp_path)
 
         mocker.patch(
