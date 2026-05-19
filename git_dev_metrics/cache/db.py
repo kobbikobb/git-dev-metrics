@@ -5,6 +5,8 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+_connections: dict[Path, sqlite3.Connection] = {}
+
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS prs (
     repo_org TEXT NOT NULL,
@@ -59,12 +61,22 @@ def default_db_path() -> Path:
 
 def open_connection(db_path: Path | None = None) -> sqlite3.Connection:
     path = db_path or default_db_path()
+    if path in _connections:
+        return _connections[path]
     path.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(path)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON;")
     conn.executescript(_SCHEMA)
+    _connections[path] = conn
     return conn
+
+
+def close_connection(db_path: Path | None = None) -> None:
+    path = db_path or default_db_path()
+    conn = _connections.pop(path, None)
+    if conn is not None:
+        conn.close()
 
 
 def _iso(value: datetime | None) -> str | None:
@@ -146,7 +158,6 @@ def insert_prs(
                 """,
                 review_rows,
             )
-    conn.close()
 
 
 def seal_month(
@@ -163,7 +174,6 @@ def seal_month(
             "VALUES (?, ?, ?, ?, ?)",
             (year, month, org, repo, datetime.now(UTC).isoformat()),
         )
-    conn.close()
 
 
 def is_sealed(
@@ -174,15 +184,12 @@ def is_sealed(
     db_path: Path | None = None,
 ) -> bool:
     conn = open_connection(db_path)
-    try:
-        row = conn.execute(
-            "SELECT 1 FROM sealed_months WHERE year = ? AND month = ? "
-            "AND repo_org = ? AND repo_name = ?",
-            (year, month, org, repo),
-        ).fetchone()
-        return row is not None
-    finally:
-        conn.close()
+    row = conn.execute(
+        "SELECT 1 FROM sealed_months WHERE year = ? AND month = ? "
+        "AND repo_org = ? AND repo_name = ?",
+        (year, month, org, repo),
+    ).fetchone()
+    return row is not None
 
 
 def query_prs(
@@ -193,13 +200,10 @@ def query_prs(
     db_path: Path | None = None,
 ) -> list[sqlite3.Row]:
     conn = open_connection(db_path)
-    try:
-        return conn.execute(
-            "SELECT * FROM prs WHERE repo_org = ? AND repo_name = ? AND year = ? AND month = ?",
-            (org, repo, year, month),
-        ).fetchall()
-    finally:
-        conn.close()
+    return conn.execute(
+        "SELECT * FROM prs WHERE repo_org = ? AND repo_name = ? AND year = ? AND month = ?",
+        (org, repo, year, month),
+    ).fetchall()
 
 
 def count_prs(
@@ -210,12 +214,9 @@ def count_prs(
     db_path: Path | None = None,
 ) -> int:
     conn = open_connection(db_path)
-    try:
-        row = conn.execute(
-            "SELECT COUNT(*) AS n FROM prs "
-            "WHERE repo_org = ? AND repo_name = ? AND year = ? AND month = ?",
-            (org, repo, year, month),
-        ).fetchone()
-        return row["n"] if row else 0
-    finally:
-        conn.close()
+    row = conn.execute(
+        "SELECT COUNT(*) AS n FROM prs "
+        "WHERE repo_org = ? AND repo_name = ? AND year = ? AND month = ?",
+        (org, repo, year, month),
+    ).fetchone()
+    return row["n"] if row else 0

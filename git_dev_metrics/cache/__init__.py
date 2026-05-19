@@ -1,6 +1,7 @@
 """SQLite cache for sealed PR/review data."""
 
 from .db import (
+    close_connection,
     count_prs,
     default_db_path,
     insert_prs,
@@ -18,6 +19,7 @@ from .query import (
 )
 
 __all__ = [
+    "close_connection",
     "count_prs",
     "default_db_path",
     "insert_prs",

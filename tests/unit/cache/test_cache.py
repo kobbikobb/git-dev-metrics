@@ -33,7 +33,6 @@ class TestInsertPrs:
         assert json.loads(commits) == ["msg-1"]
         conn = open_connection(db_path)
         reviews = conn.execute("SELECT * FROM reviews").fetchall()
-        conn.close()
         assert [r["user_login"] for r in reviews] == ["reviewer-x"]
 
     def test_should_insert_pr_in_real_mapper_shape(self, tmp_path):
@@ -103,7 +102,6 @@ class TestInsertPrs:
         # Assert
         conn = open_connection(db_path)
         review_rows = conn.execute("SELECT * FROM reviews WHERE pr_number = ?", (5,)).fetchall()
-        conn.close()
         assert len(review_rows) == 2
         assert {r["user_login"] for r in review_rows} == {"bob", "carol"}
 
