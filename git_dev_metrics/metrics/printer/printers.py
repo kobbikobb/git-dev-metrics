@@ -1,9 +1,8 @@
 from ..snapshot import MetricsSnapshot
-from .base import Printer
 from .dev import ConsoleDevPrinter
 
 
-class ConsolePrinter(Printer):
+class ConsolePrinter:
     """Print metrics to console."""
 
     def __init__(self) -> None:
@@ -51,4 +50,4 @@ class ConsolePrinter(Printer):
         self._dev_printer.print_combined_metrics(snapshot, period, date_range)
 
 
-__all__ = ["ConsolePrinter", "Printer"]
+__all__ = ["ConsolePrinter"]

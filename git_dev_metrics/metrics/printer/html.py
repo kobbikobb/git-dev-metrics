@@ -3,7 +3,6 @@ from typing import TypedDict
 
 from ..snapshot import MetricsSnapshot
 from ._html_templates import render_template
-from .base import Printer
 
 
 class _DevRow(TypedDict):
@@ -71,7 +70,7 @@ def _summary_for_template(snapshot: MetricsSnapshot) -> _SummaryData:
     )
 
 
-class FileHtmlPrinter(Printer):
+class FileHtmlPrinter:
     """Render the self-contained HTML dashboard."""
 
     def __init__(self, output_path: Path) -> None:
