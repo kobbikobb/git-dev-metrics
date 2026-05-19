@@ -95,7 +95,9 @@ class TestInsertPrs:
         cache.store_prs([pr], "myorg", "myrepo", 2026, 4)
 
         # Assert
-        review_rows = cache.conn.execute("SELECT * FROM reviews WHERE pr_number = ?", (5,)).fetchall()
+        review_rows = cache.conn.execute(
+            "SELECT * FROM reviews WHERE pr_number = ?", (5,)
+        ).fetchall()
         assert len(review_rows) == 2
         assert {r["user_login"] for r in review_rows} == {"bob", "carol"}
 

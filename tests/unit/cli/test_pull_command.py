@@ -53,7 +53,9 @@ class TestPull:
         assert result.exit_code == 0
         assert Cache(db_path).count_prs("myorg", "myrepo", 2026, 4) == 10
         assert Cache(db_path).is_sealed("myorg", "myrepo", 2026, 4)
-        review_count = Cache(db_path).conn.execute("SELECT COUNT(*) AS n FROM reviews").fetchone()["n"]
+        review_count = (
+            Cache(db_path).conn.execute("SELECT COUNT(*) AS n FROM reviews").fetchone()["n"]
+        )
         assert review_count > 0
 
     @freeze_time("2026-05-12")
