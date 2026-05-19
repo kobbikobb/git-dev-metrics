@@ -3,12 +3,8 @@ import re
 import responses
 from pytest import raises
 
-from git_dev_metrics.github import (
-    GitHubAPIError,
-    fetch_pull_requests,
-    fetch_repositories,
-    fetch_reviews,
-)
+from git_dev_metrics.github import GitHubAPIError, fetch_repositories
+from git_dev_metrics.github.queries import fetch_pull_requests, fetch_reviews
 from git_dev_metrics.utils import TimePeriod
 
 from ..conftest import dt
