@@ -3,14 +3,10 @@ import re
 import responses
 from pytest import raises
 
-from git_dev_metrics.github import (
-    GitHubAPIError,
-    fetch_pull_requests,
-    fetch_repositories,
-    fetch_reviews,
-)
+from git_dev_metrics.github import GitHubAPIError, fetch_repositories
 from git_dev_metrics.github.graphql_client import execute_paginated_query, get_client
 from git_dev_metrics.github.graphql_queries import REPO_METRICS_QUERY
+from git_dev_metrics.github.queries import fetch_pull_requests, fetch_reviews
 from git_dev_metrics.utils import TimePeriod
 
 from ..conftest import dt
