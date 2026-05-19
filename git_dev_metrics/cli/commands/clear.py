@@ -2,7 +2,7 @@ from pathlib import Path
 
 import typer
 
-from ...cache import default_db_path
+from ...cache import close_connection, default_db_path
 
 
 def clear(
@@ -20,5 +20,6 @@ def clear(
         typer.echo("Cancelled.")
         raise typer.Exit(code=1)
 
+    close_connection(path)
     path.unlink()
     typer.echo(f"Deleted {path}.")

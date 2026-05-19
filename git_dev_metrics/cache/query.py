@@ -41,17 +41,14 @@ def load_prs(
 ) -> list[PullRequest]:
     """Reconstruct cached PRs (with attached reviews) as a list of PullRequest TypedDicts."""
     conn = open_connection(db_path)
-    try:
-        pr_rows = conn.execute(
-            "SELECT * FROM prs WHERE repo_org = ? AND repo_name = ? AND year = ? AND month = ?",
-            (org, repo, year, month),
-        ).fetchall()
-        review_rows = conn.execute(
-            "SELECT * FROM reviews WHERE repo_org = ? AND repo_name = ? AND year = ? AND month = ?",
-            (org, repo, year, month),
-        ).fetchall()
-    finally:
-        conn.close()
+    pr_rows = conn.execute(
+        "SELECT * FROM prs WHERE repo_org = ? AND repo_name = ? AND year = ? AND month = ?",
+        (org, repo, year, month),
+    ).fetchall()
+    review_rows = conn.execute(
+        "SELECT * FROM reviews WHERE repo_org = ? AND repo_name = ? AND year = ? AND month = ?",
+        (org, repo, year, month),
+    ).fetchall()
 
     by_pr: dict[int, list[Review]] = defaultdict(list)
     for row in review_rows:
@@ -105,11 +102,8 @@ def load_all_repos_by_month(
 def list_synced_months(db_path: Path | None = None) -> list[tuple[str, str, int, int]]:
     """All sealed (org, repo, year, month) tuples, newest first."""
     conn = open_connection(db_path)
-    try:
-        rows = conn.execute(
-            "SELECT repo_org, repo_name, year, month FROM sealed_months "
-            "ORDER BY year DESC, month DESC, repo_org, repo_name"
-        ).fetchall()
-    finally:
-        conn.close()
+    rows = conn.execute(
+        "SELECT repo_org, repo_name, year, month FROM sealed_months "
+        "ORDER BY year DESC, month DESC, repo_org, repo_name"
+    ).fetchall()
     return [(row["repo_org"], row["repo_name"], row["year"], row["month"]) for row in rows]

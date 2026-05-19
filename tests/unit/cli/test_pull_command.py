@@ -57,7 +57,6 @@ class TestPull:
         assert is_sealed("myorg", "myrepo", 2026, 4, db_path=db_path)
         conn = open_connection(db_path)
         review_count = conn.execute("SELECT COUNT(*) AS n FROM reviews").fetchone()["n"]
-        conn.close()
         assert review_count > 0
 
     @freeze_time("2026-05-12")
