@@ -54,7 +54,7 @@ def _default_fetch_repos(token: str, org: str | None) -> list[Repository]:
 
 
 def _filter_active(repos: list[Repository], since: datetime) -> list[Repository]:
-    return [r for r in repos if r.get("last_pushed") and r["last_pushed"] >= since]  # type: ignore[reportOperatorIssue]
+    return [r for r in repos if (pushed := r.get("last_pushed")) is not None and pushed >= since]
 
 
 def pull_wizard(
