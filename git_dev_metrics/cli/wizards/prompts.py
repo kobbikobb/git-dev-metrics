@@ -1,7 +1,6 @@
 import questionary
-from questionary import Style
 
-_STYLE = Style([("highlighted", "fg:#00b4d8 bold"), ("selected", "fg:#90e0ef")])
+from ._wizard import _STYLE
 
 
 def prompt_org_name(default: str | None = None) -> str | None:
