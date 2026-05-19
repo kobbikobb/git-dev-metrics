@@ -1,6 +1,7 @@
 import json
 import sqlite3
 from collections import defaultdict
+from collections.abc import Iterator
 from pathlib import Path
 
 from ..models import PullRequest, Review
@@ -69,19 +70,25 @@ def load_prs_for_range(
     }
 
 
+def _iter_synced_prs(
+    months: list[tuple[int, int]],
+    db_path: Path | None = None,
+) -> Iterator[tuple[str, str, int, int, list[PullRequest]]]:
+    wanted = set(months)
+    for org, repo, year, month in list_synced_months(db_path=db_path):
+        if (year, month) not in wanted:
+            continue
+        yield org, repo, year, month, load_prs(org, repo, year, month, db_path=db_path)
+
+
 def load_all_repos_for_range(
     months: list[tuple[int, int]],
     db_path: Path | None = None,
 ) -> dict[str, list[PullRequest]]:
     """All cached PRs per `"org/repo"` for sealed (org, repo, year, month) tuples in the range."""
-    wanted = set(months)
     out: dict[str, list[PullRequest]] = {}
-    for org, repo, year, month in list_synced_months(db_path=db_path):
-        if (year, month) not in wanted:
-            continue
-        out.setdefault(f"{org}/{repo}", []).extend(
-            load_prs(org, repo, year, month, db_path=db_path)
-        )
+    for org, repo, _year, _month, prs in _iter_synced_prs(months, db_path):
+        out.setdefault(f"{org}/{repo}", []).extend(prs)
     return out
 
 
@@ -90,12 +97,9 @@ def load_all_repos_by_month(
     db_path: Path | None = None,
 ) -> dict[tuple[int, int], list[PullRequest]]:
     """All cached PRs grouped by (year, month), aggregated across every sealed repo."""
-    wanted = set(months)
     out: dict[tuple[int, int], list[PullRequest]] = {ym: [] for ym in months}
-    for org, repo, year, month in list_synced_months(db_path=db_path):
-        if (year, month) not in wanted:
-            continue
-        out[(year, month)].extend(load_prs(org, repo, year, month, db_path=db_path))
+    for _org, _repo, year, month, prs in _iter_synced_prs(months, db_path):
+        out[(year, month)].extend(prs)
     return out
 
 
