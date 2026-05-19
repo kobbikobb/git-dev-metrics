@@ -3,6 +3,7 @@ import sqlite3
 from collections import defaultdict
 from collections.abc import Iterator
 from pathlib import Path
+from typing import cast
 
 from ..models import PullRequest, Review
 from ..utils.date_utils import parse_iso_datetime
@@ -18,23 +19,26 @@ def _review(row: sqlite3.Row) -> Review:
 
 
 def _pr(row: sqlite3.Row, reviews: list[Review]) -> PullRequest:
-    return {  # type: ignore[return-value]
-        "number": row["number"],
-        "state": row["state"] or "",
-        "title": row["title"] or "",
-        "user": {"login": row["author_login"] or ""},
-        "created_at": parse_iso_datetime(row["created_at"]),
-        "merged_at": parse_iso_datetime(row["merged_at"]),
-        "closed_at": parse_iso_datetime(row["closed_at"]),
-        "additions": row["additions"] or 0,
-        "deletions": row["deletions"] or 0,
-        "changed_files": row["changed_files"] or 0,
-        "first_commit_at": parse_iso_datetime(row["first_commit_at"]),
-        "ready_for_review_at": parse_iso_datetime(row["ready_for_review_at"]),
-        "body": row["body"],
-        "commit_messages": json.loads(row["commit_messages_json"] or "[]"),
-        "reviews": reviews,
-    }
+    return cast(
+        PullRequest,
+        {
+            "number": row["number"],
+            "state": row["state"] or "",
+            "title": row["title"] or "",
+            "user": {"login": row["author_login"] or ""},
+            "created_at": parse_iso_datetime(row["created_at"]),
+            "merged_at": parse_iso_datetime(row["merged_at"]),
+            "closed_at": parse_iso_datetime(row["closed_at"]),
+            "additions": row["additions"] or 0,
+            "deletions": row["deletions"] or 0,
+            "changed_files": row["changed_files"] or 0,
+            "first_commit_at": parse_iso_datetime(row["first_commit_at"]),
+            "ready_for_review_at": parse_iso_datetime(row["ready_for_review_at"]),
+            "body": row["body"],
+            "commit_messages": json.loads(row["commit_messages_json"] or "[]"),
+            "reviews": reviews,
+        },
+    )
 
 
 def load_prs(
