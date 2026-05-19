@@ -13,7 +13,7 @@ from .calculator import (
 )
 from .health import calculate_dev_health_score, calculate_health_score
 from .loader import InvalidRangeError, load_snapshot_for_months, load_snapshot_for_range
-from .printer import ConsolePrinter, Printer
+from .printer import ConsolePrinter
 from .snapshot import MetricsSnapshot, band_from_health, build_summary
 
 __all__ = [
@@ -21,7 +21,6 @@ __all__ = [
     "ConsolePrinter",
     "InvalidRangeError",
     "MetricsSnapshot",
-    "Printer",
     "Row",
     "Summary",
     "band_color",
