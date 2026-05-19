@@ -4,7 +4,6 @@ from pathlib import Path
 
 import questionary
 import typer
-from questionary import Style
 
 from ...cache import is_sealed
 from ...github import (
@@ -19,9 +18,9 @@ from ...models import PullRequest, Repository
 from ...utils.date_utils import TimePeriod, month_range
 from .._month_arg import parse_month_arg
 from ..runners.pull_runner import fetch_and_seal_month
+from ._wizard import _STYLE
 from .prompts import prompt_org_name, prompt_repo_selection
 
-_STYLE = Style([("highlighted", "fg:#00b4d8 bold"), ("selected", "fg:#90e0ef")])
 _MONTHS_LOOKBACK = 12
 
 MonthChoice = tuple[str, str]

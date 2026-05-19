@@ -4,14 +4,10 @@ from pathlib import Path
 
 import questionary
 import typer
-from questionary import Style
 
 from ...cache import list_synced_months
 from ..runners.trend_runner import perform_trend
-
-YearMonth = tuple[int, int]
-
-_STYLE = Style([("highlighted", "fg:#00b4d8 bold"), ("selected", "fg:#90e0ef")])
+from ._wizard import _STYLE, YearMonth
 
 
 def _month_choices(months: list[YearMonth]) -> list[questionary.Choice]:
