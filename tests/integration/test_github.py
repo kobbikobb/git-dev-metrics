@@ -1,9 +1,7 @@
 from datetime import UTC, datetime
 
-from git_dev_metrics.github import (
-    fetch_pull_requests,
-    fetch_repositories,
-)
+from git_dev_metrics.github import fetch_repositories
+from git_dev_metrics.github.queries import fetch_pull_requests
 from git_dev_metrics.utils import TimePeriod
 
 
