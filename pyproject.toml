@@ -70,6 +70,9 @@ select = [
     "C901",  # max function complexity (nesting/branching)
     "RUF022",# sorted __all__
     "RET501",# unnecessary return None
+    "PERF401",# list comprehension
+    "PTH123", # Path.open()
+    "TRY300", # try/except/else
     "PT",    # pytest-style
     "T20",   # print/pprint detection
 ]
