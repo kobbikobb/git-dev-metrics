@@ -48,8 +48,8 @@ jobs:
 
       - name: Lint and format check
         run: |
-          uv run ruff check git_dev_metrics
-          uv run ruff format --check git_dev_metrics
+          uv run ruff check git_dev_metrics tests/
+          uv run ruff format --check git_dev_metrics tests/
 
       - name: Dead code check
         run: uv run vulture
