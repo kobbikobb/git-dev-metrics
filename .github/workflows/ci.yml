@@ -54,6 +54,9 @@ jobs:
       - name: Dead code check
         run: uv run vulture
 
+      - name: Security scan
+        run: uv run bandit -s B105 -r git_dev_metrics
+
       - name: Type check
         run: uv run pyright
 

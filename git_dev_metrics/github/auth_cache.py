@@ -24,6 +24,7 @@ def is_token_valid(token: str) -> bool:
     response = requests.get(
         "https://api.github.com/user",
         headers={"Authorization": f"token {token}"},
+        timeout=10,
     )
     return response.status_code == 200
 
