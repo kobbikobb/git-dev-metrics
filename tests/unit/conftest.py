@@ -10,7 +10,7 @@ from git_dev_metrics.models import PullRequest
 freezegun.configure(default_ignore_list=[])
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture
 def _stub_webbrowser(mocker):
     return mocker.patch("webbrowser.open", return_value=False)
 
