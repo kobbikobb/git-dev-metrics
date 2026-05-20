@@ -17,5 +17,5 @@ def summary(
     """Print the dashboard summary to the console."""
     snapshot = resolve_range(from_, to, db, summary_wizard)
     ConsolePrinter().print_combined_metrics(
-        snapshot, f"{from_}-to-{to}", format_date_range(snapshot.period)
+        snapshot, format_date_range(snapshot.period)
     )

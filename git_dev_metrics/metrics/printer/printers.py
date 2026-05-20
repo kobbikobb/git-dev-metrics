@@ -9,7 +9,7 @@ class ConsolePrinter:
         self._dev_printer = ConsoleDevPrinter()
 
     def print_combined_metrics(
-        self, snapshot: MetricsSnapshot, period: str, date_range: str
+        self, snapshot: MetricsSnapshot, date_range: str
     ) -> None:
         from rich.console import Console
 
@@ -35,29 +35,9 @@ class ConsolePrinter:
         self._render_table(cells, date_range, snapshot.has_partial, console)
         console.print()
 
-        self._dev_printer.print_combined_metrics(snapshot, period, date_range)
+        console.print()
 
-    def _render_table(
-        self, cells: list[tuple[str, str]], date_range: str, has_partial: bool, console
-    ) -> None:
-        from rich.table import Table
-
-        title = f"Summary ({date_range})"
-        if has_partial:
-            title += " (partial data)"
-
-        chunk_size = 6
-        for chunk_start in range(0, len(cells), chunk_size):
-            chunk = cells[chunk_start : chunk_start + chunk_size]
-            table = Table(
-                title=title if chunk_start == 0 else None,
-                show_header=True,
-                header_style="bold",
-            )
-            for label, _ in chunk:
-                table.add_column(label, justify="left")
-            table.add_row(*(value for _, value in chunk))
-            console.print(table)
+        self._dev_printer.print_combined_metrics(snapshot, date_range)
 
 
 __all__ = ["ConsolePrinter"]
