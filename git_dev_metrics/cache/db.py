@@ -109,21 +109,19 @@ def _pr_row(pr: Mapping[str, Any], org: str, repo: str, year: int, month: int) -
 
 
 def _review_rows(pr: Mapping[str, Any], org: str, repo: str, year: int, month: int) -> list[tuple]:
-    rows = []
-    for review in pr.get("reviews") or []:
-        rows.append(
-            (
-                pr.get("number"),
-                org,
-                repo,
-                year,
-                month,
-                (review.get("user") or {}).get("login"),
-                review.get("state"),
-                _iso(review.get("submitted_at")),
-            )
+    return [
+        (
+            pr.get("number"),
+            org,
+            repo,
+            year,
+            month,
+            (review.get("user") or {}).get("login"),
+            review.get("state"),
+            _iso(review.get("submitted_at")),
         )
-    return rows
+        for review in pr.get("reviews") or []
+    ]
 
 
 def insert_prs(

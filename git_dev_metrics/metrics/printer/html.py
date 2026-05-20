@@ -89,7 +89,7 @@ class FileHtmlPrinter:
 
         html_path = self._output_path.with_suffix(".html")
         html_path.parent.mkdir(parents=True, exist_ok=True)
-        with open(html_path, "w") as f:
+        with html_path.open("w") as f:
             f.write(html)
 
 
