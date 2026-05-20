@@ -49,13 +49,6 @@ package = true
 override-dependencies = ["idna>=3.15"]
 
 
-[tool.setuptools.packages.find]
-exclude = ["metrics_results", "tests*"]
-
-[tool.setuptools]
-license-files = ["LICENSE"]
-
-
 [tool.ruff]
 line-length = 100
 target-version = "py314"

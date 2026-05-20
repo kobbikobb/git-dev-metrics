@@ -2,7 +2,7 @@ import logging
 
 import typer
 
-from git_dev_metrics.github.auth_cache import delete_token
+from ...github.auth_cache import delete_token
 
 logger = logging.getLogger(__name__)
 
