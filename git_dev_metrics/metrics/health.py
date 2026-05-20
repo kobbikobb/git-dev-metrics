@@ -100,15 +100,3 @@ def calculate_dev_health_score(
 
     score = sum(DEV_WEIGHTS[k] * v for k, v in components.items())
     return round(max(0.0, min(100.0, score)))
-
-
-def format_health(score: int) -> str:
-    return str(score)
-
-
-def get_health_color(score: int) -> str:
-    if score >= 80:
-        return "green"
-    if score >= 60:
-        return "yellow"
-    return "red"
