@@ -1,47 +1,72 @@
 # Git Dev Metrics
 
-## Getting started
-- uv sync
-- uv run app --help
+CLI tool for analyzing GitHub development metrics across teams and repos.
+
+## Setup
+
+```bash
+uv sync
+uv run app --help
+```
 
 ## Usage
 
 ```bash
-# Analyze a repository (prompts for token if needed)
-uv run app --org myorg --repo myrepo
+# Pull PR data for a repo/month into the local cache
+uv run app pull --org myorg --repo myrepo
 
-# With custom period
-uv run app --org myorg --repo myrepo --period 7d
+# Render the HTML dashboard (flag mode)
+uv run app dashboard --from 2026-04 --to 2026-04
 
-# With custom output path
-uv run app --org myorg --repo myrepo --output ./my-metrics.md
+# Render the HTML dashboard (wizard mode — pick from cached months)
+uv run app dashboard
+
+# Print dashboard summary to console
+uv run app summary --from 2026-04 --to 2026-04
+
+# Multi-month trend report
+uv run app trend --from 2026-01 --to 2026-04
+
+# Find stale PRs across repos
+uv run app stale
+
+# Clear local cache
+uv run app clear
+
+# Manage GitHub token
+uv run app logout
 ```
 
-### Options
-- `--org` - GitHub organization name
-- `--repo` - Repository name  
-- `--period` - Time period (e.g., 7d, 30d, 90d) [default: 30d]
-- `--output` - Output file path (default: ./metrics_results/metrics_TIMESTAMP.md)
+## Available Commands
 
-## Linting and Formatting  
-- uv run ruff format
-- uv run ruff check
+| Command | Description |
+|---------|-------------|
+| `pull` | Pull a sealed month of PRs for one repository into the cache |
+| `dashboard` | Render the in-depth HTML dashboard and open it in the browser |
+| `summary` | Print the dashboard summary to the console |
+| `trend` | Render a multi-month trend HTML aggregated across all cached repos |
+| `stale` | Find stale PRs across synced repos |
+| `clear` | Delete the entire local cache database |
+| `logout` | Clear the stored GitHub token |
 
-## Integration Tests (GitHub API)
+## Linting & Formatting
 
-Integration tests use VCR to record GitHub API interactions.
-
-Recorded HTTP responses are stored in:
-tests/integration/cassettes/
-
-### Running tests
-
+```bash
+./scripts/format.sh
 uv run pytest
+```
 
-### Re-recording cassettes
+## Project Structure
 
-To refresh recordings:
-
-GITHUB_TOKEN=your_token uv run pytest tests/integration
-
-Cassettes are committed to the repository to ensure deterministic CI runs.
+```
+git_dev_metrics/
+  cli/           — Typer CLI commands and wizards
+  cache/         — SQLite cache for PRs and reviews
+  github/        — GitHub GraphQL API client
+  metrics/       — Metric calculations and report printers
+  models/        — TypedDict definitions
+  utils/         — Date/time helpers
+tests/
+  unit/          — Unit tests (mocked GitHub API)
+  integration/   — Integration tests (VCR-recorded API calls)
+```
