@@ -12,7 +12,6 @@ class ConsolePrinter:
         self, snapshot: MetricsSnapshot, period: str, date_range: str
     ) -> None:
         from rich.console import Console
-        from rich.table import Table
 
         console = Console()
 
@@ -28,11 +27,21 @@ class ConsolePrinter:
             ("Total Reviews", str(team.reviews_given)),
             ("AI Adoption", f"{round(team.ai_percentage)}%"),
             ("Review Ratio", f"{summary.review_ratio}x"),
-            ("Top Reviewer", summary.top_reviewer or "—"),
+            ("Top Reviewer", summary.top_reviewer or "\u2014"),
             ("Max Review Share", f"{summary.max_review_share}%"),
         ]
 
         console.print()
+        self._render_table(cells, date_range, console)
+        console.print()
+
+        self._dev_printer.print_combined_metrics(snapshot, period, date_range)
+
+    def _render_table(
+        self, cells: list[tuple[str, str]], date_range: str, console
+    ) -> None:
+        from rich.table import Table
+
         chunk_size = 6
         for chunk_start in range(0, len(cells), chunk_size):
             chunk = cells[chunk_start : chunk_start + chunk_size]
@@ -45,9 +54,6 @@ class ConsolePrinter:
                 table.add_column(label, justify="left")
             table.add_row(*(value for _, value in chunk))
             console.print(table)
-        console.print()
-
-        self._dev_printer.print_combined_metrics(snapshot, period, date_range)
 
 
 __all__ = ["ConsolePrinter"]

@@ -56,18 +56,11 @@ def _filter_active(repos: list[Repository], since: datetime) -> list[Repository]
     return [r for r in repos if (pushed := r.get("last_pushed")) is not None and pushed >= since]
 
 
-def pull_wizard(
-    db_path: Path | None = None,
-    *,
-    ask_org: Callable[[str | None], str | None] = prompt_org_name,
-    ask_month: Callable[[list[MonthChoice]], str | None] = _prompt_month_pick,
-    ask_repos: Callable[[dict[str, str]], list[str]] = prompt_repo_selection,
-    clock: Callable[[], datetime] = lambda: datetime.now(UTC),
-    fetch: Callable[..., list[PullRequest]] = fetch_repo_metrics,
-    fetch_repos: Callable[[str, str | None], list[Repository]] = _default_fetch_repos,
-    get_token: Callable[[], str] = get_github_token,
-) -> None:
-    """Interactive flow: pick org, month, repos, then pull + seal that month per repo."""
+def _select_org_month(
+    ask_org: Callable[[str | None], str | None],
+    ask_month: Callable[[list[MonthChoice]], str | None],
+    clock: Callable[[], datetime],
+) -> tuple[str, str, int, int, TimePeriod]:
     org = ask_org(load_last_org())
     if not org:
         typer.secho("Org is required.", fg=typer.colors.RED, err=True)
@@ -82,6 +75,22 @@ def pull_wizard(
     if period.until > clock():
         typer.secho(f"Month {picked} is incomplete; cannot seal.", fg=typer.colors.RED, err=True)
         raise typer.Exit(code=1)
+
+    return org, picked, year, month_num, period
+
+
+def pull_wizard(
+    db_path: Path | None = None,
+    *,
+    ask_org: Callable[[str | None], str | None] = prompt_org_name,
+    ask_month: Callable[[list[MonthChoice]], str | None] = _prompt_month_pick,
+    ask_repos: Callable[[dict[str, str]], list[str]] = prompt_repo_selection,
+    clock: Callable[[], datetime] = lambda: datetime.now(UTC),
+    fetch: Callable[..., list[PullRequest]] = fetch_repo_metrics,
+    fetch_repos: Callable[[str, str | None], list[Repository]] = _default_fetch_repos,
+    get_token: Callable[[], str] = get_github_token,
+) -> None:
+    org, picked, year, month_num, period = _select_org_month(ask_org, ask_month, clock)
 
     token = get_token()
     active = _filter_active(fetch_repos(token, org), period.since)

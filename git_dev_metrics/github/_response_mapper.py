@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import cast
 
 from ..models import PullRequest, Repository, Review
@@ -21,22 +22,29 @@ def map_repository(repo: dict) -> Repository:
     )
 
 
-def map_pull_request(pr: dict) -> PullRequest:
-    """Map GraphQL PR response to internal model."""
+def _extract_commit_info(pr: dict) -> tuple[datetime | None, list[str]]:
     commits = pr.get("commits", {}).get("nodes", [])
     first_commit_date = None
     if commits:
         commit_data = commits[-1].get("commit", {})
         committed_at = commit_data.get("committedDate")
         first_commit_date = parse_iso_datetime(committed_at)
-
     commit_messages = [msg for c in commits if (msg := (c.get("commit") or {}).get("message"))]
+    return first_commit_date, commit_messages
 
+
+def _extract_ready_for_review(pr: dict) -> datetime | None:
     timeline_nodes = (pr.get("timelineItems") or {}).get("nodes") or []
-    ready_for_review = next(
+    return next(
         (parse_iso_datetime(n.get("createdAt")) for n in timeline_nodes if n.get("createdAt")),
         None,
     )
+
+
+def map_pull_request(pr: dict) -> PullRequest:
+    """Map GraphQL PR response to internal model."""
+    first_commit_date, commit_messages = _extract_commit_info(pr)
+    ready_for_review = _extract_ready_for_review(pr)
 
     return cast(
         PullRequest,
