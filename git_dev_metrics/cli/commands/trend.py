@@ -3,6 +3,7 @@ from pathlib import Path
 import typer
 
 from .._month_arg import parse_month_arg
+from .._options import DB_OPTION
 from ..runners.trend_runner import perform_trend
 from ..wizards.trend_wizard import trend_wizard
 
@@ -11,7 +12,7 @@ def trend(
     from_: str | None = typer.Option(None, "--from", help="Start month, YYYY-MM"),
     to: str | None = typer.Option(None, "--to", help="End month, YYYY-MM"),
     output: Path | None = typer.Option(None, "--output", help="Output HTML path"),
-    db: Path | None = typer.Option(None, "--db", help="Override cache database path"),
+    db: Path | None = DB_OPTION,
 ) -> None:
     """Render a multi-month trend HTML aggregated across all cached repos."""
     if from_ is None and to is None:

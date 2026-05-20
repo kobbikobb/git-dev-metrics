@@ -8,6 +8,7 @@ from ...github import fetch_open_prs, get_github_token
 from ...metrics._stale_pr import StalePr, get_stale_prs
 from ...metrics.printer.stale import FileStaleHtmlPrinter
 from .._browser import open_in_browser
+from .._options import DB_OPTION
 
 
 def _default_output() -> Path:
@@ -17,7 +18,7 @@ def _default_output() -> Path:
 
 def stale(
     output: Path | None = typer.Option(None, "--output", help="Output HTML path"),
-    db: Path | None = typer.Option(None, "--db", help="Override cache database path"),
+    db: Path | None = DB_OPTION,
 ) -> None:
     """Find stale open PRs across all cached repos."""
     repos = sorted({(org, repo) for org, repo, *_ in list_synced_months(db_path=db)})
