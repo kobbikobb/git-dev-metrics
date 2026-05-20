@@ -2,7 +2,7 @@ from freezegun import freeze_time
 from typer.testing import CliRunner
 
 from git_dev_metrics.cache import count_prs, seal_month
-from git_dev_metrics.cli.app import app
+from git_dev_metrics.cli import app
 
 from ..conftest import any_pr, approved_review, dt
 

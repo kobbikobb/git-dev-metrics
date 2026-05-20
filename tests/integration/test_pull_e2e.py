@@ -7,7 +7,7 @@ cache) breaks a test, not the next live `gdm pull`.
 from typer.testing import CliRunner
 
 from git_dev_metrics.cache import count_prs, is_sealed, query_prs
-from git_dev_metrics.cli.app import app
+from git_dev_metrics.cli import app
 from git_dev_metrics.github._response_mapper import map_pull_request
 
 runner = CliRunner()

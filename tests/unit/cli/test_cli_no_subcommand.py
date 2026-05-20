@@ -5,7 +5,7 @@ from pathlib import Path
 
 from typer.testing import CliRunner
 
-from git_dev_metrics.cli.app import app
+from git_dev_metrics.cli import app
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 
