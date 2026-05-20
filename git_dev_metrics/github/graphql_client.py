@@ -56,7 +56,8 @@ def execute_query(
     last_exc: Exception | None = None
     for attempt in range(TRANSIENT_RETRY_ATTEMPTS):
         try:
-            result = client.execute(query, variable_values=variables)
+            result = client.execute(GraphQLRequest(query, variable_values=variables))
+            return result if result is not None else {}
         except transport_exceptions.TransportQueryError as e:
             _handle_graphql_error(e)
             return {}  # unreachable but needed for type checker
