@@ -5,8 +5,6 @@ from git_dev_metrics.metrics.health import (
     _time_score,
     calculate_dev_health_score,
     calculate_health_score,
-    format_health,
-    get_health_color,
 )
 
 
@@ -202,22 +200,3 @@ class TestCalculateDevHealthScore:
             )
             == 55
         )
-
-
-class TestFormatHealth:
-    def test_should_return_string(self) -> None:
-        assert format_health(85) == "85"
-
-
-class TestGetHealthColor:
-    def test_should_return_green_at_80(self) -> None:
-        assert get_health_color(80) == "green"
-        assert get_health_color(100) == "green"
-
-    def test_should_return_yellow_between_60_and_79(self) -> None:
-        assert get_health_color(60) == "yellow"
-        assert get_health_color(79) == "yellow"
-
-    def test_should_return_red_below_60(self) -> None:
-        assert get_health_color(0) == "red"
-        assert get_health_color(59) == "red"
