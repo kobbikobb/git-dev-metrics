@@ -129,7 +129,10 @@ def _review_rows(pr: Mapping[str, Any], org: str, repo: str, year: int, month: i
 def _insert_reviews(
     conn: sqlite3.Connection,
     prs: Sequence[Mapping[str, Any]],
-    org: str, repo: str, year: int, month: int,
+    org: str,
+    repo: str,
+    year: int,
+    month: int,
 ) -> None:
     review_rows = [row for pr in prs for row in _review_rows(pr, org, repo, year, month)]
     if review_rows:

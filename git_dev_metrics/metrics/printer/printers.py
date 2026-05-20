@@ -37,9 +37,7 @@ class ConsolePrinter:
 
         self._dev_printer.print_combined_metrics(snapshot, period, date_range)
 
-    def _render_table(
-        self, cells: list[tuple[str, str]], date_range: str, console
-    ) -> None:
+    def _render_table(self, cells: list[tuple[str, str]], date_range: str, console) -> None:
         from rich.table import Table
 
         chunk_size = 6
