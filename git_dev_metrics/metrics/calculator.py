@@ -16,6 +16,18 @@ def median(values: list[float | int]) -> float:
     return sorted_values[n // 2]
 
 
+def _pr_start_time(pr: PullRequest) -> datetime | None:
+    created = pr["created_at"]
+    if created is None:
+        return None
+    first_commit = pr.get("first_commit_at")
+    start = first_commit if first_commit is not None and first_commit < created else created
+    ready_for_review = pr.get("ready_for_review_at")
+    if ready_for_review is not None and ready_for_review > start:
+        start = ready_for_review
+    return start
+
+
 def calculate_cycle_time(prs: list[PullRequest]) -> float:
     """Median hours from first commit/ready-for-review to merge for approved PRs.
 
@@ -28,20 +40,12 @@ def calculate_cycle_time(prs: list[PullRequest]) -> float:
 
     cycle_times = []
     for pr in prs:
-        created = pr["created_at"]
         merged = pr["merged_at"]
-        if created is None or merged is None:
+        start_time = _pr_start_time(pr)
+        if start_time is None or merged is None:
             continue
         if _first_approval_at(pr) is None:
             continue
-
-        start_time: datetime = created
-        first_commit = pr.get("first_commit_at")
-        if first_commit is not None and first_commit < created:
-            start_time = first_commit
-        ready_for_review = pr.get("ready_for_review_at")
-        if ready_for_review is not None and ready_for_review > start_time:
-            start_time = ready_for_review
 
         hours = (merged - start_time).total_seconds() / 3600
         cycle_times.append(hours)
@@ -87,14 +91,10 @@ def calculate_pickup_time(prs: list[PullRequest]) -> float:
 
     pickup_times = []
     for pr in prs:
-        created = pr["created_at"]
+        start_time = _pr_start_time(pr)
         first_approval = _first_approval_at(pr)
-        if created is None or first_approval is None:
+        if start_time is None or first_approval is None:
             continue
-        start_time: datetime = created
-        ready_for_review = pr.get("ready_for_review_at")
-        if ready_for_review is not None and ready_for_review > start_time:
-            start_time = ready_for_review
         pickup_times.append((first_approval - start_time).total_seconds() / 3600)
 
     if not pickup_times:
