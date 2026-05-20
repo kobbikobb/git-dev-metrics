@@ -1,18 +1,20 @@
 from getpass import getpass
 
+import typer
+
 from .auth_cache import is_token_valid, load_token, save_token
 from .exceptions import GitHubAuthError
 
 
 def _prompt_for_token() -> str:
     """Prompt user to input their GitHub PAT."""
-    print("Enter your GitHub Personal Access Token (PAT).")
-    print("Create a fine-grained token at: https://github.com/settings/tokens?type=beta")
-    print("- Repository access: All repositories (or select specific repos)")
-    print("- Permissions:")
-    print("  - Contents: Read")
-    print("  - Metadata: Read")
-    print("  - Pull requests: Read")
+    typer.echo("Enter your GitHub Personal Access Token (PAT).")
+    typer.echo("Create a fine-grained token at: https://github.com/settings/tokens?type=beta")
+    typer.echo("- Repository access: All repositories (or select specific repos)")
+    typer.echo("- Permissions:")
+    typer.echo("  - Contents: Read")
+    typer.echo("  - Metadata: Read")
+    typer.echo("  - Pull requests: Read")
     token = getpass("PAT: ")
     if not token:
         raise GitHubAuthError("No token provided")

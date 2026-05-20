@@ -10,10 +10,10 @@ from .types import (
 )
 
 __all__ = [
-    "Repository",
     "GitHubUser",
-    "PullRequestInfo",
-    "PullRequest",
     "OpenPullRequest",
+    "PullRequest",
+    "PullRequestInfo",
+    "Repository",
     "Review",
 ]

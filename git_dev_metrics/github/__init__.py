@@ -17,16 +17,16 @@ from .queries import (
 )
 
 __all__ = [
-    "GitHubError",
-    "GitHubAuthError",
     "GitHubAPIError",
-    "GitHubRateLimitError",
+    "GitHubAuthError",
+    "GitHubError",
     "GitHubNotFoundError",
-    "get_github_token",
-    "fetch_repositories",
+    "GitHubRateLimitError",
+    "fetch_open_prs",
     "fetch_org_repositories",
     "fetch_repo_metrics",
-    "fetch_open_prs",
+    "fetch_repositories",
+    "get_github_token",
     "load_last_org",
     "save_last_org",
 ]
