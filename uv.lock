@@ -311,7 +311,6 @@ dependencies = [
     { name = "requests" },
     { name = "rich" },
     { name = "typer" },
-    { name = "vulture" },
 ]
 
 [package.dev-dependencies]
@@ -326,6 +325,7 @@ dev = [
     { name = "responses" },
     { name = "ruff" },
     { name = "vcrpy" },
+    { name = "vulture" },
 ]
 
 [package.metadata]
@@ -337,7 +337,6 @@ requires-dist = [
     { name = "requests", specifier = ">=2.32.5" },
     { name = "rich", specifier = ">=14.3.1" },
     { name = "typer", specifier = ">=0.21.1" },
-    { name = "vulture", specifier = ">=2.16" },
 ]
 
 [package.metadata.requires-dev]
@@ -352,6 +351,7 @@ dev = [
     { name = "responses", specifier = ">=0.25.8" },
     { name = "ruff", specifier = ">=0.15.0" },
     { name = "vcrpy", specifier = ">=8.1.1" },
+    { name = "vulture", specifier = ">=2.16" },
 ]
 
 [[package]]
