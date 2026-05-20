@@ -3,11 +3,12 @@ from pathlib import Path
 import typer
 
 from ...cache import close_connection, default_db_path
+from .._options import DB_OPTION
 
 
 def clear(
     yes: bool = typer.Option(False, "--yes", "-y", help="Skip the confirmation prompt"),
-    db: Path | None = typer.Option(None, "--db", help="Override cache database path"),
+    db: Path | None = DB_OPTION,
 ) -> None:
     """Delete the entire local cache database."""
     path = db or default_db_path()

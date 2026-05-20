@@ -7,6 +7,7 @@ from ...cache import is_sealed
 from ...github import get_github_token
 from ...utils.date_utils import month_range
 from .._month_arg import parse_month_arg
+from .._options import DB_OPTION
 from ..runners.pull_runner import fetch_and_seal_month
 from ..wizards.pull_wizard import pull_wizard
 
@@ -43,7 +44,7 @@ def pull(
     re_pull: bool = typer.Option(
         False, "--re-pull", help="Re-fetch even if month is already sealed"
     ),
-    db: Path | None = typer.Option(None, "--db", help="Override cache database path"),
+    db: Path | None = DB_OPTION,
 ) -> None:
     """Pull a month of PRs for one repository into the cache."""
     if month is None and org is None and repo is None:
