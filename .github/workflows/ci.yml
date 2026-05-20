@@ -57,20 +57,10 @@ jobs:
       - name: Type check
         run: uv run pyright
 
-  actionlint:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
       - name: Check workflow files
         uses: docker://rhysd/actionlint:latest
         with:
           args: -color
 
-  security:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v4
-      - run: uv python install 3.14
-      - run: uv sync
-      - run: uv run pip-audit
+      - name: Audit dependencies
+        run: uv run pip-audit
