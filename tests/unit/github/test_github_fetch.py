@@ -1,7 +1,7 @@
 import re
 
+import pytest
 import responses
-from pytest import raises
 
 from git_dev_metrics.github import GitHubAPIError, fetch_repositories
 from git_dev_metrics.github.queries import fetch_pull_requests, fetch_reviews
@@ -48,7 +48,7 @@ class TestFetchRepositories:
             status=200,
         )
 
-        with raises(GitHubAPIError, match="Unauthorized"):
+        with pytest.raises(GitHubAPIError, match="Unauthorized"):
             fetch_repositories("bad-token")
 
     @responses.activate

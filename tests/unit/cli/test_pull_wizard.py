@@ -145,7 +145,7 @@ class TestPullWizardMonthChoices:
 
         def ask_month(choices):
             captured.append(list(choices))
-            return None  # user cancels — exits before fetch
+            return  # user cancels — exits before fetch
 
         # Act
         with pytest.raises(typer.Exit):

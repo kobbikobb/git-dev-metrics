@@ -1,7 +1,7 @@
 import re
 
+import pytest
 import responses
-from pytest import raises
 
 from git_dev_metrics.github import GitHubAPIError
 from git_dev_metrics.github.graphql_client import execute_paginated_query, get_client
@@ -297,7 +297,7 @@ class TestRetryOnTransientErrors:
             )
 
         client = get_client("fake-token")
-        with raises(GitHubAPIError):
+        with pytest.raises(GitHubAPIError):
             execute_paginated_query(
                 client,
                 REPO_METRICS_QUERY,

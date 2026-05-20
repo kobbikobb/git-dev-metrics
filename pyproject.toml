@@ -62,15 +62,22 @@ target-version = "py314"
 
 [tool.ruff.lint]
 select = [
-    "E",    # pycodestyle errors
-    "F",    # pyflakes
-    "I",    # isort (import sorting)
-    "B",    # flake8-bugbear (common bugs)
-    "UP",   # pyupgrade (modernize syntax)
-    "SIM",  # flake8-simplify
-    "C901", # max function complexity (nesting/branching)
+    "E",     # pycodestyle errors
+    "F",     # pyflakes
+    "I",     # isort (import sorting)
+    "B",     # flake8-bugbear (common bugs)
+    "UP",    # pyupgrade (modernize syntax)
+    "SIM",   # flake8-simplify
+    "C901",  # max function complexity (nesting/branching)
+    "RUF022",# sorted __all__
+    "RET501",# unnecessary return None
+    "PT",    # pytest-style
+    "T20",   # print/pprint detection
 ]
-ignore = ["B008"]  # typer.Option() in argument defaults is required
+ignore = [
+    "B008",  # typer.Option() in argument defaults is required
+    "PT019", # fixture value IS used in test body (false positive on autouse fixtures with mocker)
+]
 
 [tool.ruff.lint.mccabe]
 max-complexity = 10  # Rule 2: max nesting/branching depth
