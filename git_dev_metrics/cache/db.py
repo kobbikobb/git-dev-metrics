@@ -126,6 +126,24 @@ def _review_rows(pr: Mapping[str, Any], org: str, repo: str, year: int, month: i
     return rows
 
 
+def _insert_reviews(
+    conn: sqlite3.Connection,
+    prs: Sequence[Mapping[str, Any]],
+    org: str, repo: str, year: int, month: int,
+) -> None:
+    review_rows = [row for pr in prs for row in _review_rows(pr, org, repo, year, month)]
+    if review_rows:
+        conn.executemany(
+            """
+            INSERT INTO reviews (
+                pr_number, repo_org, repo_name, year, month,
+                user_login, state, submitted_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            review_rows,
+        )
+
+
 def insert_prs(
     prs: Sequence[Mapping[str, Any]],
     org: str,
@@ -147,17 +165,7 @@ def insert_prs(
             """,
             [_pr_row(pr, org, repo, year, month) for pr in prs],
         )
-        review_rows = [row for pr in prs for row in _review_rows(pr, org, repo, year, month)]
-        if review_rows:
-            conn.executemany(
-                """
-                INSERT INTO reviews (
-                    pr_number, repo_org, repo_name, year, month,
-                    user_login, state, submitted_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                """,
-                review_rows,
-            )
+        _insert_reviews(conn, prs, org, repo, year, month)
 
 
 def seal_month(

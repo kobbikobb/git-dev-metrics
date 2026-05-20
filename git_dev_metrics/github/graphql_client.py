@@ -194,6 +194,21 @@ def _paginate_quiet(
             return all_nodes
 
 
+def _process_nodes(
+    nodes: list[dict[str, Any]],
+    stop_if: Callable[[dict[str, Any]], bool] | None,
+    all_nodes: list[dict[str, Any]],
+    repo_id: str,
+) -> bool:
+    for node in nodes:
+        if stop_if and stop_if(node):
+            all_nodes.append(node)
+            console.print(f"[green]✓[/green] {repo_id}: {len(all_nodes)} PRs")
+            return True
+        all_nodes.append(node)
+    return False
+
+
 def _paginate_with_progress(
     client: Client,
     query: GraphQLRequest,
@@ -218,12 +233,8 @@ def _paginate_with_progress(
                 f"[bold blue]{SPINNER_FRAMES[spinner_idx]}[/bold blue] "
                 f"{repo_id} p{page_num} ({len(all_nodes)} total, {elapsed:.1f}s)"
             )
-            for node in nodes:
-                if stop_if and stop_if(node):
-                    all_nodes.append(node)
-                    console.print(f"[green]✓[/green] {repo_id}: {len(all_nodes)} PRs")
-                    return all_nodes
-                all_nodes.append(node)
+            if _process_nodes(nodes, stop_if, all_nodes, repo_id):
+                return all_nodes
             if not cursor:
                 break
 
