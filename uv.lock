@@ -307,8 +307,6 @@ dependencies = [
     { name = "gql", extra = ["requests"] },
     { name = "jinja2" },
     { name = "keyring" },
-    { name = "pypi" },
-    { name = "python-dateutil" },
     { name = "questionary" },
     { name = "requests" },
     { name = "rich" },
@@ -335,8 +333,6 @@ requires-dist = [
     { name = "gql", extras = ["requests"], specifier = ">=3.5.0" },
     { name = "jinja2", specifier = ">=3.1.5" },
     { name = "keyring", specifier = ">=25.7.0" },
-    { name = "pypi", specifier = ">=2.1" },
-    { name = "python-dateutil", specifier = ">=2.9.0.post0" },
     { name = "questionary", specifier = ">=2.1.1" },
     { name = "requests", specifier = ">=2.32.5" },
     { name = "rich", specifier = ">=14.3.1" },
@@ -809,12 +805,6 @@ sdist = { url = "https://files.pythonhosted.org/packages/f3/91/9c6ee907786a473bf
 wheels = [
     { url = "https://files.pythonhosted.org/packages/10/bd/c038d7cc38edc1aa5bf91ab8068b63d4308c66c4c8bb3cbba7dfbc049f9c/pyparsing-3.3.2-py3-none-any.whl", hash = "sha256:850ba148bd908d7e2411587e247a1e4f0327839c40e2e5e6d05a007ecc69911d", size = 122781, upload-time = "2026-01-21T03:57:55.912Z" },
 ]
-
-[[package]]
-name = "pypi"
-version = "2.1"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/32/d2/8fb6f6a37af408d52dae28b4ff999e0d11b936729661c93d242ffbdb0a77/pypi-2.1.tar.gz", hash = "sha256:f014c87f871c2143ff613d9d13a59cc8ab8309b048754c27da8c58b21de2c10d", size = 997, upload-time = "2018-03-24T22:31:13.968Z" }
 
 [[package]]
 name = "pyright"
