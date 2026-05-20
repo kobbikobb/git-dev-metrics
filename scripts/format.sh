@@ -3,7 +3,7 @@
 set -e
 
 echo "Running ruff check --fix..."
-uv run ruff check git_dev_metrics --fix
+uv run ruff check git_dev_metrics tests --fix
 
 echo "Running ruff format..."
 uv run ruff format git_dev_metrics tests
