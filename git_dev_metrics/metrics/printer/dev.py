@@ -20,7 +20,7 @@ class ConsoleDevPrinter:
     """Print dev metrics to console using Rich."""
 
     def print_combined_metrics(
-        self, snapshot: MetricsSnapshot, period: str, date_range: str | None = None
+        self, snapshot: MetricsSnapshot, date_range: str | None = None
     ) -> None:
         from rich.console import Console
         from rich.table import Table
