@@ -44,12 +44,13 @@ CREATE TABLE IF NOT EXISTS reviews (
 CREATE INDEX IF NOT EXISTS idx_reviews_scope
     ON reviews (repo_org, repo_name, year, month);
 
-CREATE TABLE IF NOT EXISTS sealed_months (
+CREATE TABLE IF NOT EXISTS synced_months (
     year INTEGER NOT NULL,
     month INTEGER NOT NULL,
     repo_org TEXT NOT NULL,
     repo_name TEXT NOT NULL,
-    sealed_at TEXT NOT NULL,
+    synced_at TEXT NOT NULL,
+    partial INTEGER NOT NULL DEFAULT 0,
     PRIMARY KEY (year, month, repo_org, repo_name)
 );
 """
@@ -57,6 +58,32 @@ CREATE TABLE IF NOT EXISTS sealed_months (
 
 def default_db_path() -> Path:
     return Path.home() / ".gdm" / "cache.db"
+
+
+def _migrate_schema(conn: sqlite3.Connection) -> None:
+    cursor = conn.execute(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name='sealed_months'"
+    )
+    if cursor.fetchone():
+        conn.execute("ALTER TABLE sealed_months RENAME TO synced_months_old")
+        conn.executescript(_SCHEMA)
+        conn.execute(
+            "INSERT INTO synced_months (year, month, repo_org, repo_name, synced_at, partial) "
+            "SELECT year, month, repo_org, repo_name, sealed_at, 0 FROM synced_months_old"
+        )
+        conn.execute("DROP TABLE synced_months_old")
+
+    cursor = conn.execute(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name='synced_months_old'"
+    )
+    if cursor.fetchone():
+        conn.executescript(_SCHEMA)
+        conn.execute(
+            "INSERT OR IGNORE INTO synced_months "
+            "(year, month, repo_org, repo_name, synced_at, partial) "
+            "SELECT year, month, repo_org, repo_name, sealed_at, 0 FROM synced_months_old"
+        )
+        conn.execute("DROP TABLE synced_months_old")
 
 
 def open_connection(db_path: Path | None = None) -> sqlite3.Connection:
@@ -67,6 +94,7 @@ def open_connection(db_path: Path | None = None) -> sqlite3.Connection:
     conn = sqlite3.connect(path)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON;")
+    _migrate_schema(conn)
     conn.executescript(_SCHEMA)
     _connections[path] = conn
     return conn
@@ -179,8 +207,26 @@ def seal_month(
     conn = open_connection(db_path)
     with conn:
         conn.execute(
-            "INSERT OR REPLACE INTO sealed_months (year, month, repo_org, repo_name, sealed_at) "
-            "VALUES (?, ?, ?, ?, ?)",
+            "INSERT OR REPLACE INTO synced_months "
+            "(year, month, repo_org, repo_name, synced_at, partial) "
+            "VALUES (?, ?, ?, ?, ?, 0)",
+            (year, month, org, repo, datetime.now(UTC).isoformat()),
+        )
+
+
+def mark_partial(
+    org: str,
+    repo: str,
+    year: int,
+    month: int,
+    db_path: Path | None = None,
+) -> None:
+    conn = open_connection(db_path)
+    with conn:
+        conn.execute(
+            "INSERT OR REPLACE INTO synced_months "
+            "(year, month, repo_org, repo_name, synced_at, partial) "
+            "VALUES (?, ?, ?, ?, ?, 1)",
             (year, month, org, repo, datetime.now(UTC).isoformat()),
         )
 
@@ -194,7 +240,39 @@ def is_sealed(
 ) -> bool:
     conn = open_connection(db_path)
     row = conn.execute(
-        "SELECT 1 FROM sealed_months WHERE year = ? AND month = ? "
+        "SELECT 1 FROM synced_months WHERE year = ? AND month = ? "
+        "AND repo_org = ? AND repo_name = ? AND partial = 0",
+        (year, month, org, repo),
+    ).fetchone()
+    return row is not None
+
+
+def is_partial(
+    org: str,
+    repo: str,
+    year: int,
+    month: int,
+    db_path: Path | None = None,
+) -> bool:
+    conn = open_connection(db_path)
+    row = conn.execute(
+        "SELECT 1 FROM synced_months WHERE year = ? AND month = ? "
+        "AND repo_org = ? AND repo_name = ? AND partial = 1",
+        (year, month, org, repo),
+    ).fetchone()
+    return row is not None
+
+
+def is_synced(
+    org: str,
+    repo: str,
+    year: int,
+    month: int,
+    db_path: Path | None = None,
+) -> bool:
+    conn = open_connection(db_path)
+    row = conn.execute(
+        "SELECT 1 FROM synced_months WHERE year = ? AND month = ? "
         "AND repo_org = ? AND repo_name = ?",
         (year, month, org, repo),
     ).fetchone()

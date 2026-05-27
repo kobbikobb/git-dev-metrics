@@ -32,19 +32,25 @@ class ConsolePrinter:
         ]
 
         console.print()
-        self._render_table(cells, date_range, console)
+        self._render_table(cells, date_range, snapshot.has_partial, console)
         console.print()
 
         self._dev_printer.print_combined_metrics(snapshot, period, date_range)
 
-    def _render_table(self, cells: list[tuple[str, str]], date_range: str, console) -> None:
+    def _render_table(
+        self, cells: list[tuple[str, str]], date_range: str, has_partial: bool, console
+    ) -> None:
         from rich.table import Table
+
+        title = f"Summary ({date_range})"
+        if has_partial:
+            title += " (partial data)"
 
         chunk_size = 6
         for chunk_start in range(0, len(cells), chunk_size):
             chunk = cells[chunk_start : chunk_start + chunk_size]
             table = Table(
-                title=f"Summary ({date_range})" if chunk_start == 0 else None,
+                title=title if chunk_start == 0 else None,
                 show_header=True,
                 header_style="bold",
             )

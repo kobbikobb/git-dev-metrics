@@ -47,6 +47,20 @@
     font-size: 0.875rem;
   }
 
+  .partial-banner {
+    background: rgba(234,179,8,0.12);
+    color: var(--yellow);
+    border: 1px solid rgba(234,179,8,0.3);
+    border-radius: 8px;
+    padding: 0.75rem 1.25rem;
+    margin-bottom: 1.5rem;
+    max-width: 1400px;
+    margin-left: auto;
+    margin-right: auto;
+    text-align: center;
+    font-size: 0.875rem;
+  }
+
   .summary {
     display: grid;
     grid-template-columns: repeat(6, 1fr);
@@ -396,6 +410,12 @@
   <h1>Developer Metrics Dashboard</h1>
   <p>Team performance overview &middot; {{ date_range or ("Last " + period) }}</p>
 </div>
+
+{% if has_partial %}
+<div class="partial-banner">
+  ⚠ This report includes partial data — months still in progress will update when re-pulled after month-end.
+</div>
+{% endif %}
 
 <div class="summary">
   <div class="summary-card">

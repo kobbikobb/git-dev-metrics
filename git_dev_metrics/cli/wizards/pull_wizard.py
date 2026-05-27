@@ -27,15 +27,14 @@ MonthChoice = tuple[str, str]
 
 
 def _candidate_months(now: datetime) -> list[MonthChoice]:
-    """Past `_MONTHS_LOOKBACK` complete calendar months, newest first."""
+    """`_MONTHS_LOOKBACK` months including current, newest first."""
     out: list[MonthChoice] = []
     year, month = now.year, now.month
-    month -= 1
-    if month == 0:
-        month = 12
-        year -= 1
     for _ in range(_MONTHS_LOOKBACK):
-        out.append((datetime(year, month, 1).strftime("%B %Y"), f"{year:04d}-{month:02d}"))
+        label = datetime(year, month, 1).strftime("%B %Y")
+        if year == now.year and month == now.month:
+            label += " (current)"
+        out.append((label, f"{year:04d}-{month:02d}"))
         month -= 1
         if month == 0:
             month = 12
@@ -72,9 +71,6 @@ def _select_org_month(
         raise typer.Exit(code=1)
     year, month_num = parse_month_arg(picked)
     period = month_range(year, month_num)
-    if period.until > clock():
-        typer.secho(f"Month {picked} is incomplete; cannot seal.", fg=typer.colors.RED, err=True)
-        raise typer.Exit(code=1)
 
     return org, picked, year, month_num, period
 
@@ -89,6 +85,7 @@ def pull_wizard(
     fetch: Callable[..., list[PullRequest]] = fetch_repo_metrics,
     fetch_repos: Callable[[str, str | None], list[Repository]] = _default_fetch_repos,
     get_token: Callable[[], str] = get_github_token,
+    re_pull: bool = False,
 ) -> None:
     org, picked, year, month_num, period = _select_org_month(ask_org, ask_month, clock)
 
@@ -103,7 +100,7 @@ def pull_wizard(
     if not selected:
         raise typer.Exit(code=1)
 
-    _pull_each(selected, year, month_num, period, token, fetch, db_path)
+    _pull_each(selected, year, month_num, period, token, fetch, db_path, re_pull=re_pull)
 
 
 def _pull_each(
@@ -114,16 +111,34 @@ def _pull_each(
     token: str,
     fetch: Callable[..., list[PullRequest]],
     db_path: Path | None,
+    *,
+    re_pull: bool = False,
 ) -> None:
     pulled = 0
     skipped = 0
+    partial = period.until > datetime.now(UTC)
     for full_name in selected:
         org, repo = full_name.split("/", 1)
-        if is_sealed(org, repo, year, month_num, db_path=db_path):
+        if not re_pull and is_sealed(org, repo, year, month_num, db_path=db_path):
             typer.echo(f"Skipped {full_name}: already sealed.")
             skipped += 1
             continue
-        n = fetch_and_seal_month(org, repo, year, month_num, period, token, db_path, fetch=fetch)
-        typer.echo(f"Pulled {n} PRs for {full_name}.")
+        n = fetch_and_seal_month(
+            org,
+            repo,
+            year,
+            month_num,
+            period,
+            token,
+            db_path,
+            fetch=fetch,
+            partial=partial,
+        )
+        tag = ""
+        if partial:
+            tag = " (partial)"
+        elif re_pull:
+            tag = " (re-pulled)"
+        typer.echo(f"Pulled {n} PRs for {full_name}.{tag}")
         pulled += 1
     typer.echo(f"Done. Pulled {pulled}, skipped {skipped}.")
