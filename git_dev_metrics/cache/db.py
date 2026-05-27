@@ -73,6 +73,18 @@ def _migrate_schema(conn: sqlite3.Connection) -> None:
         )
         conn.execute("DROP TABLE synced_months_old")
 
+    cursor = conn.execute(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name='synced_months_old'"
+    )
+    if cursor.fetchone():
+        conn.executescript(_SCHEMA)
+        conn.execute(
+            "INSERT OR IGNORE INTO synced_months "
+            "(year, month, repo_org, repo_name, synced_at, partial) "
+            "SELECT year, month, repo_org, repo_name, sealed_at, 0 FROM synced_months_old"
+        )
+        conn.execute("DROP TABLE synced_months_old")
+
 
 def open_connection(db_path: Path | None = None) -> sqlite3.Connection:
     path = db_path or default_db_path()
