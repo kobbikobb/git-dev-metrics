@@ -85,6 +85,7 @@ def pull_wizard(
     fetch: Callable[..., list[PullRequest]] = fetch_repo_metrics,
     fetch_repos: Callable[[str, str | None], list[Repository]] = _default_fetch_repos,
     get_token: Callable[[], str] = get_github_token,
+    re_pull: bool = False,
 ) -> None:
     org, picked, year, month_num, period = _select_org_month(ask_org, ask_month, clock)
 
@@ -99,7 +100,7 @@ def pull_wizard(
     if not selected:
         raise typer.Exit(code=1)
 
-    _pull_each(selected, year, month_num, period, token, fetch, db_path)
+    _pull_each(selected, year, month_num, period, token, fetch, db_path, re_pull=re_pull)
 
 
 def _pull_each(
@@ -110,13 +111,15 @@ def _pull_each(
     token: str,
     fetch: Callable[..., list[PullRequest]],
     db_path: Path | None,
+    *,
+    re_pull: bool = False,
 ) -> None:
     pulled = 0
     skipped = 0
     partial = period.until > datetime.now(UTC)
     for full_name in selected:
         org, repo = full_name.split("/", 1)
-        if is_sealed(org, repo, year, month_num, db_path=db_path):
+        if not re_pull and is_sealed(org, repo, year, month_num, db_path=db_path):
             typer.echo(f"Skipped {full_name}: already sealed.")
             skipped += 1
             continue
@@ -131,7 +134,11 @@ def _pull_each(
             fetch=fetch,
             partial=partial,
         )
-        tag = " (partial)" if partial else ""
+        tag = ""
+        if partial:
+            tag = " (partial)"
+        elif re_pull:
+            tag = " (re-pulled)"
         typer.echo(f"Pulled {n} PRs for {full_name}.{tag}")
         pulled += 1
     typer.echo(f"Done. Pulled {pulled}, skipped {skipped}.")

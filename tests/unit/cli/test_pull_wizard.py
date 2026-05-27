@@ -109,6 +109,38 @@ class TestPullWizardSkipsSealedInBatch:
         assert fetch.call_count == 1
 
 
+class TestPullWizardRePull:
+    def test_should_re_pull_sealed_repos(self, tmp_path, mocker, capsys):
+        db_path = tmp_path / "cache.db"
+        seal_month("myorg", "repoA", 2026, 4, db_path=db_path)
+        mocker.patch("git_dev_metrics.cli.wizards.pull_wizard.load_last_org", return_value=None)
+        mocker.patch("git_dev_metrics.cli.wizards.pull_wizard.save_last_org")
+        repos = [
+            _repo("myorg/repoA", private=False, pushed=dt(year=2026, month=4, day=20)),
+            _repo("myorg/repoB", private=False, pushed=dt(year=2026, month=4, day=20)),
+        ]
+        fetch = Mock(return_value=_three_prs(200))
+
+        pull_wizard(
+            db_path=db_path,
+            ask_org=lambda _last: "myorg",
+            ask_month=lambda _choices: "2026-04",
+            ask_repos=lambda _opts: ["myorg/repoA", "myorg/repoB"],
+            clock=lambda: dt(year=2026, month=5, day=12),
+            fetch=fetch,
+            fetch_repos=lambda _token, _org: repos,
+            get_token=lambda: "fake",
+            re_pull=True,
+        )
+
+        out = capsys.readouterr().out
+        assert "Skipped" not in out
+        assert all(f"Pulled 3 PRs for myorg/repo{letter}." in out for letter in ("A", "B"))
+        assert count_prs("myorg", "repoA", 2026, 4, db_path=db_path) == 3
+        assert count_prs("myorg", "repoB", 2026, 4, db_path=db_path) == 3
+        assert fetch.call_count == 2
+
+
 class TestPullWizardNoActiveRepos:
     def test_should_exit_when_no_active_repos_in_month(self, tmp_path, mocker, capsys):
         # Arrange

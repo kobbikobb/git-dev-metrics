@@ -98,7 +98,7 @@ class TestPull:
         result = runner.invoke(app, ["pull", "--db", str(db_path)])
 
         assert result.exit_code == 0, result.output
-        wizard.assert_called_once_with(db_path=db_path)
+        wizard.assert_called_once_with(db_path=db_path, re_pull=False)
 
     @freeze_time("2026-05-12")
     def test_should_refuse_already_sealed_month(self, tmp_path, mocker):
@@ -130,3 +130,36 @@ class TestPull:
         assert "already sealed" in result.stderr
         fetch.assert_not_called()
         assert count_prs("myorg", "myrepo", 2026, 4, db_path=db_path) == 0
+
+    @freeze_time("2026-05-12")
+    def test_should_re_pull_sealed_month(self, tmp_path, mocker):
+        db_path = tmp_path / "cache.db"
+        seal_month("myorg", "myrepo", 2026, 4, db_path=db_path)
+        mocker.patch(
+            "git_dev_metrics.cli.commands.pull.get_github_token", return_value="fake-token"
+        )
+        prs = _ten_prs_for_april()
+        mocker.patch("git_dev_metrics.cli.runners.pull_runner.fetch_repo_metrics", return_value=prs)
+
+        result = runner.invoke(
+            app,
+            [
+                "pull",
+                "--re-pull",
+                "--month",
+                "2026-04",
+                "--org",
+                "myorg",
+                "--repo",
+                "myrepo",
+                "--db",
+                str(db_path),
+            ],
+        )
+
+        assert result.exit_code == 0
+        assert "(re-pulled)" in result.output
+        assert count_prs("myorg", "myrepo", 2026, 4, db_path=db_path) == 10
+        from git_dev_metrics.cache import is_sealed
+
+        assert is_sealed("myorg", "myrepo", 2026, 4, db_path=db_path)
