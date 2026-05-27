@@ -9,6 +9,7 @@ from ._response_mapper import (
 )
 from .graphql_client import execute_paginated_query, get_client
 from .graphql_queries import (
+    LANG_REPORT_QUERY,
     OPEN_PRS_QUERY,
     ORG_REPOSITORIES_QUERY,
     REPO_METRICS_QUERY,
@@ -127,6 +128,7 @@ def fetch_repo_metrics(token: str, org: str, repo: str, period: TimePeriod) -> l
 
 
 def _map_open_prs(prs: list[dict]) -> list[OpenPullRequest]:
+    """Map raw GraphQL PR nodes to OpenPullRequest model."""
     result: list[OpenPullRequest] = []
     for pr in prs:
         number = pr.get("number")
@@ -161,6 +163,45 @@ def fetch_skill_report_prs(token: str, org: str, repo: str, year: int, month: in
     nodes = execute_paginated_query(
         client,
         SKILL_REPORT_QUERY,
+        {"query": query_str, "first": 25},
+        "search",
+        repo_id=f"{org}/{repo}",
+    )
+
+    result: list[dict] = []
+    for node in nodes:
+        files_raw = (node.get("files") or {}).get("nodes") or []
+        result.append(
+            {
+                "number": node.get("number"),
+                "user": {"login": map_author_login(node.get("author"))},
+                "files": [
+                    {
+                        "path": f["path"],
+                        "additions": f.get("additions", 0),
+                        "deletions": f.get("deletions", 0),
+                    }
+                    for f in files_raw
+                ],
+            }
+        )
+    return result
+
+
+def fetch_lang_report_prs(
+    token: str, org: str, repo: str, year: int, month: int
+) -> list[dict]:
+    """Fetch merged PRs with file paths for a given month. Returns lightweight dicts."""
+    from ..utils.date_utils import month_range
+
+    client = get_client(token)
+    period = month_range(year, month)
+    since_s = period.since.strftime("%Y-%m-%d")
+    until_s = period.until.strftime("%Y-%m-%d")
+    query_str = f"repo:{org}/{repo} is:pr merged:{since_s}..{until_s}"
+    nodes = execute_paginated_query(
+        client,
+        LANG_REPORT_QUERY,
         {"query": query_str, "first": 25},
         "search",
         repo_id=f"{org}/{repo}",
