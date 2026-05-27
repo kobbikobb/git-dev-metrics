@@ -136,7 +136,7 @@ class TestPullWizardNoActiveRepos:
 
 
 class TestPullWizardMonthChoices:
-    def test_should_list_past_twelve_complete_months_excluding_current(self, tmp_path, mocker):
+    def test_should_list_twelve_months_including_current(self, tmp_path, mocker):
         # Arrange
         db_path = tmp_path / "cache.db"
         mocker.patch("git_dev_metrics.cli.wizards.pull_wizard.load_last_org", return_value=None)
@@ -161,7 +161,8 @@ class TestPullWizardMonthChoices:
             )
 
         # Assert
+        labels = [label for label, _value in captured[0]]
         values = [value for _label, value in captured[0]]
-        assert values[:4] == ["2026-04", "2026-03", "2026-02", "2026-01"]
-        assert "2026-05" not in values
+        assert values[:4] == ["2026-05", "2026-04", "2026-03", "2026-02"]
+        assert labels[0] == "May 2026 (current)"
         assert len(values) == 12

@@ -60,14 +60,13 @@ class TestPull:
         assert review_count > 0
 
     @freeze_time("2026-05-12")
-    def test_should_refuse_incomplete_current_month(self, tmp_path, mocker):
+    def test_should_pull_current_month_as_partial(self, tmp_path, mocker):
         db_path = tmp_path / "cache.db"
+        prs = _ten_prs_for_april()
         mocker.patch(
             "git_dev_metrics.cli.commands.pull.get_github_token", return_value="fake-token"
         )
-        fetch = mocker.patch(
-            "git_dev_metrics.cli.runners.pull_runner.fetch_repo_metrics", return_value=[]
-        )
+        mocker.patch("git_dev_metrics.cli.runners.pull_runner.fetch_repo_metrics", return_value=prs)
 
         result = runner.invoke(
             app,
@@ -84,10 +83,13 @@ class TestPull:
             ],
         )
 
-        assert result.exit_code == 1
-        assert "incomplete" in result.stderr
-        fetch.assert_not_called()
-        assert count_prs("myorg", "myrepo", 2026, 5, db_path=db_path) == 0
+        assert result.exit_code == 0
+        assert "(partial)" in result.output
+        assert count_prs("myorg", "myrepo", 2026, 5, db_path=db_path) == 10
+        from git_dev_metrics.cache import is_partial, is_sealed
+
+        assert is_partial("myorg", "myrepo", 2026, 5, db_path=db_path)
+        assert not is_sealed("myorg", "myrepo", 2026, 5, db_path=db_path)
 
     def test_should_invoke_wizard_when_no_flags(self, tmp_path, mocker):
         db_path = tmp_path / "cache.db"

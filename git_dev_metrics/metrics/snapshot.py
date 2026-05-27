@@ -140,12 +140,15 @@ class MetricsSnapshot:
     repos: tuple[Row, ...]
     summary: Summary
     reviewer_counts: dict[str, int]
+    has_partial: bool = False
 
     @classmethod
     def from_repo_prs(
         cls,
         repo_prs: dict[str, list[PullRequest]],
         period: TimePeriod,
+        *,
+        has_partial: bool = False,
     ) -> MetricsSnapshot:
         days = period_days(period)
         all_prs: list[PullRequest] = [pr for prs in repo_prs.values() for pr in prs]
@@ -166,6 +169,7 @@ class MetricsSnapshot:
             repos=repos,
             summary=build_summary(devs, reviewer_counts, team),
             reviewer_counts=reviewer_counts,
+            has_partial=has_partial,
         )
 
 

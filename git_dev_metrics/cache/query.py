@@ -108,10 +108,29 @@ def load_all_repos_by_month(
 
 
 def list_synced_months(db_path: Path | None = None) -> list[tuple[str, str, int, int]]:
-    """All sealed (org, repo, year, month) tuples, newest first."""
+    """All (org, repo, year, month) tuples with data, newest first."""
     conn = open_connection(db_path)
     rows = conn.execute(
-        "SELECT repo_org, repo_name, year, month FROM sealed_months "
+        "SELECT repo_org, repo_name, year, month FROM synced_months "
         "ORDER BY year DESC, month DESC, repo_org, repo_name"
     ).fetchall()
     return [(row["repo_org"], row["repo_name"], row["year"], row["month"]) for row in rows]
+
+
+def list_partial_months(db_path: Path | None = None) -> list[tuple[str, str, int, int]]:
+    """All partial (org, repo, year, month) tuples, newest first."""
+    conn = open_connection(db_path)
+    rows = conn.execute(
+        "SELECT repo_org, repo_name, year, month FROM synced_months "
+        "WHERE partial = 1 ORDER BY year DESC, month DESC, repo_org, repo_name"
+    ).fetchall()
+    return [(row["repo_org"], row["repo_name"], row["year"], row["month"]) for row in rows]
+
+
+def has_partial_for_range(months: list[tuple[int, int]], db_path: Path | None = None) -> bool:
+    """True if any (year, month) in the range has partial data."""
+    wanted = set(months)
+    for _org, _repo, year, month in list_partial_months(db_path=db_path):
+        if (year, month) in wanted:
+            return True
+    return False
