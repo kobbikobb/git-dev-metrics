@@ -308,6 +308,32 @@
     font-size: 0.75rem;
   }
 
+  .pie-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+  }
+
+  .pie-legend {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 0.75rem;
+  }
+
+  .pie-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .pie-legend-swatch {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+
   .scatter-container {
     position: relative;
     height: 260px;
@@ -465,6 +491,13 @@
     <h3>AI-Assisted PRs</h3>
     <div class="bar-chart" id="aiChart"></div>
   </div>
+  <div class="chart-card">
+    <h3>PR Distribution</h3>
+    <div class="pie-wrapper">
+      <canvas id="prPieChart" width="220" height="220"></canvas>
+      <div class="pie-legend" id="prPieLegend"></div>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -579,6 +612,48 @@ const aiData = [...devs]
   .sort((a,b) => b.ai - a.ai)
   .map(d => ({ label: d.name, value: d.ai, display: d.ai + "%" }));
 barChart("aiChart", aiData, "#a78bfa", 100);
+
+const PIE_COLORS = ["#6366f1","#22c55e","#f59e0b","#ef4444","#06b6d4","#ec4899","#f97316","#8b5cf6","#14b8a6","#e11d48","#84cc16","#0ea5e9"];
+
+function pieChart(canvasId, legendId, data) {
+  const canvas = document.getElementById(canvasId);
+  const ctx = canvas.getContext("2d");
+  const total = data.reduce((s, d) => s + d.value, 0);
+  if (total === 0) return;
+
+  const cx = canvas.width / 2;
+  const cy = canvas.height / 2;
+  const r = canvas.width / 2 - 10;
+  let start = -Math.PI / 2;
+
+  data.forEach((d, i) => {
+    const angle = (d.value / total) * Math.PI * 2;
+    const color = PIE_COLORS[i % PIE_COLORS.length];
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, r, start, start + angle);
+    ctx.closePath();
+    ctx.fillStyle = color;
+    ctx.fill();
+    ctx.strokeStyle = "#1a1d27";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    start += angle;
+  });
+
+  const legend = document.getElementById(legendId);
+  legend.innerHTML = data.map((d, i) =>
+    `<div class="pie-legend-item">
+      <span class="pie-legend-swatch" style="background:${PIE_COLORS[i % PIE_COLORS.length]}"></span>
+      ${d.label} (${d.value})
+    </div>`
+  ).join("");
+}
+
+const pieData = [...devs]
+  .filter(d => d.prs > 0)
+  .sort((a,b) => b.prs - a.prs);
+pieChart("prPieChart", "prPieLegend", pieData);
 </script>
 
 </body>
