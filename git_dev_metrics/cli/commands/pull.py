@@ -15,10 +15,6 @@ def _pull_direct(month: str, org: str, repo: str, db: Path | None) -> None:
     year, month_num = parse_month_arg(month)
     period = month_range(year, month_num)
 
-    if period.until > datetime.now(UTC):
-        typer.secho(f"Month {month} is incomplete; cannot seal.", fg=typer.colors.RED, err=True)
-        raise typer.Exit(code=1)
-
     if is_sealed(org, repo, year, month_num, db_path=db):
         typer.secho(
             f"Month {month} for {org}/{repo} is already sealed.",
@@ -27,10 +23,15 @@ def _pull_direct(month: str, org: str, repo: str, db: Path | None) -> None:
         )
         raise typer.Exit(code=1)
 
-    token = get_github_token()
-    n = fetch_and_seal_month(org, repo, year, month_num, period, token, db)
+    incomplete = period.until > datetime.now(UTC)
 
-    typer.echo(f"Pulled {n} PRs for {org}/{repo} {month}.")
+    token = get_github_token()
+    n = fetch_and_seal_month(org, repo, year, month_num, period, token, db, partial=incomplete)
+
+    if incomplete:
+        typer.echo(f"Pulled {n} PRs for {org}/{repo} {month} (partial).")
+    else:
+        typer.echo(f"Pulled {n} PRs for {org}/{repo} {month}.")
 
 
 def pull(

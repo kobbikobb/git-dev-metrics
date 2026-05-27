@@ -29,6 +29,8 @@ class ConsoleDevPrinter:
         title = (
             f"Developer Metrics ({date_range})" if date_range else ("Developer Metrics (combined)")
         )
+        if snapshot.has_partial:
+            title += " (partial data)"
         table = Table(title=title)
         for col in DEV_COLUMNS:
             table.add_column(col)

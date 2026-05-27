@@ -183,11 +183,12 @@ class TestTrendAggregatesAllRepos:
 
 class TestTrendWizard:
     @freeze_time("2026-05-12")
-    def test_should_render_default_output_from_wizard_picks(self, tmp_path, monkeypatch):
+    def test_should_render_default_output_from_wizard_picks(self, tmp_path, monkeypatch, mocker):
         # Arrange
         db_path = tmp_path / "cache.db"
         _seed_three_months_one_repo(db_path)
         monkeypatch.chdir(tmp_path)
+        mocker.patch("webbrowser.open", return_value=False)
 
         # Act
         trend_wizard(

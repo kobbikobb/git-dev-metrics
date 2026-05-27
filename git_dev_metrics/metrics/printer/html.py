@@ -85,6 +85,7 @@ class FileHtmlPrinter:
             summary=_summary_for_template(snapshot),
             period=period,
             date_range=date_range,
+            has_partial=snapshot.has_partial,
         )
 
         html_path = self._output_path.with_suffix(".html")
