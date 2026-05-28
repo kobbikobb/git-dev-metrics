@@ -60,7 +60,7 @@ class TestStale:
         _stub_webbrowser.assert_called_once_with(out.resolve().as_uri())
 
     @freeze_time("2026-05-12")
-    def test_should_sort_oldest_first(self, tmp_path, mocker):
+    def test_should_sort_oldest_first(self, tmp_path, mocker, _stub_webbrowser):
         # Arrange
         db_path = tmp_path / "cache.db"
         seal_month("myorg", "repoA", 2026, 4, db_path=db_path)
@@ -88,7 +88,7 @@ class TestStale:
         assert 0 < old_idx < young_idx
 
     @freeze_time("2026-05-12")
-    def test_should_render_empty_state_when_no_stale_prs(self, tmp_path, mocker):
+    def test_should_render_empty_state_when_no_stale_prs(self, tmp_path, mocker, _stub_webbrowser):
         # Arrange
         db_path = tmp_path / "cache.db"
         seal_month("myorg", "repoA", 2026, 4, db_path=db_path)
@@ -123,7 +123,9 @@ class TestStale:
         assert "No repos in cache" in result.stderr
 
     @freeze_time("2026-05-12")
-    def test_should_write_default_path_when_no_output(self, tmp_path, monkeypatch, mocker):
+    def test_should_write_default_path_when_no_output(
+        self, tmp_path, monkeypatch, mocker, _stub_webbrowser
+    ):
         # Arrange
         db_path = tmp_path / "cache.db"
         seal_month("myorg", "repoA", 2026, 4, db_path=db_path)
