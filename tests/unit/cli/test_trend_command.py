@@ -64,7 +64,7 @@ def _data_block(html: str) -> dict:
 
 class TestTrendFiltersLeavers:
     @freeze_time("2026-05-12")
-    def test_should_render_active_devs_only_and_omit_leavers(self, tmp_path):
+    def test_should_render_active_devs_only_and_omit_leavers(self, tmp_path, _stub_webbrowser):
         # Arrange
         db_path = tmp_path / "cache.db"
         _seed_three_months_one_repo(db_path)
@@ -97,7 +97,7 @@ class TestTrendFiltersLeavers:
 
 class TestTrendCanvases:
     @freeze_time("2026-05-12")
-    def test_should_render_three_chart_canvases_with_cdn(self, tmp_path):
+    def test_should_render_three_chart_canvases_with_cdn(self, tmp_path, _stub_webbrowser):
         # Arrange
         db_path = tmp_path / "cache.db"
         _seed_three_months_one_repo(db_path)
@@ -132,7 +132,7 @@ class TestTrendCanvases:
 
 class TestTrendAggregatesAllRepos:
     @freeze_time("2026-05-12")
-    def test_should_sum_pr_counts_across_every_synced_repo(self, tmp_path):
+    def test_should_sum_pr_counts_across_every_synced_repo(self, tmp_path, _stub_webbrowser):
         # Arrange
         db_path = tmp_path / "cache.db"
         insert_prs(
