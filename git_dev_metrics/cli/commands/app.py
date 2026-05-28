@@ -2,6 +2,7 @@ import typer
 
 from .clear import clear
 from .dashboard import dashboard
+from .lang_report import lang_report
 from .logout import logout
 from .pull import pull
 from .stale import stale
@@ -20,6 +21,7 @@ def main(ctx: typer.Context) -> None:
 
 app.command()(clear)
 app.command()(dashboard)
+app.command()(lang_report)
 app.command()(logout)
 app.command()(pull)
 app.command()(stale)

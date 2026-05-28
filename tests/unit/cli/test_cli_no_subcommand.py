@@ -25,8 +25,8 @@ class TestNoSubcommand:
         assert "stale" in result.output
         assert "clear" in result.output
         assert "logout" in result.output
+        assert "lang-report" in result.output
         assert "analyze" not in result.output
-        assert "report" not in result.output
         forbidden = "anon" + "ymize"
         assert forbidden not in result.output
 
