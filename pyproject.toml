@@ -43,6 +43,9 @@ venv = ".venv"
 typeCheckingMode = "standard"
 
 
+[tool.setuptools.packages.find]
+include = ["git_dev_metrics", "git_dev_metrics.*"]
+
 [tool.uv]
 package = true
 override-dependencies = ["idna>=3.15"]
