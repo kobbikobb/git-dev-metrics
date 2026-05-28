@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Language Report</title>
+<title>Skill Report</title>
 <style>
   :root {
     --bg: #0f1117;
@@ -48,37 +48,37 @@
 </head>
 <body>
 <div class="header">
-  <h1>Language Report</h1>
+  <h1>Skill Report</h1>
   <p>{{ period_range }}</p>
 </div>
 <div class="grid">
-  <div class="card"><h2>PRs by Language (team)</h2><div class="chart-wrap pie-wrap"><canvas id="teamPie"></canvas></div></div>
-  <div class="card"><h2>Language Breakdown per Developer</h2><div class="chart-wrap"><canvas id="devBar"></canvas></div></div>
+  <div class="card"><h2>PRs by Skill (team)</h2><div class="chart-wrap pie-wrap"><canvas id="teamPie"></canvas></div></div>
+  <div class="card"><h2>Skill Breakdown per Developer</h2><div class="chart-wrap"><canvas id="devBar"></canvas></div></div>
   <div class="card">
-    <h2>PRs by Language per Developer</h2>
+    <h2>PRs by Skill per Developer</h2>
     <table>
-      <thead><tr><th>Developer</th>{% for lang in langs %}<th>{{ lang }}</th>{% endfor %}</tr></thead>
+      <thead><tr><th>Developer</th>{% for skill in skills %}<th>{{ skill }}</th>{% endfor %}</tr></thead>
       <tbody>
         {% for dev in devs %}
-        <tr><td>{{ dev }}</td>{% for lang in langs %}<td>{{ dev_langs.get(dev, {}).get(lang, 0) }}</td>{% endfor %}</tr>
+        <tr><td>{{ dev }}</td>{% for skill in skills %}<td>{{ dev_skills.get(dev, {}).get(skill, 0) }}</td>{% endfor %}</tr>
         {% endfor %}
-        <tr class="total-row"><td>Total</td>{% for lang in langs %}<td>{{ team_langs.get(lang, 0) }}</td>{% endfor %}</tr>
+        <tr class="total-row"><td>Total</td>{% for skill in skills %}<td>{{ team_skills.get(skill, 0) }}</td>{% endfor %}</tr>
       </tbody>
     </table>
   </div>
 </div>
 <script>
 const palette = ['#6366f1','#22c55e','#eab308','#ef4444','#06b6d4','#f97316','#3b82f6','#a855f7','#14b8a6','#ec4899','#84cc16','#0ea5e9','#d946ef','#10b981','#f43f5e'];
-const TEAM = {{ team_langs | tojson }};
+const TEAM = {{ team_skills | tojson }};
 const DEVS = {{ devs | tojson }};
-const LANGS = {{ langs | tojson }};
-const DEV_LANGS = {{ dev_langs | tojson }};
+const SKILLS = {{ skills | tojson }};
+const DEV_SKILLS = {{ dev_skills | tojson }};
 
 new Chart(document.getElementById('teamPie'), {
   type: 'doughnut',
   data: {
-    labels: LANGS,
-    datasets: [{ data: LANGS.map(l => TEAM[l] || 0), backgroundColor: palette.slice(0, LANGS.length) }],
+    labels: SKILLS,
+    datasets: [{ data: SKILLS.map(l => TEAM[l] || 0), backgroundColor: palette.slice(0, SKILLS.length) }],
   },
   options: {
     responsive: true,
@@ -93,10 +93,10 @@ new Chart(document.getElementById('devBar'), {
   type: 'bar',
   data: {
     labels: DEVS,
-    datasets: LANGS.map((lang, i) => ({
-      label: lang,
+    datasets: SKILLS.map((skill, i) => ({
+      label: skill,
       backgroundColor: palette[i % palette.length],
-      data: DEVS.map(dev => (DEV_LANGS[dev] && DEV_LANGS[dev][lang]) || 0),
+      data: DEVS.map(dev => (DEV_SKILLS[dev] && DEV_SKILLS[dev][skill]) || 0),
     })),
   },
   options: {
