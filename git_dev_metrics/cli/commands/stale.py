@@ -19,6 +19,7 @@ def stale(
     output: Path | None = typer.Option(None, "--output", help="Output HTML path"),
     db: Path | None = typer.Option(None, "--db", help="Override cache database path"),
 ) -> None:
+    """Find stale open PRs across all cached repos."""
     repos = sorted({(org, repo) for org, repo, *_ in list_synced_months(db_path=db)})
     if not repos:
         typer.secho("No repos in cache — run pull first.", fg=typer.colors.RED, err=True)

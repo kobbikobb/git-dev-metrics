@@ -672,7 +672,8 @@ function pieChart(canvasId, legendId, data) {
 
 const pieData = [...devs]
   .filter(d => d.prs > 0)
-  .sort((a,b) => b.prs - a.prs);
+  .sort((a,b) => b.prs - a.prs)
+  .map(d => ({ label: d.name, value: d.prs }));
 pieChart("prPieChart", "prPieLegend", pieData);
 </script>
 
