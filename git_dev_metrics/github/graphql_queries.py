@@ -145,9 +145,9 @@ OPEN_PRS_QUERY = gql.gql(
     """
 )
 
-LANG_REPORT_QUERY = gql.gql(
+SKILL_REPORT_QUERY = gql.gql(
     """
-    query LangReportQuery($query: String!, $first: Int!, $after: String) {
+    query SkillReportQuery($query: String!, $first: Int!, $after: String) {
         search(query: $query, type: ISSUE, first: $first, after: $after) {
             nodes {
                 ... on PullRequest {

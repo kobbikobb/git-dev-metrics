@@ -4,19 +4,19 @@ import typer
 
 from ...utils.date_utils import month_iter
 from .._month_arg import parse_month_arg
-from ..runners.lang_runner import perform_lang_report
-from ..wizards.lang_wizard import lang_wizard
+from ..runners.skill_runner import perform_skill_report
+from ..wizards.skill_wizard import skill_wizard
 
 
-def lang_report(
+def skill_report(
     from_: str | None = typer.Option(None, "--from", help="Start month, YYYY-MM"),
     to: str | None = typer.Option(None, "--to", help="End month, YYYY-MM"),
     output: Path | None = typer.Option(None, "--output", help="Output HTML path"),
     db: Path | None = typer.Option(None, "--db", help="Override cache database path"),
 ) -> None:
-    """Render a language breakdown report for selected months."""
+    """Render a skill breakdown report for selected months."""
     if from_ is None and to is None:
-        lang_wizard(db_path=db)
+        skill_wizard(db_path=db)
         return
 
     if from_ is None or to is None:
@@ -34,4 +34,4 @@ def lang_report(
         raise typer.Exit(code=1)
 
     months = month_iter(from_ym, to_ym)
-    perform_lang_report(months, output=output, db_path=db)
+    perform_skill_report(months, output=output, db_path=db)

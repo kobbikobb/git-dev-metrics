@@ -9,12 +9,12 @@ from ._response_mapper import (
 )
 from .graphql_client import execute_paginated_query, get_client
 from .graphql_queries import (
-    LANG_REPORT_QUERY,
     OPEN_PRS_QUERY,
     ORG_REPOSITORIES_QUERY,
     REPO_METRICS_QUERY,
     REPOSITORIES_QUERY,
     SEARCH_MERGED_PRS_QUERY,
+    SKILL_REPORT_QUERY,
 )
 
 PAGE_SIZE = 50
@@ -149,7 +149,7 @@ def _map_open_prs(prs: list[dict]) -> list[OpenPullRequest]:
     return result
 
 
-def fetch_lang_report_prs(token: str, org: str, repo: str, year: int, month: int) -> list[dict]:
+def fetch_skill_report_prs(token: str, org: str, repo: str, year: int, month: int) -> list[dict]:
     """Fetch merged PRs with file paths for a given month. Returns lightweight dicts."""
     from ..utils.date_utils import month_range
 
@@ -160,7 +160,7 @@ def fetch_lang_report_prs(token: str, org: str, repo: str, year: int, month: int
     query_str = f"repo:{org}/{repo} is:pr merged:{since_s}..{until_s}"
     nodes = execute_paginated_query(
         client,
-        LANG_REPORT_QUERY,
+        SKILL_REPORT_QUERY,
         {"query": query_str, "first": 25},
         "search",
         repo_id=f"{org}/{repo}",
