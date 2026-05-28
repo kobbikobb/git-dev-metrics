@@ -145,6 +145,26 @@ OPEN_PRS_QUERY = gql.gql(
     """
 )
 
+LANG_REPORT_QUERY = gql.gql(
+    """
+    query LangReportQuery($query: String!, $first: Int!, $after: String) {
+        search(query: $query, type: ISSUE, first: $first, after: $after) {
+            nodes {
+                ... on PullRequest {
+                    number
+                    author { login }
+                    files(first: 100) {
+                        nodes { path additions deletions }
+                    }
+                }
+            }
+            pageInfo { hasNextPage endCursor }
+        }
+    }
+    """
+)
+
+
 SEARCH_MERGED_PRS_QUERY = gql.gql(
     """
     query SearchMergedPRs($query: String!, $first: Int!, $after: String) {
