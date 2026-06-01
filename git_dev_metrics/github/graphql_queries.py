@@ -161,6 +161,7 @@ SKILL_REPORT_QUERY = gql.gql(
             pageInfo { hasNextPage endCursor }
         }
     }
+    """
 )
 
 LANG_REPORT_QUERY = gql.gql(
@@ -179,8 +180,8 @@ LANG_REPORT_QUERY = gql.gql(
             pageInfo { hasNextPage endCursor }
         }
     }
+    """
 )
-
 
 SEARCH_MERGED_PRS_QUERY = gql.gql(
     """
