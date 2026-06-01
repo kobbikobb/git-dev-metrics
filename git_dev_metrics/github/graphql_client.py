@@ -57,7 +57,6 @@ def execute_query(
     for attempt in range(TRANSIENT_RETRY_ATTEMPTS):
         try:
             result = client.execute(GraphQLRequest(query, variable_values=variables))
-            return result if result is not None else {}
         except transport_exceptions.TransportQueryError as e:
             _handle_graphql_error(e)
             return {}  # unreachable but needed for type checker
@@ -71,6 +70,8 @@ def execute_query(
                 last_exc = e
                 continue
             raise GitHubAPIError(f"GitHub API error: {e}") from e
+        else:
+            return result if result is not None else {}
     raise GitHubAPIError(f"GitHub API error after retries: {last_exc}") from last_exc
 
 
