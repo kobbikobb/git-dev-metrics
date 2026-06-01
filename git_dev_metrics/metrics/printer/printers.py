@@ -8,9 +8,7 @@ class ConsolePrinter:
     def __init__(self) -> None:
         self._dev_printer = ConsoleDevPrinter()
 
-    def print_combined_metrics(
-        self, snapshot: MetricsSnapshot, date_range: str
-    ) -> None:
+    def print_combined_metrics(self, snapshot: MetricsSnapshot, date_range: str) -> None:
         from rich.console import Console
 
         console = Console()
