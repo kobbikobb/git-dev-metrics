@@ -188,9 +188,7 @@ def fetch_skill_report_prs(token: str, org: str, repo: str, year: int, month: in
     return result
 
 
-def fetch_lang_report_prs(
-    token: str, org: str, repo: str, year: int, month: int
-) -> list[dict]:
+def fetch_lang_report_prs(token: str, org: str, repo: str, year: int, month: int) -> list[dict]:
     """Fetch merged PRs with file paths for a given month. Returns lightweight dicts."""
     from ..utils.date_utils import month_range
 
