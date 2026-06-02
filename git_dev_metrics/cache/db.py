@@ -58,6 +58,11 @@ CREATE TABLE IF NOT EXISTS nicknames (
     login TEXT PRIMARY KEY,
     nickname TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS targets (
+    key TEXT PRIMARY KEY,
+    value REAL NOT NULL
+);
 """
 
 
@@ -352,3 +357,25 @@ def delete_nickname(login: str, db_path: Path | None = None) -> None:
     conn = open_connection(db_path)
     with conn:
         conn.execute("DELETE FROM nicknames WHERE login = ?", (login,))
+
+
+def get_targets(db_path: Path | None = None) -> dict[str, float]:
+    """All target key → value mappings."""
+    conn = open_connection(db_path)
+    rows = conn.execute("SELECT key, value FROM targets").fetchall()
+    return {row["key"]: row["value"] for row in rows}
+
+
+def set_target(key: str, value: float, db_path: Path | None = None) -> None:
+    conn = open_connection(db_path)
+    with conn:
+        conn.execute(
+            "INSERT OR REPLACE INTO targets (key, value) VALUES (?, ?)",
+            (key, value),
+        )
+
+
+def delete_target(key: str, db_path: Path | None = None) -> None:
+    conn = open_connection(db_path)
+    with conn:
+        conn.execute("DELETE FROM targets WHERE key = ?", (key,))

@@ -3,14 +3,17 @@ import json
 from git_dev_metrics.cache import (
     count_prs,
     delete_nickname,
+    delete_target,
     get_all_dev_logins,
     get_nicknames,
+    get_targets,
     insert_prs,
     is_sealed,
     open_connection,
     query_prs,
     seal_month,
     set_nickname,
+    set_target,
 )
 
 from ..conftest import any_pr, approved_review, dt
@@ -233,3 +236,44 @@ class TestNicknameDb:
         logins = get_all_dev_logins(db_path=db_path)
 
         assert logins == set()
+
+
+class TestTargetDb:
+    def test_should_return_empty_dict_when_no_targets(self, tmp_path):
+        db_path = tmp_path / "cache.db"
+
+        result = get_targets(db_path=db_path)
+
+        assert result == {}
+
+    def test_should_set_and_retrieve_target(self, tmp_path):
+        db_path = tmp_path / "cache.db"
+
+        set_target("cycle_time_max", 24.0, db_path=db_path)
+
+        assert get_targets(db_path=db_path) == {"cycle_time_max": 24.0}
+
+    def test_should_replace_existing_target(self, tmp_path):
+        db_path = tmp_path / "cache.db"
+        set_target("cycle_time_max", 24.0, db_path=db_path)
+
+        set_target("cycle_time_max", 48.0, db_path=db_path)
+
+        assert get_targets(db_path=db_path) == {"cycle_time_max": 48.0}
+
+    def test_should_delete_target(self, tmp_path):
+        db_path = tmp_path / "cache.db"
+        set_target("cycle_time_max", 24.0, db_path=db_path)
+
+        delete_target("cycle_time_max", db_path=db_path)
+
+        assert get_targets(db_path=db_path) == {}
+
+    def test_should_return_all_targets(self, tmp_path):
+        db_path = tmp_path / "cache.db"
+        set_target("cycle_time_max", 24.0, db_path=db_path)
+        set_target("health_min", 80.0, db_path=db_path)
+
+        result = get_targets(db_path=db_path)
+
+        assert result == {"cycle_time_max": 24.0, "health_min": 80.0}

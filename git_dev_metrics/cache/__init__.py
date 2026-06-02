@@ -5,8 +5,10 @@ from .db import (
     count_prs,
     default_db_path,
     delete_nickname,
+    delete_target,
     get_all_dev_logins,
     get_nicknames,
+    get_targets,
     insert_prs,
     is_partial,
     is_sealed,
@@ -16,6 +18,7 @@ from .db import (
     query_prs,
     seal_month,
     set_nickname,
+    set_target,
 )
 from .query import (
     has_partial_for_range,
@@ -32,8 +35,10 @@ __all__ = [
     "count_prs",
     "default_db_path",
     "delete_nickname",
+    "delete_target",
     "get_all_dev_logins",
     "get_nicknames",
+    "get_targets",
     "has_partial_for_range",
     "insert_prs",
     "is_partial",
@@ -50,4 +55,5 @@ __all__ = [
     "query_prs",
     "seal_month",
     "set_nickname",
+    "set_target",
 ]

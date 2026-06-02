@@ -348,6 +348,11 @@
     flex-shrink: 0;
   }
 
+  .target-ok { color: var(--green); }
+  .target-fail { color: var(--red); font-weight: 600; }
+  .target-items { display: flex; flex-direction: column; gap: 4px; font-size: 0.75rem; }
+  .target-items .item { display: flex; gap: 4px; }
+
   .scatter-container {
     position: relative;
     height: 260px;
@@ -481,6 +486,23 @@
     <div class="value">{{ summary.max_review_share }}%</div>
     <div class="sub">Reviews by top reviewer</div>
   </div>
+  {% if target_status and target_status.total > 0 %}
+  <div class="summary-card">
+    <div class="label">Targets</div>
+    <div class="value">{{ target_status.met }}/{{ target_status.total }}</div>
+    <div class="sub">Met</div>
+    <div class="target-items">
+      {% for t in target_status.items %}
+      <div class="item">
+        <span class="{% if t.ok %}target-ok{% else %}target-fail{% endif %}">
+          {% if t.ok %}✓{% else %}✗{% endif %}
+        </span>
+        {{ t.label }} {{ t.actual }}{{ t.unit }} / {{ t.target }}{{ t.unit }}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
 </div>
 
 <div class="table-wrapper">

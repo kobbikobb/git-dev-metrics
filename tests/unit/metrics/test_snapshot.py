@@ -276,3 +276,51 @@ class TestBuildSummary:
         assert summary.top_reviewer == "bob"
         assert summary.max_review_share == round(5 / 7 * 100)
         assert summary.review_ratio == round(7 / 5, 2)
+
+
+class TestTeamTargetStatus:
+    def test_should_return_total_zero_with_no_matching_targets(self):
+        from git_dev_metrics.metrics._rows import team_target_status
+
+        team = Row("team", 5, 10, 2, 4, 100, 20, 2.5, 7, 50, 80, "good")
+        result = team_target_status(team, {"unrelated": 42})
+        assert result["total"] == 0
+        assert result["met"] == 0
+
+    def test_should_report_cycle_time_target_as_met(self):
+        from git_dev_metrics.metrics._rows import team_target_status
+
+        team = Row("team", 5, 10, 2, 4, 100, 20, 2.5, 7, 50, 80, "good")
+        result = team_target_status(team, {"cycle_time_max": 24})
+        assert result["total"] == 1
+        assert result["met"] == 1
+        assert result["items"][0]["ok"] is True
+
+    def test_should_report_cycle_time_target_as_unmet(self):
+        from git_dev_metrics.metrics._rows import team_target_status
+
+        team = Row("team", 5, 30, 2, 4, 100, 20, 2.5, 7, 50, 80, "good")
+        result = team_target_status(team, {"cycle_time_max": 24})
+        assert result["total"] == 1
+        assert result["met"] == 0
+        assert result["items"][0]["ok"] is False
+
+    def test_should_report_health_min_target(self):
+        from git_dev_metrics.metrics._rows import team_target_status
+
+        team = Row("team", 5, 10, 2, 4, 100, 20, 2.5, 7, 50, 80, "good")
+        result = team_target_status(team, {"health_min": 90})
+        assert result["met"] == 0
+        result = team_target_status(team, {"health_min": 70})
+        assert result["met"] == 1
+
+    def test_should_handle_multiple_targets(self):
+        from git_dev_metrics.metrics._rows import team_target_status
+
+        team = Row("team", 5, 18, 3, 6, 100, 20, 3.0, 7, 50, 85, "good")
+        result = team_target_status(
+            team, {"cycle_time_max": 24, "pickup_time_max": 4, "health_min": 80}
+        )
+        assert result["total"] == 3
+        assert result["met"] == 3  # 18/24 ✓, 3/4 ✓, 85/80 ✓
+        assert all(item["ok"] for item in result["items"])
