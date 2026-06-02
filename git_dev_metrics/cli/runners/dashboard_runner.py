@@ -14,9 +14,15 @@ def _default_output(period_slug: str) -> Path:
 
 
 def write_and_open_dashboard(
-    snapshot: MetricsSnapshot, period_slug: str, date_range: str, output: Path | None
+    snapshot: MetricsSnapshot,
+    period_slug: str,
+    date_range: str,
+    output: Path | None,
+    nicknames: dict[str, str] | None = None,
 ) -> None:
     out = (output or _default_output(period_slug)).with_suffix(".html")
-    FileHtmlPrinter(out).print_combined_metrics(snapshot, period_slug, date_range)
+    FileHtmlPrinter(out).print_combined_metrics(
+        snapshot, period_slug, date_range, nicknames=nicknames
+    )
     typer.echo(f"Dashboard written to {out}.")
     open_in_browser(out)

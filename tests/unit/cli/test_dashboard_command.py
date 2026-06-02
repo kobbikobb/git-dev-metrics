@@ -1,6 +1,6 @@
 from typer.testing import CliRunner
 
-from git_dev_metrics.cache import insert_prs, seal_month
+from git_dev_metrics.cache import insert_prs, seal_month, set_nickname
 from git_dev_metrics.cli import app
 
 from ..conftest import any_pr, approved_review, dt
@@ -157,6 +157,33 @@ class TestDashboardFlagMode:
         # Assert
         assert result.exit_code == 1
         assert "No synced data" in result.stderr
+
+    def test_should_render_nickname_in_html(self, tmp_path, _stub_webbrowser):
+        db_path = tmp_path / "cache.db"
+        _seed_two_repos_apr(db_path)
+        set_nickname("alice", "Alpha", db_path=db_path)
+        set_nickname("bob", "Beta", db_path=db_path)
+        out = tmp_path / "r.html"
+
+        result = runner.invoke(
+            app,
+            [
+                "dashboard",
+                "--from",
+                "2026-04",
+                "--to",
+                "2026-04",
+                "--output",
+                str(out),
+                "--db",
+                str(db_path),
+            ],
+        )
+
+        assert result.exit_code == 0, result.output
+        html = out.read_text()
+        assert "Alpha" in html
+        assert "Beta" in html
 
 
 class TestDashboardWizardDispatch:

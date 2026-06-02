@@ -4,6 +4,9 @@ from .db import (
     close_connection,
     count_prs,
     default_db_path,
+    delete_nickname,
+    get_all_dev_logins,
+    get_nicknames,
     insert_prs,
     is_partial,
     is_sealed,
@@ -12,6 +15,7 @@ from .db import (
     open_connection,
     query_prs,
     seal_month,
+    set_nickname,
 )
 from .query import (
     has_partial_for_range,
@@ -27,6 +31,9 @@ __all__ = [
     "close_connection",
     "count_prs",
     "default_db_path",
+    "delete_nickname",
+    "get_all_dev_logins",
+    "get_nicknames",
     "has_partial_for_range",
     "insert_prs",
     "is_partial",
@@ -42,4 +49,5 @@ __all__ = [
     "open_connection",
     "query_prs",
     "seal_month",
+    "set_nickname",
 ]
