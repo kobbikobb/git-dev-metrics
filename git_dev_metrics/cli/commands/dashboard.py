@@ -2,6 +2,7 @@ from pathlib import Path
 
 import typer
 
+from ...cache import get_nicknames
 from ..runners.dashboard_runner import write_and_open_dashboard
 from ..utils._date_formatter import format_date_range
 from ..wizards.dashboard_wizard import dashboard_wizard
@@ -16,6 +17,11 @@ def dashboard(
 ) -> None:
     """Render the in-depth HTML dashboard and open it in the browser."""
     snapshot = resolve_range(from_, to, db, dashboard_wizard)
+    nicknames = get_nicknames(db_path=db)
     write_and_open_dashboard(
-        snapshot, f"{from_}-to-{to}", format_date_range(snapshot.period), output
+        snapshot,
+        f"{from_}-to-{to}",
+        format_date_range(snapshot.period),
+        output,
+        nicknames=nicknames,
     )

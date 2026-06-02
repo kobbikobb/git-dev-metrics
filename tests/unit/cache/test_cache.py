@@ -2,11 +2,15 @@ import json
 
 from git_dev_metrics.cache import (
     count_prs,
+    delete_nickname,
+    get_all_dev_logins,
+    get_nicknames,
     insert_prs,
     is_sealed,
     open_connection,
     query_prs,
     seal_month,
+    set_nickname,
 )
 
 from ..conftest import any_pr, approved_review, dt
@@ -129,3 +133,103 @@ class TestSealing:
         result = count_prs("myorg", "myrepo", 2026, 4, db_path=db_path)
 
         assert result == 2
+
+
+class TestNicknameDb:
+    def test_should_return_empty_dict_when_no_nicknames(self, tmp_path):
+        db_path = tmp_path / "cache.db"
+
+        result = get_nicknames(db_path=db_path)
+
+        assert result == {}
+
+    def test_should_set_and_retrieve_nickname(self, tmp_path):
+        db_path = tmp_path / "cache.db"
+
+        set_nickname("alice", "Alpha", db_path=db_path)
+
+        assert get_nicknames(db_path=db_path) == {"alice": "Alpha"}
+
+    def test_should_replace_existing_nickname(self, tmp_path):
+        db_path = tmp_path / "cache.db"
+        set_nickname("alice", "Alpha", db_path=db_path)
+
+        set_nickname("alice", "A-Plus", db_path=db_path)
+
+        assert get_nicknames(db_path=db_path) == {"alice": "A-Plus"}
+
+    def test_should_delete_nickname(self, tmp_path):
+        db_path = tmp_path / "cache.db"
+        set_nickname("alice", "Alpha", db_path=db_path)
+
+        delete_nickname("alice", db_path=db_path)
+
+        assert get_nicknames(db_path=db_path) == {}
+
+    def test_should_return_all_nicknames(self, tmp_path):
+        db_path = tmp_path / "cache.db"
+        set_nickname("alice", "Alpha", db_path=db_path)
+        set_nickname("bob", "Beta", db_path=db_path)
+
+        result = get_nicknames(db_path=db_path)
+
+        assert result == {"alice": "Alpha", "bob": "Beta"}
+
+    def test_should_handle_special_characters(self, tmp_path):
+        db_path = tmp_path / "cache.db"
+
+        set_nickname("bob", "Bøb 🌟", db_path=db_path)
+
+        assert get_nicknames(db_path=db_path) == {"bob": "Bøb 🌟"}
+
+    def test_should_get_all_dev_logins_from_authors(self, tmp_path):
+        db_path = tmp_path / "cache.db"
+        insert_prs(
+            [any_pr(number=1, user={"login": "alice"}), any_pr(number=2, user={"login": "bob"})],
+            "myorg",
+            "myrepo",
+            2026,
+            4,
+            db_path=db_path,
+        )
+
+        logins = get_all_dev_logins(db_path=db_path)
+
+        assert logins == {"alice", "bob"}
+
+    def test_should_get_all_dev_logins_from_reviewers(self, tmp_path):
+        db_path = tmp_path / "cache.db"
+        insert_prs(
+            [any_pr(number=1, user={"login": "alice"}, reviews=[approved_review(login="carol")])],
+            "myorg",
+            "myrepo",
+            2026,
+            4,
+            db_path=db_path,
+        )
+
+        logins = get_all_dev_logins(db_path=db_path)
+
+        assert logins == {"alice", "carol"}
+
+    def test_should_deduplicate_logins_in_get_all_dev_logins(self, tmp_path):
+        db_path = tmp_path / "cache.db"
+        insert_prs(
+            [any_pr(number=1, user={"login": "alice"}, reviews=[approved_review(login="alice")])],
+            "myorg",
+            "myrepo",
+            2026,
+            4,
+            db_path=db_path,
+        )
+
+        logins = get_all_dev_logins(db_path=db_path)
+
+        assert logins == {"alice"}
+
+    def test_should_return_empty_set_when_no_data(self, tmp_path):
+        db_path = tmp_path / "cache.db"
+
+        logins = get_all_dev_logins(db_path=db_path)
+
+        assert logins == set()

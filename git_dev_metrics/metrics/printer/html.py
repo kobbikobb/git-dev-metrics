@@ -33,10 +33,13 @@ class _SummaryData(TypedDict):
     max_review_share: int
 
 
-def _devs_for_template(snapshot: MetricsSnapshot) -> list[_DevRow]:
+def _devs_for_template(
+    snapshot: MetricsSnapshot,
+    nicknames: dict[str, str] | None = None,
+) -> list[_DevRow]:
     return [
         _DevRow(
-            name=row.name,
+            name=nicknames.get(row.name, row.name) if nicknames else row.name,
             health=row.health,
             pickup=row.pickup_time,
             review=row.review_time,
@@ -51,9 +54,17 @@ def _devs_for_template(snapshot: MetricsSnapshot) -> list[_DevRow]:
     ]
 
 
-def _summary_for_template(snapshot: MetricsSnapshot) -> _SummaryData:
+def _summary_for_template(
+    snapshot: MetricsSnapshot,
+    nicknames: dict[str, str] | None = None,
+) -> _SummaryData:
     team = snapshot.team
     summary = snapshot.summary
+    top_reviewer = summary.top_reviewer
+    if nicknames and top_reviewer:
+        top_reviewer = nicknames.get(top_reviewer, top_reviewer)
+    elif not top_reviewer:
+        top_reviewer = "\u2014"
     return _SummaryData(
         team_health=team.health,
         total_prs=team.pr_count,
@@ -65,7 +76,7 @@ def _summary_for_template(snapshot: MetricsSnapshot) -> _SummaryData:
         ai_adoption=round(team.ai_percentage),
         ai_per_dev=list(summary.ai_per_dev),
         review_ratio=summary.review_ratio,
-        top_reviewer=summary.top_reviewer,
+        top_reviewer=top_reviewer,
         max_review_share=summary.max_review_share,
     )
 
@@ -77,12 +88,16 @@ class FileHtmlPrinter:
         self._output_path = output_path
 
     def print_combined_metrics(
-        self, snapshot: MetricsSnapshot, period: str, date_range: str
+        self,
+        snapshot: MetricsSnapshot,
+        period: str,
+        date_range: str,
+        nicknames: dict[str, str] | None = None,
     ) -> None:
         html = render_template(
             "dashboard.html",
-            devs=_devs_for_template(snapshot),
-            summary=_summary_for_template(snapshot),
+            devs=_devs_for_template(snapshot, nicknames),
+            summary=_summary_for_template(snapshot, nicknames),
             period=period,
             date_range=date_range,
             has_partial=snapshot.has_partial,

@@ -9,7 +9,11 @@ class ConsolePrinter:
         self._dev_printer = ConsoleDevPrinter()
 
     def print_combined_metrics(
-        self, snapshot: MetricsSnapshot, period: str, date_range: str
+        self,
+        snapshot: MetricsSnapshot,
+        period: str,
+        date_range: str,
+        nicknames: dict[str, str] | None = None,
     ) -> None:
         from rich.console import Console
 
@@ -17,6 +21,11 @@ class ConsolePrinter:
 
         team = snapshot.team
         summary = snapshot.summary
+        top_reviewer = summary.top_reviewer
+        if nicknames and top_reviewer:
+            top_reviewer = nicknames.get(top_reviewer, top_reviewer)
+        elif not top_reviewer:
+            top_reviewer = "\u2014"
         cells = [
             ("Team Health", str(team.health)),
             ("Total PRs", str(team.pr_count)),
@@ -27,7 +36,7 @@ class ConsolePrinter:
             ("Total Reviews", str(team.reviews_given)),
             ("AI Adoption", f"{round(team.ai_percentage)}%"),
             ("Review Ratio", f"{summary.review_ratio}x"),
-            ("Top Reviewer", summary.top_reviewer or "\u2014"),
+            ("Top Reviewer", top_reviewer),
             ("Max Review Share", f"{summary.max_review_share}%"),
         ]
 
@@ -35,7 +44,9 @@ class ConsolePrinter:
         self._render_table(cells, date_range, snapshot.has_partial, console)
         console.print()
 
-        self._dev_printer.print_combined_metrics(snapshot, period, date_range)
+        self._dev_printer.print_combined_metrics(
+            snapshot, period, date_range, nicknames=nicknames
+        )
 
     def _render_table(
         self, cells: list[tuple[str, str]], date_range: str, has_partial: bool, console

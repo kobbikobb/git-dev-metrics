@@ -2,6 +2,7 @@ from pathlib import Path
 
 import typer
 
+from ...cache import get_nicknames
 from ...metrics.printer import ConsolePrinter
 from ..utils._date_formatter import format_date_range
 from ..wizards.summary_wizard import summary_wizard
@@ -15,6 +16,7 @@ def summary(
 ) -> None:
     """Print the dashboard summary to the console."""
     snapshot = resolve_range(from_, to, db, summary_wizard)
+    nicknames = get_nicknames(db_path=db)
     ConsolePrinter().print_combined_metrics(
-        snapshot, f"{from_}-to-{to}", format_date_range(snapshot.period)
+        snapshot, f"{from_}-to-{to}", format_date_range(snapshot.period), nicknames=nicknames
     )

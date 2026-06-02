@@ -53,6 +53,11 @@ CREATE TABLE IF NOT EXISTS synced_months (
     partial INTEGER NOT NULL DEFAULT 0,
     PRIMARY KEY (year, month, repo_org, repo_name)
 );
+
+CREATE TABLE IF NOT EXISTS nicknames (
+    login TEXT PRIMARY KEY,
+    nickname TEXT NOT NULL
+);
 """
 
 
@@ -307,3 +312,43 @@ def count_prs(
         (org, repo, year, month),
     ).fetchone()
     return row["n"] if row else 0
+
+
+def get_all_dev_logins(db_path: Path | None = None) -> set[str]:
+    """All unique developer logins across cached PRs and reviews."""
+    conn = open_connection(db_path)
+    authors = conn.execute(
+        "SELECT DISTINCT author_login FROM prs "
+        "WHERE author_login IS NOT NULL AND author_login != ''"
+    ).fetchall()
+    reviewers = conn.execute(
+        "SELECT DISTINCT user_login FROM reviews WHERE user_login IS NOT NULL AND user_login != ''"
+    ).fetchall()
+    result: set[str] = set()
+    for row in authors:
+        result.add(row[0])
+    for row in reviewers:
+        result.add(row[0])
+    return result
+
+
+def get_nicknames(db_path: Path | None = None) -> dict[str, str]:
+    """All login → nickname mappings."""
+    conn = open_connection(db_path)
+    rows = conn.execute("SELECT login, nickname FROM nicknames").fetchall()
+    return {row["login"]: row["nickname"] for row in rows}
+
+
+def set_nickname(login: str, nickname: str, db_path: Path | None = None) -> None:
+    conn = open_connection(db_path)
+    with conn:
+        conn.execute(
+            "INSERT OR REPLACE INTO nicknames (login, nickname) VALUES (?, ?)",
+            (login, nickname),
+        )
+
+
+def delete_nickname(login: str, db_path: Path | None = None) -> None:
+    conn = open_connection(db_path)
+    with conn:
+        conn.execute("DELETE FROM nicknames WHERE login = ?", (login,))
