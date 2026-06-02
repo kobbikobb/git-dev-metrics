@@ -5,6 +5,7 @@ from typer.testing import CliRunner
 
 from git_dev_metrics.cache import seal_month
 from git_dev_metrics.cli import app
+from git_dev_metrics.github import GitHubNotFoundError
 
 from ..conftest import dt
 
@@ -146,3 +147,32 @@ class TestStale:
         assert result.exit_code == 0, result.output
         expected = tmp_path / "metrics_results" / "stale_2026-05-12.html"
         assert expected.exists()
+
+    @freeze_time("2026-05-12")
+    def test_should_skip_missing_repos(self, tmp_path, mocker, _stub_webbrowser):
+        db_path = tmp_path / "cache.db"
+        seal_month("myorg", "repoA", 2026, 4, db_path=db_path)
+        seal_month("myorg", "ghost-repo", 2026, 4, db_path=db_path)
+
+        def fake_open_prs(_token, _org, repo, **_kwargs):
+            if repo == "ghost-repo":
+                raise GitHubNotFoundError("not found")
+            return [_open_pr(1, "alice", dt(year=2026, month=4, day=1, hour=8, minute=0))]
+
+        mocker.patch(
+            "git_dev_metrics.cli.commands.stale.get_github_token",
+            return_value="fake-token",
+        )
+        mocker.patch(
+            "git_dev_metrics.cli.commands.stale.fetch_open_prs",
+            side_effect=fake_open_prs,
+        )
+        out = tmp_path / "stale.html"
+
+        result = runner.invoke(app, ["stale", "--db", str(db_path), "--output", str(out)])
+
+        assert result.exit_code == 0, result.output
+        html = out.read_text()
+        assert "myorg/repoA" in html
+        assert "myorg/ghost-repo" not in html
+        assert "Skipping" in result.stderr
