@@ -36,14 +36,17 @@ def _calculate_age_hours(
 
 
 def _is_stale_pr(
-    pr: OpenPullRequest, repo: str, clock: Callable[[], datetime] | None = None
+    pr: OpenPullRequest,
+    repo: str,
+    clock: Callable[[], datetime] | None = None,
+    threshold_hours: float = STALE_PR_THRESHOLD_HOURS,
 ) -> StalePr | None:
     created = pr.get("created_at")
     if created is None:
         return None
 
     age_hours = _calculate_age_hours(created, clock)
-    if age_hours > STALE_PR_THRESHOLD_HOURS:
+    if age_hours > threshold_hours:
         number = pr.get("number")
         return StalePr(
             number=number if number is not None else 0,
@@ -60,9 +63,12 @@ def _is_stale_pr(
 
 
 def get_stale_prs(
-    prs: list[OpenPullRequest], repo: str = "", clock: Callable[[], datetime] | None = None
+    prs: list[OpenPullRequest],
+    repo: str = "",
+    clock: Callable[[], datetime] | None = None,
+    threshold_hours: float = STALE_PR_THRESHOLD_HOURS,
 ) -> list[StalePr]:
-    stale = [p for p in (_is_stale_pr(pr, repo, clock) for pr in prs) if p]
+    stale = [p for p in (_is_stale_pr(pr, repo, clock, threshold_hours) for pr in prs) if p]
     stale.sort(key=lambda x: x.age_hours, reverse=True)
     return stale
 

@@ -36,6 +36,10 @@
   .badge { font-size: 0.7rem; padding: 0.1rem 0.4rem; border-radius: 4px; background: var(--border); color: var(--muted); }
   .badge-approved { background: rgba(34,197,94,0.15); color: var(--ok); }
   .empty { text-align: center; color: var(--muted); padding: 3rem; }
+  .targets { display: flex; gap: 1.5rem; justify-content: center; margin-bottom: 1.5rem; }
+  .target-item { font-size: 0.85rem; }
+  .target-item .ok { color: var(--ok); }
+  .target-item .fail { color: var(--crit); font-weight: 600; }
 </style>
 </head>
 <body>
@@ -44,6 +48,19 @@
     <h1>Stale PRs</h1>
     <p>{{ total }} open &gt; 7 days · avg age {{ "%.1f"|format(avg_age) }} days</p>
   </div>
+  {% if targets %}
+  <div class="targets">
+    {% for t in targets.items %}
+    <div class="target-item">
+      <span class="{% if t.ok %}ok{% else %}fail{% endif %}">
+        {% if t.ok %}✓{% else %}✗{% endif %}
+      </span>
+      {{ t.label }}: {{ t.actual }}{{ t.unit }} / {{ t.target }}{{ t.unit }}
+    </div>
+    {% endfor %}
+    <div class="target-item">Targets met: {{ targets.met }}/{{ targets.total }}</div>
+  </div>
+  {% endif %}
   <div class="card">
     {% if prs %}
     <table>

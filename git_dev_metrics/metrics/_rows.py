@@ -44,6 +44,42 @@ class Row:
     band: Band
 
 
+_TEAM_TARGETS: dict[str, tuple[str, str]] = {
+    "cycle_time_max": ("Cycle Time", "h"),
+    "pickup_time_max": ("Pickup Time", "h"),
+    "review_time_max": ("Review Time", "h"),
+    "health_min": ("Health", ""),
+    "prs_per_week_min": ("PRs/Week", ""),
+}
+
+
+def team_target_status(team: Row, targets: dict[str, float]) -> dict:
+    """Compare team row against targets, return {items, met, total}."""
+    items: list[dict] = []
+    met = 0
+    for key, (label, unit) in _TEAM_TARGETS.items():
+        if key not in targets:
+            continue
+        target = targets[key]
+        actual = getattr(team, key.removesuffix("_max").removesuffix("_min"), None)
+        if actual is None:
+            continue
+        is_max = key.endswith("_max")
+        ok = actual <= target if is_max else actual >= target
+        if ok:
+            met += 1
+        items.append(
+            {
+                "label": label,
+                "actual": round(actual, 1),
+                "target": int(target) if target == int(target) else target,
+                "unit": unit,
+                "ok": ok,
+            }
+        )
+    return {"items": items, "met": met, "total": len(items)}
+
+
 @dataclass(frozen=True)
 class Summary:
     ai_per_dev: tuple[int, ...]

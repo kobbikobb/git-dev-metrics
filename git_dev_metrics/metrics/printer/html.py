@@ -1,6 +1,7 @@
 from pathlib import Path
 from typing import TypedDict
 
+from .._rows import team_target_status
 from ..snapshot import MetricsSnapshot
 from ._html_templates import render_template
 
@@ -93,7 +94,9 @@ class FileHtmlPrinter:
         period: str,
         date_range: str,
         nicknames: dict[str, str] | None = None,
+        targets: dict[str, float] | None = None,
     ) -> None:
+        target_status = team_target_status(snapshot.team, targets) if targets else None
         html = render_template(
             "dashboard.html",
             devs=_devs_for_template(snapshot, nicknames),
@@ -101,6 +104,7 @@ class FileHtmlPrinter:
             period=period,
             date_range=date_range,
             has_partial=snapshot.has_partial,
+            target_status=target_status,
         )
 
         html_path = self._output_path.with_suffix(".html")

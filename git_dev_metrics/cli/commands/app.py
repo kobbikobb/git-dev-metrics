@@ -9,6 +9,7 @@ from .pull import pull
 from .skill_report import skill_report
 from .stale import stale
 from .summary import summary
+from .targets import targets
 from .trend import trend
 
 app = typer.Typer(help="Git development metrics CLI.")
@@ -30,4 +31,5 @@ app.command()(nickname)
 app.command()(pull)
 app.command()(stale)
 app.command()(summary)
+app.command()(targets)
 app.command()(trend)

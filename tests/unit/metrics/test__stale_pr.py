@@ -13,6 +13,29 @@ class TestGetStalePrs:
         result = get_stale_prs([], "myrepo")
         assert result == []
 
+    def test_should_use_custom_threshold(self):
+        from git_dev_metrics.metrics._stale_pr import get_stale_prs
+
+        now = datetime.now(UTC)
+        prs = cast(
+            list[OpenPullRequest],
+            [
+                {
+                    "number": 1,
+                    "title": "5 day old PR",
+                    "created_at": now - timedelta(days=5),
+                    "merged_at": None,
+                    "user": {"login": "alice"},
+                },
+            ],
+        )
+        # 5 days = 120 hours, threshold 96h should flag it
+        result = get_stale_prs(prs, "myrepo", lambda: now, threshold_hours=96)
+        assert len(result) == 1
+        # threshold 144h should not flag it
+        result = get_stale_prs(prs, "myrepo", lambda: now, threshold_hours=144)
+        assert result == []
+
     def test_should_return_fresh_prs(self):
         from git_dev_metrics.metrics._stale_pr import get_stale_prs
 
