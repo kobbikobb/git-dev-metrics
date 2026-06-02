@@ -4,6 +4,7 @@ from .clear import clear
 from .dashboard import dashboard
 from .lang_report import lang_report
 from .logout import logout
+from .nickname import nickname
 from .pull import pull
 from .skill_report import skill_report
 from .stale import stale
@@ -25,6 +26,7 @@ app.command()(dashboard)
 app.command()(skill_report)
 app.command()(lang_report)
 app.command()(logout)
+app.command()(nickname)
 app.command()(pull)
 app.command()(stale)
 app.command()(summary)

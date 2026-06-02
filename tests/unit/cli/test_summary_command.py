@@ -1,6 +1,6 @@
 from typer.testing import CliRunner
 
-from git_dev_metrics.cache import insert_prs, seal_month
+from git_dev_metrics.cache import insert_prs, seal_month, set_nickname
 from git_dev_metrics.cli import app
 
 from ..conftest import any_pr, approved_review, dt
@@ -126,6 +126,22 @@ class TestSummaryFlagMode:
         # Assert
         assert result.exit_code == 0, result.output
         _stub_webbrowser.assert_not_called()
+
+    def test_should_display_nickname_instead_of_login(self, tmp_path):
+        db_path = tmp_path / "cache.db"
+        _seed_two_repos_apr(db_path)
+        set_nickname("alice", "Ali", db_path=db_path)
+        set_nickname("bob", "Bob", db_path=db_path)
+
+        result = runner.invoke(
+            app,
+            ["summary", "--from", "2026-04", "--to", "2026-04", "--db", str(db_path)],
+        )
+
+        assert result.exit_code == 0, result.output
+        out = result.output
+        assert "Ali" in out
+        assert "Bob" in out
 
 
 class TestSummaryWizardDispatch:

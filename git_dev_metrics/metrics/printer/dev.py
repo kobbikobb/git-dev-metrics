@@ -20,7 +20,10 @@ class ConsoleDevPrinter:
     """Print dev metrics to console using Rich."""
 
     def print_combined_metrics(
-        self, snapshot: MetricsSnapshot, date_range: str | None = None
+        self,
+        snapshot: MetricsSnapshot,
+        date_range: str | None = None,
+        nicknames: dict[str, str] | None = None,
     ) -> None:
         from rich.console import Console
         from rich.table import Table
@@ -37,8 +40,9 @@ class ConsoleDevPrinter:
 
         for row in snapshot.devs:
             color = band_color(row.band)
+            display_name = nicknames.get(row.name, row.name) if nicknames else row.name
             table.add_row(
-                row.name,
+                display_name,
                 f"[{color}]{row.health}[/{color}]",
                 f"{row.pickup_time:.2f}",
                 f"{row.review_time:.2f}",
