@@ -16,7 +16,5 @@ def summary_wizard(
     run_wizard(
         db_path,
         ask_months,
-        lambda s, slug, dr: ConsolePrinter().print_combined_metrics(
-            s, slug, dr, nicknames=nicknames
-        ),
+        lambda s, slug, dr: ConsolePrinter().print_combined_metrics(s, dr, nicknames=nicknames),
     )

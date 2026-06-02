@@ -158,19 +158,18 @@ class TestSummary:
         assert snap.summary.max_review_share == 0
 
     def test_should_sort_ai_per_dev_ascending(self):
-        prs = []
-        for login, ai_count in [("alice", 5), ("bob", 2), ("carol", 4)]:
-            for i in range(5):
-                prs.append(
-                    any_pr(
-                        number=f"{login}-{i}",
-                        user={"login": login},
-                        created_at=dt(year=2024, month=1, day=1, hour=0, minute=0),
-                        merged_at=dt(year=2024, month=1, day=2, hour=0, minute=0),
-                        reviews=[approved_review(dt(year=2024, month=1, day=1, hour=6, minute=0))],
-                        body="Co-Authored-By: Claude" if i < ai_count else "",
-                    )
-                )
+        prs = [
+            any_pr(
+                number=f"{login}-{i}",
+                user={"login": login},
+                created_at=dt(year=2024, month=1, day=1, hour=0, minute=0),
+                merged_at=dt(year=2024, month=1, day=2, hour=0, minute=0),
+                reviews=[approved_review(dt(year=2024, month=1, day=1, hour=6, minute=0))],
+                body="Co-Authored-By: Claude" if i < ai_count else "",
+            )
+            for login, ai_count in [("alice", 5), ("bob", 2), ("carol", 4)]
+            for i in range(5)
+        ]
 
         snap = MetricsSnapshot.from_repo_prs({"org/r": prs}, _period())
 
@@ -241,19 +240,18 @@ class TestTeamAggregation:
         assert snap.team.pickup_time <= snap.team.cycle_time
 
     def test_should_use_mean_of_dev_rates_for_ai_adoption(self):
-        prs = []
-        for login, ai_count in [("alice", 5), ("bob", 2), ("carol", 2)]:
-            for i in range(5):
-                prs.append(
-                    any_pr(
-                        number=f"{login}-{i}",
-                        user={"login": login},
-                        created_at=dt(year=2024, month=1, day=1, hour=0, minute=0),
-                        merged_at=dt(year=2024, month=1, day=2, hour=0, minute=0),
-                        reviews=[approved_review(dt(year=2024, month=1, day=1, hour=6, minute=0))],
-                        body="Co-Authored-By: Claude" if i < ai_count else "",
-                    )
-                )
+        prs = [
+            any_pr(
+                number=f"{login}-{i}",
+                user={"login": login},
+                created_at=dt(year=2024, month=1, day=1, hour=0, minute=0),
+                merged_at=dt(year=2024, month=1, day=2, hour=0, minute=0),
+                reviews=[approved_review(dt(year=2024, month=1, day=1, hour=6, minute=0))],
+                body="Co-Authored-By: Claude" if i < ai_count else "",
+            )
+            for login, ai_count in [("alice", 5), ("bob", 2), ("carol", 2)]
+            for i in range(5)
+        ]
 
         snap = MetricsSnapshot.from_repo_prs({"org/repo": prs}, _period())
 

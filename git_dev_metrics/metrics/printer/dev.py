@@ -22,7 +22,6 @@ class ConsoleDevPrinter:
     def print_combined_metrics(
         self,
         snapshot: MetricsSnapshot,
-        period: str,
         date_range: str | None = None,
         nicknames: dict[str, str] | None = None,
     ) -> None:

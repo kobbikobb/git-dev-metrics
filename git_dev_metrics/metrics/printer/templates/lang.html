@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Language Report</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --card: #1a1d27;
+    --border: #2a2d3a;
+    --text: #e1e4ed;
+    --muted: #8b8fa3;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding: 2rem;
+  }
+  .header { text-align: center; margin-bottom: 2rem; }
+  .header h1 { font-size: 1.5rem; letter-spacing: -0.02em; }
+  .header p { color: var(--muted); font-size: 0.875rem; margin-top: 0.25rem; }
+  .grid {
+    display: grid;
+    gap: 1.5rem;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.25rem;
+  }
+  .card h2 { font-size: 1rem; margin-bottom: 0.75rem; }
+  .chart-wrap { position: relative; height: 360px; display: flex; justify-content: center; }
+  .pie-wrap { max-width: 400px; margin: 0 auto; }
+  table { width: 100%; border-collapse: collapse; margin-top: 0.5rem; }
+  th { text-align: left; padding: 0.5rem; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); font-weight: 500; border-bottom: 1px solid var(--border); }
+  td { padding: 0.5rem; font-size: 0.8rem; border-bottom: 1px solid var(--border); }
+  td:first-child { font-weight: 600; }
+  tr:last-child td { border-bottom: none; }
+  .total-row td { border-top: 2px solid var(--border); font-weight: 700; }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+</head>
+<body>
+<div class="header">
+  <h1>Language Report</h1>
+  <p>{{ period_range }}</p>
+</div>
+<div class="grid">
+  <div class="card"><h2>PRs by Language (team)</h2><div class="chart-wrap pie-wrap"><canvas id="teamPie"></canvas></div></div>
+  <div class="card"><h2>Language Breakdown per Developer</h2><div class="chart-wrap"><canvas id="devBar"></canvas></div></div>
+  <div class="card">
+    <h2>PRs by Language per Developer</h2>
+    <table>
+      <thead><tr><th>Developer</th>{% for lang in langs %}<th>{{ lang }}</th>{% endfor %}</tr></thead>
+      <tbody>
+        {% for dev in devs %}
+        <tr><td>{{ dev }}</td>{% for lang in langs %}<td>{{ dev_langs.get(dev, {}).get(lang, 0) }}</td>{% endfor %}</tr>
+        {% endfor %}
+        <tr class="total-row"><td>Total</td>{% for lang in langs %}<td>{{ team_langs.get(lang, 0) }}</td>{% endfor %}</tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+<script>
+const palette = ['#6366f1','#22c55e','#eab308','#ef4444','#06b6d4','#f97316','#3b82f6','#a855f7','#14b8a6','#ec4899','#84cc16','#0ea5e9','#d946ef','#10b981','#f43f5e'];
+const TEAM = {{ team_langs | tojson }};
+const DEVS = {{ devs | tojson }};
+const LANGS = {{ langs | tojson }};
+const DEV_LANGS = {{ dev_langs | tojson }};
+
+new Chart(document.getElementById('teamPie'), {
+  type: 'doughnut',
+  data: {
+    labels: LANGS,
+    datasets: [{ data: LANGS.map(l => TEAM[l] || 0), backgroundColor: palette.slice(0, LANGS.length) }],
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { position: 'right', labels: { color: '#e1e4ed' } },
+    },
+  },
+});
+
+new Chart(document.getElementById('devBar'), {
+  type: 'bar',
+  data: {
+    labels: DEVS,
+    datasets: LANGS.map((lang, i) => ({
+      label: lang,
+      backgroundColor: palette[i % palette.length],
+      data: DEVS.map(dev => (DEV_LANGS[dev] && DEV_LANGS[dev][lang]) || 0),
+    })),
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    scales: {
+      x: { stacked: true, ticks: { color: '#e1e4ed' }, grid: { color: '#2a2d3a' } },
+      y: { stacked: true, title: { display: true, text: 'PRs', color: '#8b8fa3' }, ticks: { color: '#8b8fa3' }, grid: { color: '#2a2d3a' } },
+    },
+    plugins: { legend: { position: 'bottom', labels: { color: '#e1e4ed' } } },
+  },
+});
+</script>
+</body>
+</html>

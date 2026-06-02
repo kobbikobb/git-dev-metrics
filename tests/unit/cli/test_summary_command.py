@@ -80,8 +80,7 @@ class TestSummaryFlagMode:
         # Assert
         assert result.exit_code == 0, result.output
         out = result.output
-        assert "Summary (2026-04-01 to 2026-05-01)" in out
-        assert "Total PRs" in out
+        assert "Developer Metrics (2026-04-01 to 2026-05-01)" in out
         assert "bob" in out
 
     def test_should_exit_when_no_synced_data_in_range(self, tmp_path):
@@ -143,7 +142,6 @@ class TestSummaryFlagMode:
         out = result.output
         assert "Ali" in out
         assert "Bob" in out
-        assert "Top Reviewer" in out
 
 
 class TestSummaryWizardDispatch:

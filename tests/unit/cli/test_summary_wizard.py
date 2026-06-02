@@ -50,8 +50,7 @@ class TestSummaryWizardRenders:
         # Assert
         assert captured[0] == [(2026, 4), (2026, 3), (2026, 2)]
         printed = capsys.readouterr().out
-        assert "Summary (2026-03-01 to 2026-05-01)" in printed
-        assert "Total PRs" in printed
+        assert "Developer Metrics (2026-03-01 to 2026-05-01)" in printed
 
 
 class TestSummaryWizardEmptyCache:

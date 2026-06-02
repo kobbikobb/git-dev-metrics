@@ -9,7 +9,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Install uv
         uses: astral-sh/setup-uv@v7
@@ -33,7 +33,7 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Install uv
         uses: astral-sh/setup-uv@v7
@@ -48,8 +48,8 @@ jobs:
 
       - name: Lint and format check
         run: |
-          uv run ruff check git_dev_metrics
-          uv run ruff format --check git_dev_metrics
+          uv run ruff check git_dev_metrics tests/
+          uv run ruff format --check git_dev_metrics tests/
 
       - name: Dead code check
         run: uv run vulture
