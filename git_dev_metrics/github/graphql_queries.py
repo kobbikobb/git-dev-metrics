@@ -83,8 +83,7 @@ REPO_METRICS_QUERY = gql.gql(
                             }
                         }
                     }
-                    # Note: max 10 reviews per PR - truncates if more
-                    reviews(first: 10) {
+                    reviews(first: 100) {
                         nodes {
                             author {
                                 login
@@ -208,7 +207,7 @@ SEARCH_MERGED_PRS_QUERY = gql.gql(
                             }
                         }
                     }
-                    reviews(first: 10) {
+                    reviews(first: 100) {
                         nodes {
                             author {
                                 login

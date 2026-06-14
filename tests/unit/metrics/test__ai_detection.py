@@ -22,16 +22,24 @@ class TestIsAiCoauthored:
         result = is_ai_coauthored(any_pr(body="This is a regular PR description"))
         assert result is False
 
-    def test_should_return_true_for_coauthored_by_in_body(self):
+    def test_should_return_false_for_human_coauthored_by(self):
         from git_dev_metrics.metrics._ai_detection import is_ai_coauthored
 
-        result = is_ai_coauthored(any_pr(body="Co-Authored-By: GitHub <noreply@github.com>"))
+        result = is_ai_coauthored(any_pr(body="Co-Authored-By: Jane Doe <jane@example.com>"))
+        assert result is False
+
+    def test_should_return_true_for_claude_coauthored_by(self):
+        from git_dev_metrics.metrics._ai_detection import is_ai_coauthored
+
+        result = is_ai_coauthored(
+            any_pr(body="Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>")
+        )
         assert result is True
 
     def test_should_be_case_insensitive(self):
         from git_dev_metrics.metrics._ai_detection import is_ai_coauthored
 
-        result = is_ai_coauthored(any_pr(body="co-authored-by: someone@example.com"))
+        result = is_ai_coauthored(any_pr(body="co-authored-by: cursor <cursor@example.com>"))
         assert result is True
 
     def test_should_return_true_when_trailer_only_in_commit_message(self):
@@ -91,9 +99,9 @@ class TestCalculateAiPercentage:
         from git_dev_metrics.metrics._ai_detection import calculate_ai_percentage
 
         prs = [
-            any_pr(body="Co-Authored-By: someone@example.com"),
+            any_pr(body="Co-Authored-By: Claude <noreply@anthropic.com>"),
             any_pr(body="Regular PR"),
-            any_pr(body="Co-Authored-By: another@example.com"),
+            any_pr(body="Co-Authored-By: Cursor <cursor@example.com>"),
             any_pr(body="Another regular PR"),
         ]
         result = calculate_ai_percentage(prs)
@@ -103,8 +111,8 @@ class TestCalculateAiPercentage:
         from git_dev_metrics.metrics._ai_detection import calculate_ai_percentage
 
         prs = [
-            any_pr(body="Co-Authored-By: someone@example.com"),
-            any_pr(body="Co-Authored-By: another@example.com"),
+            any_pr(body="Co-Authored-By: Claude <noreply@anthropic.com>"),
+            any_pr(body="Co-Authored-By: Cursor <cursor@example.com>"),
         ]
         result = calculate_ai_percentage(prs)
         assert result == 100.0
@@ -113,7 +121,7 @@ class TestCalculateAiPercentage:
         from git_dev_metrics.metrics._ai_detection import calculate_ai_percentage
 
         prs = [
-            any_pr(body="Co-Authored-By: someone@example.com"),
+            any_pr(body="Co-Authored-By: Claude <noreply@anthropic.com>"),
             any_pr(body="Regular PR"),
             any_pr(body="Regular PR"),
         ]

@@ -1,4 +1,3 @@
-import re
 from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import datetime
@@ -6,6 +5,7 @@ from typing import TypedDict
 
 from ..constants import is_bot_login
 from ..models import PullRequest
+from ._ai_detection import calculate_ai_percentage
 
 
 @dataclass(frozen=True)
@@ -88,38 +88,6 @@ def _median_cycle_hours(prs: list[PullRequest]) -> float:
     return round(_median(hours), 2) if hours else 0.0
 
 
-_AI_PATTERNS = [
-    r"Co-Authored-By:",
-    r"co-authored-by:",
-    r"Generated\s+(by|with|with\s+)?[\w\s]*AI",
-    r"Claude\s+Code",
-    r"Coding-Agent:",
-    r"AI-assistant:",
-    r"🤖\s*Generated",
-    r"Aider:",
-    r"Cursor:",
-    r"GitHub\s+Copilot:",
-    r"Devin:",
-]
-
-
-def _is_ai_coauthored(pr: PullRequest) -> bool:
-    texts = [pr.get("body") or "", *(pr.get("commit_messages") or [])]
-    return any(
-        re.search(pattern, text, re.IGNORECASE)
-        for text in texts
-        if text
-        for pattern in _AI_PATTERNS
-    )
-
-
-def _ai_percentage(prs: list[PullRequest]) -> float:
-    if not prs:
-        return 0.0
-    ai_count = sum(1 for pr in prs if _is_ai_coauthored(pr))
-    return round((ai_count / len(prs)) * 100, 1)
-
-
 def _row(dev: str, year: int, month: int, prs: list[PullRequest]) -> DevMonthRow:
     dev_prs = [pr for pr in prs if pr["user"]["login"] == dev]
     return DevMonthRow(
@@ -127,7 +95,7 @@ def _row(dev: str, year: int, month: int, prs: list[PullRequest]) -> DevMonthRow
         month_key=_month_key(year, month),
         pr_count=len(dev_prs),
         cycle_hours=_median_cycle_hours(dev_prs),
-        ai_pct=_ai_percentage(dev_prs),
+        ai_pct=calculate_ai_percentage(dev_prs),
     )
 
 

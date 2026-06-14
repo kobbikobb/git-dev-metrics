@@ -5,8 +5,7 @@ import re
 from ..models import PullRequest
 
 AI_TRAILER_PATTERNS = [
-    r"Co-Authored-By:",
-    r"co-authored-by:",
+    r"Co-Authored-By:.*\b(Claude|Copilot|Cursor|Devin|Aider)\b",
     r"Generated\s+(by|with|with\s+)?[\w\s]*AI",
     r"Claude\s+Code",
     r"Coding-Agent:",
