@@ -77,12 +77,17 @@ def parse_iso_datetime(dt_str: str | None) -> datetime | None:
         return None
 
 
-def last_n_months(n: int) -> tuple[tuple[int, int], tuple[int, int]]:
-    """Return (start, end) month tuples for last n full months, ending previous month."""
+def last_n_months(
+    n: int, *, include_current: bool = False
+) -> tuple[tuple[int, int], tuple[int, int]]:
+    """Return (start, end) month tuples for last n months."""
     if n < 1:
         raise ValueError(f"n must be >= 1, got {n}")
     now = datetime.now(UTC)
-    end_y, end_m = (now.year - 1, 12) if now.month == 1 else (now.year, now.month - 1)
+    if include_current:
+        end_y, end_m = now.year, now.month
+    else:
+        end_y, end_m = (now.year - 1, 12) if now.month == 1 else (now.year, now.month - 1)
     end_total = end_y * 12 + end_m
     start_total = end_total - n + 1
     start_y = (start_total - 1) // 12
