@@ -7,6 +7,7 @@ license = "MIT"
 authors = [{name = "Jakob Jonasson"}]
 requires-python = ">=3.14"
 dependencies = [
+    "cryptography>=48.0.1",
     "gql[requests]>=3.5.0",
     "jinja2>=3.1.5",
     "keyring>=25.7.0",
