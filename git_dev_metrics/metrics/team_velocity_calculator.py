@@ -32,6 +32,8 @@ def build_team_velocity_dataset(
     rows: list[TeamVelocityMonth] = []
     for y, m in months:
         month_prs = prs_per_month.get((y, m), [])
+        if not month_prs:
+            continue
         pr_count = len(month_prs)
         active = _count_active_devs(month_prs)
         rows.append(
