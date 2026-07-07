@@ -6,6 +6,7 @@ from typing import TypedDict
 
 from ..constants import is_bot_login
 from ..models import PullRequest
+from ..utils.date_utils import month_key, month_label
 
 
 @dataclass(frozen=True)
@@ -30,14 +31,6 @@ class TrendDataset:
     months: list[str]
     devs: list[str]
     rows: dict[str, list[DevMonthRow]]
-
-
-def _month_label(year: int, month: int) -> str:
-    return datetime(year, month, 1).strftime("%b %Y")
-
-
-def _month_key(year: int, month: int) -> str:
-    return f"{year:04d}-{month:02d}"
 
 
 def _active_devs(prs: list[PullRequest]) -> set[str]:
@@ -123,8 +116,8 @@ def _ai_percentage(prs: list[PullRequest]) -> float:
 def _row(dev: str, year: int, month: int, prs: list[PullRequest]) -> DevMonthRow:
     dev_prs = [pr for pr in prs if pr["user"]["login"] == dev]
     return DevMonthRow(
-        month_label=_month_label(year, month),
-        month_key=_month_key(year, month),
+        month_label=month_label(year, month),
+        month_key=month_key(year, month),
         pr_count=len(dev_prs),
         cycle_hours=_median_cycle_hours(dev_prs),
         ai_pct=_ai_percentage(dev_prs),
@@ -149,4 +142,4 @@ def build_trend_dataset(
         ]
         for dev in devs
     }
-    return TrendDataset(months=[_month_key(y, m) for y, m in months], devs=devs, rows=rows)
+    return TrendDataset(months=[month_key(y, m) for y, m in months], devs=devs, rows=rows)

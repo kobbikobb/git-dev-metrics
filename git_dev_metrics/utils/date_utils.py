@@ -47,6 +47,16 @@ def range_period(start: tuple[int, int], end: tuple[int, int]) -> TimePeriod:
     return TimePeriod(since=since, until=until)
 
 
+def month_label(year: int, month: int) -> str:
+    """Human-readable label like \"Jan 2025\"."""
+    return datetime(year, month, 1).strftime("%b %Y")
+
+
+def month_key(year: int, month: int) -> str:
+    """Sortable key like \"2025-01\"."""
+    return f"{year:04d}-{month:02d}"
+
+
 def get_last_month() -> TimePeriod:
     """Gets the TimePeriod for last month"""
     now = datetime.now(UTC)
@@ -65,6 +75,19 @@ def parse_iso_datetime(dt_str: str | None) -> datetime | None:
         return datetime.fromisoformat(dt_str.replace("Z", "+00:00"))
     except ValueError:
         return None
+
+
+def last_n_months(n: int) -> tuple[tuple[int, int], tuple[int, int]]:
+    """Return (start, end) month tuples for last n full months, ending previous month."""
+    if n < 1:
+        raise ValueError(f"n must be >= 1, got {n}")
+    now = datetime.now(UTC)
+    end_y, end_m = (now.year - 1, 12) if now.month == 1 else (now.year, now.month - 1)
+    end_total = end_y * 12 + end_m
+    start_total = end_total - n + 1
+    start_y = (start_total - 1) // 12
+    start_m = ((start_total - 1) % 12) + 1
+    return (start_y, start_m), (end_y, end_m)
 
 
 def parse_year_month(value: str) -> tuple[int, int]:
