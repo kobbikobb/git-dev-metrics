@@ -11,6 +11,7 @@
     --border: #2a2d3a;
     --text: #e1e4ed;
     --muted: #8b8fa3;
+    --accent: #6366f1;
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
@@ -36,6 +37,20 @@
   }
   .card h2 { font-size: 1rem; margin-bottom: 0.75rem; }
   .chart-wrap { position: relative; height: 400px; }
+
+  .filters { display: flex; flex-wrap: wrap; gap: 0.5rem 1rem; }
+  .filters label {
+    display: flex; align-items: center; gap: 0.4rem;
+    font-size: 0.8rem; cursor: pointer; user-select: none;
+  }
+  .filters input[type="checkbox"] {
+    appearance: none; width: 14px; height: 14px; border: 1.5px solid var(--muted);
+    border-radius: 3px; background: transparent; cursor: pointer; flex-shrink: 0;
+  }
+  .filters input[type="checkbox"]:checked {
+    background: var(--accent); border-color: var(--accent);
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 14 14' fill='white' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11.3 3.3l-5.3 5.3-2.3-2.3-1.4 1.4 3.7 3.7 6.7-6.7z'/%3E%3C/svg%3E");
+  }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 </head>
@@ -45,62 +60,91 @@
   <p>{{ period_range }}</p>
 </div>
 <div class="grid">
-  <div class="card"><h2>PR throughput by repo, active devs, and PRs per developer</h2><div class="chart-wrap"><canvas id="velocity"></canvas></div></div>
+  <div class="card">
+    <h2>Repositories</h2>
+    <div class="filters" id="repo-filters"></div>
+  </div>
+  <div class="card"><h2>PR throughput, active devs, and PRs per developer</h2><div class="chart-wrap"><canvas id="velocity"></canvas></div></div>
 </div>
 <script>
 const MONTHS = {{ months | tojson }};
 const REPOS = {{ repos | tojson }};
-const REPO_PR_COUNTS = {{ repo_pr_counts | tojson }};
+const REPO_PR = {{ repo_pr_counts | tojson }};
 const ACTIVE_DEVS = {{ active_devs | tojson }};
 const PRS_PER_DEV = {{ prs_per_dev | tojson }};
 
-const palette = ['#6366f1', '#22c55e', '#eab308', '#ef4444', '#06b6d4', '#f97316', '#3b82f6', '#a855f7', '#ec4899', '#14b8a6'];
+function repoId(repo) { return 'cb-' + repo.replace(/[^a-zA-Z0-9_-]/g, '_'); }
 
-const datasets = [];
-
-REPOS.forEach(function(repo, i) {
-  const c = palette[i % palette.length];
-  datasets.push({
-    label: repo,
-    data: REPO_PR_COUNTS[repo],
-    borderColor: c,
-    backgroundColor: c + '22',
-    fill: false,
-    tension: 0.2,
-    pointRadius: 3,
-    pointHoverRadius: 5,
-    yAxisID: 'y',
+function sumPrCounts() {
+  return MONTHS.map(function(_, mi) {
+    var total = 0;
+    REPOS.forEach(function(repo) {
+      if (document.getElementById(repoId(repo)).checked) {
+        total += REPO_PR[repo][mi];
+      }
+    });
+    return total;
   });
+}
+
+function updateChart() {
+  chart.data.datasets[0].data = sumPrCounts();
+  chart.update();
+}
+
+var filtersEl = document.getElementById('repo-filters');
+REPOS.forEach(function(repo) {
+  var wrap = document.createElement('label');
+  var cb = document.createElement('input');
+  cb.type = 'checkbox';
+  cb.id = repoId(repo);
+  cb.checked = true;
+  cb.addEventListener('change', updateChart);
+  wrap.appendChild(cb);
+  wrap.appendChild(document.createTextNode(repo));
+  filtersEl.appendChild(wrap);
 });
 
-datasets.push({
-  label: 'Active developers',
-  data: ACTIVE_DEVS,
-  borderColor: '#fefefe',
-  backgroundColor: 'rgba(254, 254, 254, 0.1)',
-  fill: true,
-  tension: 0.2,
-  pointRadius: 4,
-  pointHoverRadius: 6,
-  yAxisID: 'y1',
-});
-
-datasets.push({
-  label: 'PRs per developer',
-  data: PRS_PER_DEV,
-  borderColor: '#f97316',
-  backgroundColor: 'rgba(249, 115, 22, 0.1)',
-  borderDash: [5, 3],
-  fill: false,
-  tension: 0.2,
-  pointRadius: 3,
-  pointHoverRadius: 5,
-  yAxisID: 'y1',
-});
-
-new Chart(document.getElementById('velocity'), {
+var chart = new Chart(document.getElementById('velocity'), {
   type: 'line',
-  data: { labels: MONTHS, datasets: datasets },
+  data: {
+    labels: MONTHS,
+    datasets: [
+      {
+        label: 'Merged PRs',
+        data: sumPrCounts(),
+        borderColor: '#6366f1',
+        backgroundColor: 'rgba(99, 102, 241, 0.1)',
+        fill: true,
+        tension: 0.2,
+        pointRadius: 4,
+        pointHoverRadius: 6,
+      },
+      {
+        label: 'Active developers',
+        data: ACTIVE_DEVS,
+        borderColor: '#22c55e',
+        backgroundColor: 'rgba(34, 197, 94, 0.1)',
+        fill: true,
+        tension: 0.2,
+        pointRadius: 4,
+        pointHoverRadius: 6,
+        yAxisID: 'y1',
+      },
+      {
+        label: 'PRs per developer',
+        data: PRS_PER_DEV,
+        borderColor: '#f97316',
+        backgroundColor: 'rgba(249, 115, 22, 0.1)',
+        borderDash: [5, 3],
+        fill: false,
+        tension: 0.2,
+        pointRadius: 3,
+        pointHoverRadius: 5,
+        yAxisID: 'y1',
+      },
+    ],
+  },
   options: {
     responsive: true,
     maintainAspectRatio: false,
