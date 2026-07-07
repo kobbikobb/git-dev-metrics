@@ -45,54 +45,62 @@
   <p>{{ period_range }}</p>
 </div>
 <div class="grid">
-  <div class="card"><h2>PR throughput, active devs, and PRs per developer</h2><div class="chart-wrap"><canvas id="velocity"></canvas></div></div>
+  <div class="card"><h2>PR throughput by repo, active devs, and PRs per developer</h2><div class="chart-wrap"><canvas id="velocity"></canvas></div></div>
 </div>
 <script>
-const MONTHS = {{ month_labels | tojson }};
-const PR_COUNTS = {{ pr_counts | tojson }};
+const MONTHS = {{ months | tojson }};
+const REPOS = {{ repos | tojson }};
+const REPO_PR_COUNTS = {{ repo_pr_counts | tojson }};
 const ACTIVE_DEVS = {{ active_devs | tojson }};
 const PRS_PER_DEV = {{ prs_per_dev | tojson }};
 
+const palette = ['#6366f1', '#22c55e', '#eab308', '#ef4444', '#06b6d4', '#f97316', '#3b82f6', '#a855f7', '#ec4899', '#14b8a6'];
+
+const datasets = [];
+
+REPOS.forEach(function(repo, i) {
+  const c = palette[i % palette.length];
+  datasets.push({
+    label: repo,
+    data: REPO_PR_COUNTS[repo],
+    borderColor: c,
+    backgroundColor: c + '22',
+    fill: false,
+    tension: 0.2,
+    pointRadius: 3,
+    pointHoverRadius: 5,
+    yAxisID: 'y',
+  });
+});
+
+datasets.push({
+  label: 'Active developers',
+  data: ACTIVE_DEVS,
+  borderColor: '#fefefe',
+  backgroundColor: 'rgba(254, 254, 254, 0.1)',
+  fill: true,
+  tension: 0.2,
+  pointRadius: 4,
+  pointHoverRadius: 6,
+  yAxisID: 'y1',
+});
+
+datasets.push({
+  label: 'PRs per developer',
+  data: PRS_PER_DEV,
+  borderColor: '#f97316',
+  backgroundColor: 'rgba(249, 115, 22, 0.1)',
+  borderDash: [5, 3],
+  fill: false,
+  tension: 0.2,
+  pointRadius: 3,
+  pointHoverRadius: 5,
+  yAxisID: 'y1',
+});
+
 new Chart(document.getElementById('velocity'), {
   type: 'line',
-  data: {
-    labels: MONTHS,
-    datasets: [
-      {
-        label: 'Merged PRs',
-        data: PR_COUNTS,
-        borderColor: '#6366f1',
-        backgroundColor: 'rgba(99, 102, 241, 0.1)',
-        fill: true,
-        tension: 0.2,
-        pointRadius: 4,
-        pointHoverRadius: 6,
-      },
-      {
-        label: 'Active developers',
-        data: ACTIVE_DEVS,
-        borderColor: '#22c55e',
-        backgroundColor: 'rgba(34, 197, 94, 0.1)',
-        fill: true,
-        tension: 0.2,
-        pointRadius: 4,
-        pointHoverRadius: 6,
-        yAxisID: 'y1',
-      },
-      {
-        label: 'PRs per developer',
-        data: PRS_PER_DEV,
-        borderColor: '#f97316',
-        backgroundColor: 'rgba(249, 115, 22, 0.1)',
-        borderDash: [5, 3],
-        fill: false,
-        tension: 0.2,
-        pointRadius: 3,
-        pointHoverRadius: 5,
-        yAxisID: 'y1',
-      },
-    ],
-  },
+  data: { labels: MONTHS, datasets: datasets },
   options: {
     responsive: true,
     maintainAspectRatio: false,

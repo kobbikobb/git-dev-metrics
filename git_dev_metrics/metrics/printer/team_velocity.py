@@ -12,10 +12,11 @@ class FileTeamVelocityPrinter:
         html = render_template(
             "team_velocity.html",
             period_range=period_range,
-            month_labels=[m.month_label for m in dataset.months],
-            pr_counts=[m.pr_count for m in dataset.months],
-            active_devs=[m.active_devs for m in dataset.months],
-            prs_per_dev=[m.prs_per_dev for m in dataset.months],
+            months=dataset.months,
+            repos=dataset.repos,
+            repo_pr_counts=dataset.repo_pr_counts,
+            active_devs=dataset.active_devs,
+            prs_per_dev=dataset.prs_per_dev,
         )
         self._output_path.parent.mkdir(parents=True, exist_ok=True)
         self._output_path.write_text(html)

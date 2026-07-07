@@ -3,7 +3,7 @@ from pathlib import Path
 
 import typer
 
-from ...cache import load_all_repos_by_month
+from ...cache import list_synced_months, load_prs
 from ...metrics.printer.team_velocity import FileTeamVelocityPrinter
 from ...metrics.team_velocity_calculator import build_team_velocity_dataset
 from ...utils.date_utils import month_iter
@@ -30,8 +30,17 @@ def perform_team_velocity(
         raise typer.Exit(code=1)
 
     months = month_iter(from_ym, to_ym)
-    prs_per_month = load_all_repos_by_month(months, db_path=db_path)
-    if not any(prs_per_month.values()):
+    wanted = set(months)
+
+    repo_prs_by_month: dict[str, dict[YearMonth, list]] = {}
+    for org, repo, y, m in list_synced_months(db_path=db_path):
+        if (y, m) not in wanted:
+            continue
+        prs = load_prs(org, repo, y, m, db_path=db_path)
+        key = f"{org}/{repo}"
+        repo_prs_by_month.setdefault(key, {})[(y, m)] = prs
+
+    if not repo_prs_by_month:
         typer.secho(
             "No synced data for selected range. Run pull first.",
             fg=typer.colors.RED,
@@ -39,7 +48,7 @@ def perform_team_velocity(
         )
         raise typer.Exit(code=1)
 
-    dataset = build_team_velocity_dataset(months, prs_per_month)
+    dataset = build_team_velocity_dataset(repo_prs_by_month)
     first, last = months[0], months[-1]
     period_range = (
         f"{datetime(first[0], first[1], 1).strftime('%b %Y')}"
