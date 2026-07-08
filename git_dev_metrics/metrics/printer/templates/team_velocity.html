@@ -46,12 +46,38 @@
 </div>
 <div class="grid">
   <div class="card"><h2>PR throughput, active devs, and PRs per developer</h2><div class="chart-wrap"><canvas id="velocity"></canvas></div></div>
+  <div class="card"><h2>PR throughput by developer (stacked)</h2><div class="chart-wrap"><canvas id="per-dev"></canvas></div></div>
 </div>
 <script>
 const MONTHS = {{ month_labels | tojson }};
 const PR_COUNTS = {{ pr_counts | tojson }};
 const ACTIVE_DEVS = {{ active_devs | tojson }};
 const PRS_PER_DEV = {{ prs_per_dev | tojson }};
+const DEV_NAMES = {{ dev_names | tojson }};
+const DEV_DATA = {{ dev_data | tojson }};
+
+const palette = [
+  { b: '#4e79a7', f: 'rgba(78,121,167,0.45)' },
+  { b: '#f28e2b', f: 'rgba(242,142,43,0.45)' },
+  { b: '#e15759', f: 'rgba(225,87,89,0.45)' },
+  { b: '#76b7b2', f: 'rgba(118,183,178,0.45)' },
+  { b: '#59a14f', f: 'rgba(89,161,79,0.45)' },
+  { b: '#edc948', f: 'rgba(237,201,72,0.45)' },
+  { b: '#b07aa1', f: 'rgba(176,122,161,0.45)' },
+  { b: '#ff9da7', f: 'rgba(255,157,167,0.45)' },
+  { b: '#9c755f', f: 'rgba(156,117,95,0.45)' },
+  { b: '#4c6b8a', f: 'rgba(76,107,138,0.45)' },
+  { b: '#e06c5e', f: 'rgba(224,108,94,0.45)' },
+  { b: '#6ba3a0', f: 'rgba(107,163,160,0.45)' },
+  { b: '#b88b4a', f: 'rgba(184,139,74,0.45)' },
+  { b: '#a55e79', f: 'rgba(165,94,121,0.45)' },
+  { b: '#5f8f5a', f: 'rgba(95,143,90,0.45)' },
+  { b: '#c5a84d', f: 'rgba(197,168,77,0.45)' },
+  { b: '#8d6e8b', f: 'rgba(141,110,139,0.45)' },
+  { b: '#d48a8a', f: 'rgba(212,138,138,0.45)' },
+  { b: '#7a6b60', f: 'rgba(122,107,96,0.45)' },
+  { b: '#5b7f95', f: 'rgba(91,127,149,0.45)' },
+];
 
 new Chart(document.getElementById('velocity'), {
   type: 'line',
@@ -119,6 +145,54 @@ new Chart(document.getElementById('velocity'), {
         ticks: { color: '#8b8fa3' },
         grid: { drawOnChartArea: false },
         beginAtZero: true,
+      },
+    },
+    plugins: {
+      legend: {
+        labels: { color: '#e1e4ed', usePointStyle: true, padding: 20 },
+      },
+      tooltip: {
+        callbacks: {
+          label: function(ctx) {
+            return ctx.dataset.label + ': ' + ctx.parsed.y;
+          },
+        },
+      },
+    },
+  },
+});
+
+new Chart(document.getElementById('per-dev'), {
+  type: 'line',
+  data: {
+    labels: MONTHS,
+    datasets: DEV_NAMES.map((name, i) => ({
+      label: name,
+      data: DEV_DATA[i],
+      borderColor: palette[i % palette.length].b,
+      backgroundColor: palette[i % palette.length].f,
+      borderWidth: 2,
+      fill: true,
+      tension: 0.2,
+      pointRadius: 2,
+      pointHoverRadius: 4,
+    })),
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    interaction: { mode: 'index', intersect: false },
+    scales: {
+      x: {
+        ticks: { color: '#8b8fa3' },
+        grid: { color: '#2a2d3a' },
+      },
+      y: {
+        stacked: true,
+        beginAtZero: true,
+        title: { display: true, text: 'Merged PRs', color: '#8b8fa3' },
+        ticks: { color: '#8b8fa3' },
+        grid: { color: '#2a2d3a' },
       },
     },
     plugins: {

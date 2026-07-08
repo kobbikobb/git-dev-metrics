@@ -24,6 +24,7 @@ def perform_team_velocity(
     to_ym: YearMonth,
     output: Path | None,
     db_path: Path | None,
+    nicknames: dict[str, str] | None = None,
 ) -> None:
     if to_ym < from_ym:
         typer.secho("--to must be >= --from.", fg=typer.colors.RED, err=True)
@@ -46,6 +47,6 @@ def perform_team_velocity(
         f" – {datetime(last[0], last[1], 1).strftime('%b %Y')}"
     )
     out_path = output or _default_output(from_ym, to_ym)
-    FileTeamVelocityPrinter(out_path).render(dataset, period_range)
+    FileTeamVelocityPrinter(out_path).render(dataset, period_range, nicknames=nicknames)
     typer.echo(f"Team velocity written to {out_path}.")
     open_in_browser(out_path)
