@@ -22,6 +22,7 @@ def _default_output(from_ym: YearMonth, to_ym: YearMonth) -> Path:
 def perform_team_velocity(
     from_ym: YearMonth,
     to_ym: YearMonth,
+    repos: list[str],
     output: Path | None,
     db_path: Path | None,
 ) -> None:
@@ -29,15 +30,16 @@ def perform_team_velocity(
         typer.secho("--to must be >= --from.", fg=typer.colors.RED, err=True)
         raise typer.Exit(code=1)
 
+    repo_set = set(repos)
     months = month_iter(from_ym, to_ym)
     wanted = set(months)
 
     repo_prs_by_month: dict[str, dict[YearMonth, list]] = {}
     for org, repo, y, m in list_synced_months(db_path=db_path):
-        if (y, m) not in wanted:
+        key = f"{org}/{repo}"
+        if key not in repo_set or (y, m) not in wanted:
             continue
         prs = load_prs(org, repo, y, m, db_path=db_path)
-        key = f"{org}/{repo}"
         repo_prs_by_month.setdefault(key, {})[(y, m)] = prs
 
     if not repo_prs_by_month:
