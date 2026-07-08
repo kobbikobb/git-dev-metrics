@@ -46,6 +46,9 @@
 </div>
 <div class="grid">
   <div class="card"><h2>PR throughput, active devs, and PRs per developer</h2><div class="chart-wrap"><canvas id="velocity"></canvas></div></div>
+  {% if dev_data %}
+  <div class="card"><h2>PRs per developer (stacked)</h2><div class="chart-wrap"><canvas id="perdev"></canvas></div></div>
+  {% endif %}
 </div>
 <script>
 const MONTHS = {{ month_labels | tojson }};
@@ -135,6 +138,52 @@ new Chart(document.getElementById('velocity'), {
     },
   },
 });
+{% if dev_data %}
+const DEV_DATA = {{ dev_data | tojson }};
+new Chart(document.getElementById('perdev'), {
+  type: 'line',
+  data: {
+    labels: MONTHS,
+    datasets: DEV_DATA.map(function(s, i) {
+      const hue = (i * 137) % 360;
+      return {
+        label: s.label,
+        data: s.data,
+        borderColor: 'hsl(' + hue + ', 70%, 55%)',
+        backgroundColor: 'hsla(' + hue + ', 70%, 55%, 0.3)',
+        fill: true,
+        tension: 0.2,
+        pointRadius: 3,
+        pointHoverRadius: 5,
+      };
+    }),
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    interaction: { mode: 'index', intersect: false },
+    scales: {
+      x: { ticks: { color: '#8b8fa3' }, grid: { color: '#2a2d3a' } },
+      y: {
+        beginAtZero: true,
+        ticks: { color: '#8b8fa3' },
+        grid: { color: '#2a2d3a' },
+        title: { display: true, text: 'Merged PRs', color: '#8b8fa3' },
+      },
+    },
+    plugins: {
+      legend: { labels: { color: '#e1e4ed', usePointStyle: true, padding: 20 } },
+      tooltip: {
+        callbacks: {
+          label: function(ctx) {
+            return ctx.dataset.label + ': ' + ctx.parsed.y;
+          },
+        },
+      },
+    },
+  },
+});
+{% endif %}
 </script>
 </body>
 </html>
