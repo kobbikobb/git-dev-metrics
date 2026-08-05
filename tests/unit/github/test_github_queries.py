@@ -368,6 +368,40 @@ class TestFetchOpenPrs:
         assert result == []
 
     @responses.activate
+    def test_should_skip_prs_from_archived_repos(self):
+        # Arrange
+        pr = {
+            "number": 1,
+            "title": "Open PR in archived repo",
+            "createdAt": "2024-01-01T00:00:00Z",
+            "isDraft": False,
+            "author": {"login": "dev1"},
+            "repository": {"isArchived": True},
+            "reviews": {"nodes": []},
+        }
+        responses.add(
+            responses.POST,
+            re.compile(r"https://api\.github\.com/graphql"),
+            json={
+                "data": {
+                    "repository": {
+                        "pullRequests": {
+                            "nodes": [pr],
+                            "pageInfo": {"hasNextPage": False, "endCursor": None},
+                        }
+                    }
+                }
+            },
+            status=200,
+        )
+
+        # Act
+        result = fetch_open_prs("fake-token", "myorg", "myrepo")
+
+        # Assert
+        assert result == []
+
+    @responses.activate
     def test_should_skip_pr_without_number(self):
         pr = {
             "title": "No number",

@@ -129,6 +129,9 @@ OPEN_PRS_QUERY = gql.gql(
                     author {
                         login
                     }
+                    repository {
+                        isArchived
+                    }
                     reviews(first: 100) {
                         nodes {
                             state

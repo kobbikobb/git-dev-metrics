@@ -135,6 +135,8 @@ def _map_open_prs(prs: list[dict]) -> list[OpenPullRequest]:
         title = pr.get("title")
         if number is None or title is None:
             continue
+        if pr.get("repository", {}).get("isArchived"):
+            continue
         reviews = pr.get("reviews", {}).get("nodes", [])
         is_approved = any(r.get("state") == "APPROVED" for r in reviews)
         result.append(
