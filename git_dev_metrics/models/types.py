@@ -49,3 +49,9 @@ class OpenPullRequest(TypedDict):
     is_draft: bool
     is_approved: bool
     labels: list[str]
+    build_state: str | None
+
+
+class SecurityInfo(TypedDict):
+    severity: str
+    advisory_id: str

@@ -142,6 +142,15 @@ OPEN_PRS_QUERY = gql.gql(
                             name
                         }
                     }
+                    commits(last: 1) {
+                        nodes {
+                            commit {
+                                statusCheckRollup {
+                                    state
+                                }
+                            }
+                        }
+                    }
                 }
                 pageInfo {
                     hasNextPage

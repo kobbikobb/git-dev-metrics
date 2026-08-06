@@ -4,9 +4,16 @@ from pathlib import Path
 import typer
 
 from ...cache import get_targets, list_synced_months
-from ...github import GitHubNotFoundError, fetch_open_prs, get_github_token
+from ...github import (
+    GitHubError,
+    GitHubNotFoundError,
+    fetch_open_pr_security,
+    fetch_open_prs,
+    get_github_token,
+)
 from ...metrics._stale_pr import StalePr, get_stale_prs
 from ...metrics.printer.stale import FileStaleHtmlPrinter
+from ...models import SecurityInfo
 from .._browser import open_in_browser
 from .._options import DB_OPTION
 
@@ -32,6 +39,7 @@ def stale(
 
     token = get_github_token()
     all_stale: list[StalePr] = []
+    security_warned = False
     for org, repo in repos:
         try:
             opens = fetch_open_prs(token, org, repo, quiet=True)
@@ -42,7 +50,26 @@ def stale(
                 err=True,
             )
             continue
-        all_stale.extend(get_stale_prs(opens, f"{org}/{repo}", threshold_hours=threshold_hours))
+        security: dict[int, SecurityInfo] = {}
+        try:
+            security = fetch_open_pr_security(token, org, repo)
+        except GitHubNotFoundError as e:
+            if not security_warned:
+                typer.secho(f"Security alerts unavailable: {e}", fg=typer.colors.YELLOW, err=True)
+                security_warned = True
+        except GitHubError as e:
+            if not security_warned:
+                typer.secho(
+                    f"Security alerts skipped for {org}/{repo}: {e}",
+                    fg=typer.colors.YELLOW,
+                    err=True,
+                )
+                security_warned = True
+        all_stale.extend(
+            get_stale_prs(
+                opens, f"{org}/{repo}", threshold_hours=threshold_hours, security=security
+            )
+        )
     all_stale.sort(key=lambda x: (x.author or "", -x.age_hours))
 
     out = (output or _default_output()).with_suffix(".html")

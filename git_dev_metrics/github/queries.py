@@ -142,6 +142,8 @@ def _map_open_prs(prs: list[dict]) -> list[OpenPullRequest]:
         labels = [
             node.get("name") for node in pr.get("labels", {}).get("nodes", []) if node.get("name")
         ]
+        commits = pr.get("commits", {}).get("nodes", [])
+        rollup = commits[-1].get("commit", {}).get("statusCheckRollup") if commits else None
         result.append(
             {
                 "number": number,
@@ -152,6 +154,7 @@ def _map_open_prs(prs: list[dict]) -> list[OpenPullRequest]:
                 "is_draft": pr.get("isDraft", False),
                 "is_approved": is_approved,
                 "labels": labels,
+                "build_state": (rollup or {}).get("state"),
             }
         )
     return result

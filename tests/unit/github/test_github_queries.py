@@ -321,6 +321,17 @@ class TestFetchOpenPrs:
             "author": {"login": "dev1"},
             "reviews": {"nodes": []},
             "labels": {"nodes": [{"name": "bug"}, {"name": "priority:high"}]},
+            "commits": {
+                "nodes": [
+                    {
+                        "commit": {
+                            "statusCheckRollup": {
+                                "state": "FAILURE",
+                            }
+                        }
+                    }
+                ]
+            },
         }
         responses.add(
             responses.POST,
@@ -346,6 +357,7 @@ class TestFetchOpenPrs:
         assert result[0]["is_draft"] is False
         assert result[0]["is_approved"] is False
         assert result[0]["labels"] == ["bug", "priority:high"]
+        assert result[0]["build_state"] == "FAILURE"
 
     @responses.activate
     def test_should_return_empty_when_no_open_prs(self):

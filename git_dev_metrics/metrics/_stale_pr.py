@@ -4,7 +4,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime
 
-from ..models import OpenPullRequest
+from ..models import OpenPullRequest, SecurityInfo
 
 STALE_PR_THRESHOLD_HOURS = 24 * 7  # 7 days
 
@@ -21,6 +21,9 @@ class StalePr:
     is_approved: bool
     url: str
     labels: tuple[str, ...] = ()
+    build_state: str | None = None
+    security_severity: str | None = None
+    security_advisory: str | None = None
 
 
 def _calculate_age_hours(
@@ -41,6 +44,7 @@ def _is_stale_pr(
     repo: str,
     clock: Callable[[], datetime] | None = None,
     threshold_hours: float = STALE_PR_THRESHOLD_HOURS,
+    security: dict[int, SecurityInfo] | None = None,
 ) -> StalePr | None:
     created = pr.get("created_at")
     if created is None:
@@ -49,6 +53,7 @@ def _is_stale_pr(
     age_hours = _calculate_age_hours(created, clock)
     if age_hours > threshold_hours:
         number = pr.get("number")
+        info = (security or {}).get(number)
         return StalePr(
             number=number if number is not None else 0,
             title=pr.get("title") or "",
@@ -60,6 +65,9 @@ def _is_stale_pr(
             is_approved=pr.get("is_approved", False),
             url=f"https://github.com/{repo}/pull/{number}",
             labels=tuple(pr.get("labels") or []),
+            build_state=pr.get("build_state"),
+            security_severity=info["severity"] if info else None,
+            security_advisory=info["advisory_id"] if info else None,
         )
     return None
 
@@ -69,8 +77,11 @@ def get_stale_prs(
     repo: str = "",
     clock: Callable[[], datetime] | None = None,
     threshold_hours: float = STALE_PR_THRESHOLD_HOURS,
+    security: dict[int, SecurityInfo] | None = None,
 ) -> list[StalePr]:
-    stale = [p for p in (_is_stale_pr(pr, repo, clock, threshold_hours) for pr in prs) if p]
+    stale = [
+        p for p in (_is_stale_pr(pr, repo, clock, threshold_hours, security) for pr in prs) if p
+    ]
     stale.sort(key=lambda x: (x.author or "", -x.age_hours))
     return stale
 

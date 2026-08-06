@@ -1,6 +1,7 @@
 """Github auth and data fetching."""
 
 from .auth import get_github_token
+from .dependabot import fetch_open_pr_security
 from .exceptions import (
     GitHubAPIError,
     GitHubAuthError,
@@ -22,6 +23,7 @@ __all__ = [
     "GitHubError",
     "GitHubNotFoundError",
     "GitHubRateLimitError",
+    "fetch_open_pr_security",
     "fetch_open_prs",
     "fetch_org_repositories",
     "fetch_repo_metrics",
