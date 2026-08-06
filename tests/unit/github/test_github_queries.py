@@ -320,6 +320,7 @@ class TestFetchOpenPrs:
             "isDraft": False,
             "author": {"login": "dev1"},
             "reviews": {"nodes": []},
+            "labels": {"nodes": [{"name": "bug"}, {"name": "priority:high"}]},
         }
         responses.add(
             responses.POST,
@@ -344,6 +345,7 @@ class TestFetchOpenPrs:
         assert result[0]["title"] == "Open PR"
         assert result[0]["is_draft"] is False
         assert result[0]["is_approved"] is False
+        assert result[0]["labels"] == ["bug", "priority:high"]
 
     @responses.activate
     def test_should_return_empty_when_no_open_prs(self):

@@ -12,7 +12,13 @@ from ..conftest import dt
 runner = CliRunner()
 
 
-def _open_pr(number: int, login: str, created_at: datetime, is_draft: bool = False) -> dict:
+def _open_pr(
+    number: int,
+    login: str,
+    created_at: datetime,
+    is_draft: bool = False,
+    labels: list[str] | None = None,
+) -> dict:
     return {
         "number": number,
         "title": f"PR #{number}",
@@ -21,6 +27,7 @@ def _open_pr(number: int, login: str, created_at: datetime, is_draft: bool = Fal
         "user": {"login": login},
         "is_draft": is_draft,
         "is_approved": False,
+        "labels": labels or [],
     }
 
 
@@ -61,7 +68,7 @@ class TestStale:
         _stub_webbrowser.assert_called_once_with(out.resolve().as_uri())
 
     @freeze_time("2026-05-12")
-    def test_should_sort_oldest_first(self, tmp_path, mocker, _stub_webbrowser):
+    def test_should_group_by_creator_then_oldest_first(self, tmp_path, mocker, _stub_webbrowser):
         # Arrange
         db_path = tmp_path / "cache.db"
         seal_month("myorg", "repoA", 2026, 4, db_path=db_path)
@@ -74,6 +81,7 @@ class TestStale:
             return_value=[
                 _open_pr(10, "young", dt(year=2026, month=5, day=1, hour=8, minute=0)),  # ~11d
                 _open_pr(11, "old", dt(year=2026, month=4, day=1, hour=8, minute=0)),  # ~41d
+                _open_pr(12, "old", dt(year=2026, month=5, day=1, hour=8, minute=0)),  # ~11d
             ],
         )
         out = tmp_path / "stale.html"
@@ -84,9 +92,42 @@ class TestStale:
         # Assert
         assert result.exit_code == 0, result.output
         html = out.read_text()
-        old_idx = html.find("#11")
         young_idx = html.find("#10")
-        assert 0 < old_idx < young_idx
+        old_older_idx = html.find("#11")
+        old_newer_idx = html.find("#12")
+        # "old" grouped before "young"; within "old", oldest first
+        assert 0 < old_older_idx < old_newer_idx < young_idx
+
+    @freeze_time("2026-05-12")
+    def test_should_render_labels(self, tmp_path, mocker, _stub_webbrowser):
+        # Arrange
+        db_path = tmp_path / "cache.db"
+        seal_month("myorg", "repoA", 2026, 4, db_path=db_path)
+
+        mocker.patch(
+            "git_dev_metrics.cli.commands.stale.get_github_token", return_value="fake-token"
+        )
+        mocker.patch(
+            "git_dev_metrics.cli.commands.stale.fetch_open_prs",
+            return_value=[
+                _open_pr(
+                    1,
+                    "alice",
+                    dt(year=2026, month=4, day=1, hour=8, minute=0),
+                    labels=["bug", "priority:high"],
+                )
+            ],
+        )
+        out = tmp_path / "stale.html"
+
+        # Act
+        result = runner.invoke(app, ["stale", "--db", str(db_path), "--output", str(out)])
+
+        # Assert
+        assert result.exit_code == 0, result.output
+        html = out.read_text()
+        assert "bug" in html
+        assert "priority:high" in html
 
     @freeze_time("2026-05-12")
     def test_should_render_empty_state_when_no_stale_prs(self, tmp_path, mocker, _stub_webbrowser):

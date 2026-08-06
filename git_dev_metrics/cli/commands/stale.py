@@ -43,7 +43,7 @@ def stale(
             )
             continue
         all_stale.extend(get_stale_prs(opens, f"{org}/{repo}", threshold_hours=threshold_hours))
-    all_stale.sort(key=lambda x: x.age_hours, reverse=True)
+    all_stale.sort(key=lambda x: (x.author or "", -x.age_hours))
 
     out = (output or _default_output()).with_suffix(".html")
     FileStaleHtmlPrinter(out).render(all_stale, targets=targets)

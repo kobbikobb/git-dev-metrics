@@ -20,6 +20,7 @@ class StalePr:
     is_draft: bool
     is_approved: bool
     url: str
+    labels: tuple[str, ...] = ()
 
 
 def _calculate_age_hours(
@@ -58,6 +59,7 @@ def _is_stale_pr(
             is_draft=pr.get("is_draft", False),
             is_approved=pr.get("is_approved", False),
             url=f"https://github.com/{repo}/pull/{number}",
+            labels=tuple(pr.get("labels") or []),
         )
     return None
 
@@ -69,7 +71,7 @@ def get_stale_prs(
     threshold_hours: float = STALE_PR_THRESHOLD_HOURS,
 ) -> list[StalePr]:
     stale = [p for p in (_is_stale_pr(pr, repo, clock, threshold_hours) for pr in prs) if p]
-    stale.sort(key=lambda x: x.age_hours, reverse=True)
+    stale.sort(key=lambda x: (x.author or "", -x.age_hours))
     return stale
 
 
