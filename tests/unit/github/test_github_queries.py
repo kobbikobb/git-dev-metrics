@@ -360,6 +360,37 @@ class TestFetchOpenPrs:
         assert result[0]["build_state"] == "FAILURE"
 
     @responses.activate
+    def test_should_return_build_state_none_when_checks_omitted(self):
+        pr = {
+            "number": 2,
+            "title": "Open PR without checks",
+            "createdAt": "2024-01-01T00:00:00Z",
+            "isDraft": False,
+            "author": {"login": "dev1"},
+            "reviews": {"nodes": []},
+        }
+        responses.add(
+            responses.POST,
+            re.compile(r"https://api\.github\.com/graphql"),
+            json={
+                "data": {
+                    "repository": {
+                        "pullRequests": {
+                            "nodes": [pr],
+                            "pageInfo": {"hasNextPage": False, "endCursor": None},
+                        }
+                    }
+                }
+            },
+            status=200,
+        )
+
+        result = fetch_open_prs("fake-token", "myorg", "myrepo", include_checks=False)
+
+        assert len(result) == 1
+        assert result[0]["build_state"] is None
+
+    @responses.activate
     def test_should_return_empty_when_no_open_prs(self):
         responses.add(
             responses.POST,

@@ -11,6 +11,7 @@ from .graphql_client import execute_paginated_query, get_client
 from .graphql_queries import (
     LANG_REPORT_QUERY,
     OPEN_PRS_QUERY,
+    OPEN_PRS_QUERY_WITH_CHECKS,
     ORG_REPOSITORIES_QUERY,
     REPO_METRICS_QUERY,
     REPOSITORIES_QUERY,
@@ -234,12 +235,20 @@ def fetch_lang_report_prs(token: str, org: str, repo: str, year: int, month: int
     return result
 
 
-def fetch_open_prs(token: str, org: str, repo: str, quiet: bool = False) -> list[OpenPullRequest]:
-    """Fetch open pull requests for a repository."""
+def fetch_open_prs(
+    token: str, org: str, repo: str, quiet: bool = False, include_checks: bool = True
+) -> list[OpenPullRequest]:
+    """Fetch open pull requests for a repository.
+
+    include_checks requests CI build status via statusCheckRollup. That field
+    needs the Checks permission, which fine-grained PATs cannot be granted;
+    callers should retry with include_checks=False on GitHubAuthError.
+    """
+    query = OPEN_PRS_QUERY_WITH_CHECKS if include_checks else OPEN_PRS_QUERY
     client = get_client(token)
     prs = execute_paginated_query(
         client,
-        OPEN_PRS_QUERY,
+        query,
         {"owner": org, "name": repo, "first": PAGE_SIZE},
         "repository.pullRequests",
         repo_id=f"{org}/{repo}",
