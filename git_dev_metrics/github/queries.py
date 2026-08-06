@@ -11,7 +11,6 @@ from .graphql_client import execute_paginated_query, get_client
 from .graphql_queries import (
     LANG_REPORT_QUERY,
     OPEN_PRS_QUERY,
-    OPEN_PRS_QUERY_WITH_CHECKS,
     ORG_REPOSITORIES_QUERY,
     REPO_METRICS_QUERY,
     REPOSITORIES_QUERY,
@@ -143,8 +142,6 @@ def _map_open_prs(prs: list[dict]) -> list[OpenPullRequest]:
         labels = [
             node.get("name") for node in pr.get("labels", {}).get("nodes", []) if node.get("name")
         ]
-        commits = pr.get("commits", {}).get("nodes", [])
-        rollup = commits[-1].get("commit", {}).get("statusCheckRollup") if commits else None
         result.append(
             {
                 "number": number,
@@ -155,7 +152,8 @@ def _map_open_prs(prs: list[dict]) -> list[OpenPullRequest]:
                 "is_draft": pr.get("isDraft", False),
                 "is_approved": is_approved,
                 "labels": labels,
-                "build_state": (rollup or {}).get("state"),
+                "head_sha": pr.get("headRefOid"),
+                "build_state": None,
             }
         )
     return result
@@ -235,20 +233,16 @@ def fetch_lang_report_prs(token: str, org: str, repo: str, year: int, month: int
     return result
 
 
-def fetch_open_prs(
-    token: str, org: str, repo: str, quiet: bool = False, include_checks: bool = True
-) -> list[OpenPullRequest]:
+def fetch_open_prs(token: str, org: str, repo: str, quiet: bool = False) -> list[OpenPullRequest]:
     """Fetch open pull requests for a repository.
 
-    include_checks requests CI build status via statusCheckRollup. That field
-    needs the Checks permission, which fine-grained PATs cannot be granted;
-    callers should retry with include_checks=False on GitHubAuthError.
+    Build status is not resolved here; callers backfill ``build_state`` from
+    the Actions workflow-runs API (see fetch_open_pr_build_state).
     """
-    query = OPEN_PRS_QUERY_WITH_CHECKS if include_checks else OPEN_PRS_QUERY
     client = get_client(token)
     prs = execute_paginated_query(
         client,
-        query,
+        OPEN_PRS_QUERY,
         {"owner": org, "name": repo, "first": PAGE_SIZE},
         "repository.pullRequests",
         repo_id=f"{org}/{repo}",

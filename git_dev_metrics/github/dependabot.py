@@ -77,7 +77,7 @@ def fetch_open_pr_security(token: str, org: str, repo: str) -> dict[int, Securit
         if response.status_code in (401, 403):
             raise GitHubAuthError(
                 f"Token cannot read security alerts for {org}/{repo} "
-                "(needs repo scope plus security-alert access)"
+                "(needs Dependabot alerts: Read permission)"
             )
         if response.status_code >= 400:
             raise GitHubAPIError(

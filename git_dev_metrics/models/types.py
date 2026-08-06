@@ -49,6 +49,7 @@ class OpenPullRequest(TypedDict):
     is_draft: bool
     is_approved: bool
     labels: list[str]
+    head_sha: str | None
     build_state: str | None
 
 

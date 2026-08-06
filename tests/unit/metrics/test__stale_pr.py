@@ -78,7 +78,7 @@ class TestGetStalePrs:
         assert result[0].repo == "myrepo"
         assert result[0].age_hours > 24 * 7
 
-    def test_should_sort_by_creator_then_age_oldest_first(self):
+    def test_should_sort_by_age_oldest_first(self):
         from git_dev_metrics.metrics._stale_pr import get_stale_prs
 
         now = datetime.now(UTC)
@@ -101,7 +101,7 @@ class TestGetStalePrs:
                 },
                 {
                     "number": 3,
-                    "title": "alice older",
+                    "title": "alice middle",
                     "created_at": now - timedelta(days=12),
                     "merged_at": None,
                     "user": {"login": "alice"},
@@ -109,9 +109,8 @@ class TestGetStalePrs:
             ],
         )
         result = get_stale_prs(prs, "myrepo", lambda: now)
-        # Grouped by creator (alice before bob), oldest first within each creator
-        assert [r.number for r in result] == [3, 1, 2]
-        assert [r.author for r in result] == ["alice", "alice", "bob"]
+        # Oldest first, regardless of creator
+        assert [r.number for r in result] == [2, 3, 1]
         assert result[0].repo == "myrepo"
 
     def test_should_carry_labels(self):

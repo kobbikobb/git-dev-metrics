@@ -82,7 +82,7 @@ def get_stale_prs(
     stale = [
         p for p in (_is_stale_pr(pr, repo, clock, threshold_hours, security) for pr in prs) if p
     ]
-    stale.sort(key=lambda x: (x.author or "", -x.age_hours))
+    stale.sort(key=lambda x: x.age_hours, reverse=True)
     return stale
 
 
