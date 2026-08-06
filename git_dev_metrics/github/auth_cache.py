@@ -19,14 +19,29 @@ def load_token() -> str | None:
     return None
 
 
-def is_token_valid(token: str) -> bool:
-    """Check if the token is valid by making a test API call."""
-    response = requests.get(
-        "https://api.github.com/user",
-        headers={"Authorization": f"token {token}"},
-        timeout=10,
-    )
-    return response.status_code == 200
+def token_error(token: str) -> str | None:
+    """Return an error message if the token is unusable, else None.
+
+    Rejects invalid tokens and classic PATs: only fine-grained tokens are
+    supported. Classic PATs are detected via the `x-oauth-scopes` response
+    header, which classic tokens populate and fine-grained tokens leave empty.
+    """
+    try:
+        response = requests.get(
+            "https://api.github.com/user",
+            headers={"Authorization": f"token {token}"},
+            timeout=10,
+        )
+    except requests.RequestException:
+        return "Could not reach GitHub to validate the token."
+    if response.status_code != 200:
+        return "Invalid token. Please check your PAT and try again."
+    if response.headers.get("x-oauth-scopes", "").strip():
+        return (
+            "Classic PATs are not supported — create a fine-grained token at "
+            "https://github.com/settings/tokens?type=beta"
+        )
+    return None
 
 
 def delete_token() -> None:

@@ -20,6 +20,7 @@ def _open_pr(
     is_draft: bool = False,
     labels: list[str] | None = None,
     build_state: str | None = None,
+    head_sha: str | None = None,
 ) -> dict:
     return {
         "number": number,
@@ -30,6 +31,7 @@ def _open_pr(
         "is_draft": is_draft,
         "is_approved": False,
         "labels": labels or [],
+        "head_sha": head_sha,
         "build_state": build_state,
     }
 
@@ -38,6 +40,10 @@ class TestStale:
     @pytest.fixture(autouse=True)
     def _no_security_alerts(self, mocker):
         mocker.patch("git_dev_metrics.cli.commands.stale.fetch_open_pr_security", return_value={})
+
+    @pytest.fixture(autouse=True)
+    def _not_archived(self, mocker):
+        mocker.patch("git_dev_metrics.cli.commands.stale.is_repo_archived", return_value=False)
 
     @freeze_time("2026-05-12")
     def test_should_render_html_for_stale_prs_across_synced_repos(
@@ -75,7 +81,7 @@ class TestStale:
         _stub_webbrowser.assert_called_once_with(out.resolve().as_uri())
 
     @freeze_time("2026-05-12")
-    def test_should_group_by_creator_then_oldest_first(self, tmp_path, mocker, _stub_webbrowser):
+    def test_should_sort_by_age_oldest_first(self, tmp_path, mocker, _stub_webbrowser):
         # Arrange
         db_path = tmp_path / "cache.db"
         seal_month("myorg", "repoA", 2026, 4, db_path=db_path)
@@ -102,8 +108,8 @@ class TestStale:
         young_idx = html.find("#10")
         old_older_idx = html.find("#11")
         old_newer_idx = html.find("#12")
-        # "old" grouped before "young"; within "old", oldest first
-        assert 0 < old_older_idx < old_newer_idx < young_idx
+        # Oldest first; #10/#12 tie on age so insertion order is preserved
+        assert 0 < old_older_idx < young_idx < old_newer_idx
 
     @freeze_time("2026-05-12")
     def test_should_render_labels(self, tmp_path, mocker, _stub_webbrowser):
@@ -202,22 +208,31 @@ class TestStale:
         assert "Security alerts unavailable" in result.stderr
 
     @freeze_time("2026-05-12")
-    def test_should_degrade_build_status_when_checks_forbidden(
+    def test_should_warn_once_when_build_status_unavailable(
         self, tmp_path, mocker, _stub_webbrowser
     ):
         # Arrange
         db_path = tmp_path / "cache.db"
         seal_month("myorg", "repoA", 2026, 4, db_path=db_path)
 
-        def fake_open_prs(_token, _org, _repo, **_kwargs):
-            if _kwargs.get("include_checks", True):
-                raise GitHubAuthError("missing permission")
-            return [_open_pr(1, "alice", dt(year=2026, month=4, day=1, hour=8, minute=0))]
-
         mocker.patch(
             "git_dev_metrics.cli.commands.stale.get_github_token", return_value="fake-token"
         )
-        mocker.patch("git_dev_metrics.cli.commands.stale.fetch_open_prs", side_effect=fake_open_prs)
+        mocker.patch(
+            "git_dev_metrics.cli.commands.stale.fetch_open_prs",
+            return_value=[
+                _open_pr(
+                    1,
+                    "alice",
+                    dt(year=2026, month=4, day=1, hour=8, minute=0),
+                    head_sha="abc123",
+                )
+            ],
+        )
+        mocker.patch(
+            "git_dev_metrics.cli.commands.stale.fetch_open_pr_build_state",
+            side_effect=GitHubAuthError("needs Actions: Read permission"),
+        )
         out = tmp_path / "stale.html"
 
         # Act
@@ -229,6 +244,42 @@ class TestStale:
         assert "PR #1" in html
         assert "no checks" in html
         assert "Build status unavailable" in result.stderr
+        assert result.stderr.count("Build status unavailable") == 1
+
+    @freeze_time("2026-05-12")
+    def test_should_render_build_badge_from_actions(self, tmp_path, mocker, _stub_webbrowser):
+        # Arrange
+        db_path = tmp_path / "cache.db"
+        seal_month("myorg", "repoA", 2026, 4, db_path=db_path)
+
+        mocker.patch(
+            "git_dev_metrics.cli.commands.stale.get_github_token", return_value="fake-token"
+        )
+        mocker.patch(
+            "git_dev_metrics.cli.commands.stale.fetch_open_prs",
+            return_value=[
+                _open_pr(
+                    1,
+                    "alice",
+                    dt(year=2026, month=4, day=1, hour=8, minute=0),
+                    head_sha="abc123",
+                )
+            ],
+        )
+        mocker.patch(
+            "git_dev_metrics.cli.commands.stale.fetch_open_pr_build_state",
+            return_value={1: "SUCCESS"},
+        )
+        out = tmp_path / "stale.html"
+
+        # Act
+        result = runner.invoke(app, ["stale", "--db", str(db_path), "--output", str(out)])
+
+        # Assert
+        assert result.exit_code == 0, result.output
+        html = out.read_text()
+        assert "passing" in html
+        assert "no checks" not in html
 
     @freeze_time("2026-05-12")
     def test_should_skip_repo_on_generic_github_error(self, tmp_path, mocker, _stub_webbrowser):
@@ -317,6 +368,38 @@ class TestStale:
         assert result.exit_code == 0, result.output
         expected = tmp_path / "metrics_results" / "stale_2026-05-12.html"
         assert expected.exists()
+
+    @freeze_time("2026-05-12")
+    def test_should_skip_archived_repo(self, tmp_path, mocker, _stub_webbrowser):
+        # Arrange
+        db_path = tmp_path / "cache.db"
+        seal_month("myorg", "repoA", 2026, 4, db_path=db_path)
+        seal_month("myorg", "repoB", 2026, 4, db_path=db_path)
+
+        def fake_archived(_token, _org, repo):
+            return repo == "repoA"
+
+        mocker.patch(
+            "git_dev_metrics.cli.commands.stale.get_github_token", return_value="fake-token"
+        )
+        mocker.patch("git_dev_metrics.cli.commands.stale.is_repo_archived", side_effect=fake_archived)
+        mocker.patch(
+            "git_dev_metrics.cli.commands.stale.fetch_open_prs",
+            return_value=[
+                _open_pr(2, "bob", dt(year=2026, month=5, day=1, hour=8, minute=0)),
+            ],
+        )
+        out = tmp_path / "stale.html"
+
+        # Act
+        result = runner.invoke(app, ["stale", "--db", str(db_path), "--output", str(out)])
+
+        # Assert
+        assert result.exit_code == 0, result.output
+        html = out.read_text()
+        assert "myorg/repoB" in html
+        assert "myorg/repoA" not in html
+        assert "Skipping myorg/repoA — archived" in result.stderr
 
     @freeze_time("2026-05-12")
     def test_should_skip_missing_repos(self, tmp_path, mocker, _stub_webbrowser):
