@@ -16,9 +16,9 @@ def _prompt_for_token() -> str:
     typer.echo("  - Metadata: Read")
     typer.echo("  - Pull requests: Read")
     typer.echo(
-        "  - Checks: Read (build status in stale report). "
-        "Note: fine-grained tokens cannot be granted this — "
-        "build status shows 'no checks' unless you use a classic PAT."
+        "Note: build status in the stale report needs Checks: Read, which "
+        "fine-grained tokens cannot be granted — it shows 'no checks' unless "
+        "you use a classic PAT."
     )
     token = getpass("PAT: ")
     if not token:
