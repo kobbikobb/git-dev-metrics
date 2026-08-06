@@ -3,7 +3,7 @@
 from datetime import UTC, datetime, timedelta
 from typing import cast
 
-from git_dev_metrics.models import OpenPullRequest
+from git_dev_metrics.models import OpenPullRequest, SecurityInfo
 
 
 class TestGetStalePrs:
@@ -134,6 +134,53 @@ class TestGetStalePrs:
         result = get_stale_prs(prs, "myrepo", lambda: now)
         assert len(result) == 1
         assert result[0].labels == ("bug", "priority:high")
+
+    def test_should_carry_build_state_and_security(self):
+        from git_dev_metrics.metrics._stale_pr import get_stale_prs
+
+        now = datetime.now(UTC)
+        prs = cast(
+            list[OpenPullRequest],
+            [
+                {
+                    "number": 7,
+                    "title": "Stale with signals",
+                    "created_at": now - timedelta(days=10),
+                    "merged_at": None,
+                    "user": {"login": "alice"},
+                    "build_state": "FAILURE",
+                },
+            ],
+        )
+        security: dict[int, SecurityInfo] = {
+            7: {"severity": "critical", "advisory_id": "GHSA-abcd"}
+        }
+        result = get_stale_prs(prs, "myrepo", lambda: now, security=security)
+        assert len(result) == 1
+        assert result[0].build_state == "FAILURE"
+        assert result[0].security_severity == "critical"
+        assert result[0].security_advisory == "GHSA-abcd"
+
+    def test_should_leave_security_blank_when_no_join(self):
+        from git_dev_metrics.metrics._stale_pr import get_stale_prs
+
+        now = datetime.now(UTC)
+        prs = cast(
+            list[OpenPullRequest],
+            [
+                {
+                    "number": 7,
+                    "title": "Stale without alerts",
+                    "created_at": now - timedelta(days=10),
+                    "merged_at": None,
+                    "user": {"login": "alice"},
+                },
+            ],
+        )
+        result = get_stale_prs(prs, "myrepo", lambda: now)
+        assert len(result) == 1
+        assert result[0].security_severity is None
+        assert result[0].security_advisory is None
 
 
 class TestSummarizeStalePrs:

@@ -1,5 +1,6 @@
 from datetime import datetime
 
+import pytest
 from freezegun import freeze_time
 from typer.testing import CliRunner
 
@@ -18,6 +19,7 @@ def _open_pr(
     created_at: datetime,
     is_draft: bool = False,
     labels: list[str] | None = None,
+    build_state: str | None = None,
 ) -> dict:
     return {
         "number": number,
@@ -28,10 +30,15 @@ def _open_pr(
         "is_draft": is_draft,
         "is_approved": False,
         "labels": labels or [],
+        "build_state": build_state,
     }
 
 
 class TestStale:
+    @pytest.fixture(autouse=True)
+    def _no_security_alerts(self, mocker):
+        mocker.patch("git_dev_metrics.cli.commands.stale.fetch_open_pr_security", return_value={})
+
     @freeze_time("2026-05-12")
     def test_should_render_html_for_stale_prs_across_synced_repos(
         self, tmp_path, mocker, _stub_webbrowser
@@ -128,6 +135,71 @@ class TestStale:
         html = out.read_text()
         assert "bug" in html
         assert "priority:high" in html
+
+    @freeze_time("2026-05-12")
+    def test_should_render_build_and_security_badges(self, tmp_path, mocker, _stub_webbrowser):
+        # Arrange
+        db_path = tmp_path / "cache.db"
+        seal_month("myorg", "repoA", 2026, 4, db_path=db_path)
+
+        mocker.patch(
+            "git_dev_metrics.cli.commands.stale.get_github_token", return_value="fake-token"
+        )
+        mocker.patch(
+            "git_dev_metrics.cli.commands.stale.fetch_open_prs",
+            return_value=[
+                _open_pr(
+                    1,
+                    "alice",
+                    dt(year=2026, month=4, day=1, hour=8, minute=0),
+                    build_state="FAILURE",
+                )
+            ],
+        )
+        mocker.patch(
+            "git_dev_metrics.cli.commands.stale.fetch_open_pr_security",
+            return_value={1: {"severity": "high", "advisory_id": "GHSA-1234"}},
+        )
+        out = tmp_path / "stale.html"
+
+        # Act
+        result = runner.invoke(app, ["stale", "--db", str(db_path), "--output", str(out)])
+
+        # Assert
+        assert result.exit_code == 0, result.output
+        html = out.read_text()
+        assert "failing" in html
+        assert "high: GHSA-1234" in html
+
+    @freeze_time("2026-05-12")
+    def test_should_degrade_when_security_alerts_unreadable(
+        self, tmp_path, mocker, _stub_webbrowser
+    ):
+        # Arrange
+        db_path = tmp_path / "cache.db"
+        seal_month("myorg", "repoA", 2026, 4, db_path=db_path)
+
+        mocker.patch(
+            "git_dev_metrics.cli.commands.stale.get_github_token", return_value="fake-token"
+        )
+        mocker.patch(
+            "git_dev_metrics.cli.commands.stale.fetch_open_prs",
+            return_value=[_open_pr(1, "alice", dt(year=2026, month=4, day=1, hour=8, minute=0))],
+        )
+        mocker.patch(
+            "git_dev_metrics.cli.commands.stale.fetch_open_pr_security",
+            side_effect=GitHubNotFoundError("no access"),
+        )
+        out = tmp_path / "stale.html"
+
+        # Act
+        result = runner.invoke(app, ["stale", "--db", str(db_path), "--output", str(out)])
+
+        # Assert
+        assert result.exit_code == 0, result.output
+        html = out.read_text()
+        assert "PR #1" in html
+        assert "Security alerts unavailable" in result.stderr
 
     @freeze_time("2026-05-12")
     def test_should_render_empty_state_when_no_stale_prs(self, tmp_path, mocker, _stub_webbrowser):

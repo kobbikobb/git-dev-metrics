@@ -35,6 +35,9 @@
   .age-crit { color: var(--crit); font-weight: 600; }
   .badge { font-size: 0.7rem; padding: 0.1rem 0.4rem; border-radius: 4px; background: var(--border); color: var(--muted); }
   .badge-approved { background: rgba(34,197,94,0.15); color: var(--ok); }
+  .badge-fail { background: rgba(239,68,68,0.15); color: var(--crit); }
+  .badge-pending { background: rgba(234,179,8,0.15); color: var(--warn); }
+  .badge-security { background: rgba(239,68,68,0.2); color: var(--crit); font-weight: 600; }
   .empty { text-align: center; color: var(--muted); padding: 3rem; }
   .targets { display: flex; gap: 1.5rem; justify-content: center; margin-bottom: 1.5rem; }
   .target-item { font-size: 0.85rem; }
@@ -66,7 +69,7 @@
     <table>
       <thead>
         <tr>
-          <th>PR</th><th>Title</th><th>Repo</th><th>Author</th><th>Age</th><th>Flags</th><th>Labels</th>
+          <th>PR</th><th>Title</th><th>Repo</th><th>Author</th><th>Age</th><th>Build</th><th>Flags</th><th>Labels</th><th>Security</th>
         </tr>
       </thead>
       <tbody>
@@ -78,11 +81,24 @@
           <td>{{ pr.author }}</td>
           <td class="{% if pr.age_days >= 30 %}age-crit{% elif pr.age_days >= 14 %}age-warn{% endif %}">{{ "%.1f"|format(pr.age_days) }}d</td>
           <td>
+            {% if pr.build_state == "FAILURE" %}<span class="badge badge-fail">failing</span>
+            {% elif pr.build_state == "PENDING" %}<span class="badge badge-pending">pending</span>
+            {% elif pr.build_state == "SUCCESS" %}<span class="badge badge-approved">passing</span>
+            {% else %}<span class="badge">no checks</span>{% endif %}
+          </td>
+          <td>
             {% if pr.is_draft %}<span class="badge">draft</span>{% endif %}
             {% if pr.is_approved %}<span class="badge badge-approved">approved</span>{% endif %}
           </td>
           <td>
             {% for label in pr.labels %}<span class="badge">{{ label }}</span> {% endfor %}
+          </td>
+          <td>
+            {% if pr.security_severity %}
+              <span class="badge badge-security">
+                {{ pr.security_severity }}{% if pr.security_advisory %}: {{ pr.security_advisory }}{% endif %}
+              </span>
+            {% endif %}
           </td>
         </tr>
         {% endfor %}

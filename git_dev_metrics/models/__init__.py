@@ -7,6 +7,7 @@ from .types import (
     PullRequestInfo,
     Repository,
     Review,
+    SecurityInfo,
 )
 
 __all__ = [
@@ -16,4 +17,5 @@ __all__ = [
     "PullRequestInfo",
     "Repository",
     "Review",
+    "SecurityInfo",
 ]
