@@ -78,7 +78,7 @@ class TestGetStalePrs:
         assert result[0].repo == "myrepo"
         assert result[0].age_hours > 24 * 7
 
-    def test_should_sort_by_age_oldest_first(self):
+    def test_should_sort_by_creator_then_age_oldest_first(self):
         from git_dev_metrics.metrics._stale_pr import get_stale_prs
 
         now = datetime.now(UTC)
@@ -87,24 +87,53 @@ class TestGetStalePrs:
             [
                 {
                     "number": 1,
-                    "title": "Newer stale",
+                    "title": "alice newer",
                     "created_at": now - timedelta(days=8),
                     "merged_at": None,
                     "user": {"login": "alice"},
                 },
                 {
                     "number": 2,
-                    "title": "Older stale",
+                    "title": "bob older",
                     "created_at": now - timedelta(days=15),
                     "merged_at": None,
                     "user": {"login": "bob"},
                 },
+                {
+                    "number": 3,
+                    "title": "alice older",
+                    "created_at": now - timedelta(days=12),
+                    "merged_at": None,
+                    "user": {"login": "alice"},
+                },
             ],
         )
         result = get_stale_prs(prs, "myrepo", lambda: now)
-        assert result[0].number == 2
-        assert result[1].number == 1
+        # Grouped by creator (alice before bob), oldest first within each creator
+        assert [r.number for r in result] == [3, 1, 2]
+        assert [r.author for r in result] == ["alice", "alice", "bob"]
         assert result[0].repo == "myrepo"
+
+    def test_should_carry_labels(self):
+        from git_dev_metrics.metrics._stale_pr import get_stale_prs
+
+        now = datetime.now(UTC)
+        prs = cast(
+            list[OpenPullRequest],
+            [
+                {
+                    "number": 1,
+                    "title": "Stale with labels",
+                    "created_at": now - timedelta(days=10),
+                    "merged_at": None,
+                    "user": {"login": "alice"},
+                    "labels": ["bug", "priority:high"],
+                },
+            ],
+        )
+        result = get_stale_prs(prs, "myrepo", lambda: now)
+        assert len(result) == 1
+        assert result[0].labels == ("bug", "priority:high")
 
 
 class TestSummarizeStalePrs:

@@ -137,6 +137,11 @@ OPEN_PRS_QUERY = gql.gql(
                             state
                         }
                     }
+                    labels(first: 20) {
+                        nodes {
+                            name
+                        }
+                    }
                 }
                 pageInfo {
                     hasNextPage

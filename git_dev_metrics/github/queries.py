@@ -139,6 +139,9 @@ def _map_open_prs(prs: list[dict]) -> list[OpenPullRequest]:
             continue
         reviews = pr.get("reviews", {}).get("nodes", [])
         is_approved = any(r.get("state") == "APPROVED" for r in reviews)
+        labels = [
+            node.get("name") for node in pr.get("labels", {}).get("nodes", []) if node.get("name")
+        ]
         result.append(
             {
                 "number": number,
@@ -148,6 +151,7 @@ def _map_open_prs(prs: list[dict]) -> list[OpenPullRequest]:
                 "user": {"login": map_author_login(pr.get("author"))},
                 "is_draft": pr.get("isDraft", False),
                 "is_approved": is_approved,
+                "labels": labels,
             }
         )
     return result
