@@ -48,7 +48,7 @@ class TestFetchRepositories:
             status=200,
         )
 
-        with pytest.raises(GitHubAPIError, match="Unauthorized"):
+        with pytest.raises(GitHubAPIError, match="GitHub denied the request"):
             fetch_repositories("bad-token")
 
     @responses.activate

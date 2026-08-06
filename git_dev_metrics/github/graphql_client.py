@@ -85,7 +85,9 @@ def _handle_graphql_error(e: transport_exceptions.TransportQueryError) -> None:
         error_type = error.get("type", "")
 
         if error_type in ("FORBIDDEN", "UNAUTHORIZED") or "authentication" in message.lower():
-            raise GitHubAuthError("Unauthorized. Your token might be expired.") from e
+            raise GitHubAuthError(
+                f"GitHub denied the request (token expired or missing permission): {message}"
+            ) from e
 
         if error_type == "NOT_FOUND" or "Not Found" in message:
             raise GitHubNotFoundError(message) from e

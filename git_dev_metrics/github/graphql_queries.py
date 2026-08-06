@@ -142,6 +142,48 @@ OPEN_PRS_QUERY = gql.gql(
                             name
                         }
                     }
+                }
+                pageInfo {
+                    hasNextPage
+                    endCursor
+                }
+            }
+        }
+    }
+    """
+)
+
+OPEN_PRS_QUERY_WITH_CHECKS = gql.gql(
+    """
+    query FetchOpenPRsWithChecks($owner: String!, $name: String!, $first: Int!, $after: String) {
+        repository(owner: $owner, name: $name) {
+            pullRequests(
+                first: $first
+                after: $after
+                states: OPEN
+                orderBy: {field: CREATED_AT, direction: DESC}
+            ) {
+                nodes {
+                    number
+                    title
+                    createdAt
+                    isDraft
+                    author {
+                        login
+                    }
+                    repository {
+                        isArchived
+                    }
+                    reviews(first: 100) {
+                        nodes {
+                            state
+                        }
+                    }
+                    labels(first: 20) {
+                        nodes {
+                            name
+                        }
+                    }
                     commits(last: 1) {
                         nodes {
                             commit {
