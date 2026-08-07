@@ -382,7 +382,10 @@ class TestStale:
         mocker.patch(
             "git_dev_metrics.cli.commands.stale.get_github_token", return_value="fake-token"
         )
-        mocker.patch("git_dev_metrics.cli.commands.stale.is_repo_archived", side_effect=fake_archived)
+        mocker.patch(
+            "git_dev_metrics.cli.commands.stale.is_repo_archived",
+            side_effect=fake_archived,
+        )
         mocker.patch(
             "git_dev_metrics.cli.commands.stale.fetch_open_prs",
             return_value=[
