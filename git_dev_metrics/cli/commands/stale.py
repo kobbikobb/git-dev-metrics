@@ -125,5 +125,5 @@ def stale(
 
     out = (output or _default_output()).with_suffix(".html")
     FileStaleHtmlPrinter(out).render(all_stale, targets=targets)
-    typer.echo(f"Stale written to {out}.")
+    typer.echo(f"Stale written to {out.resolve().as_uri()}.")
     open_in_browser(out)
