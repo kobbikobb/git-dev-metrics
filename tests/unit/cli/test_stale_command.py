@@ -78,6 +78,7 @@ class TestStale:
         assert "myorg/repoB" in html
         assert "alice" in html
         assert "bob" in html
+        assert f"Stale written to {out.resolve().as_uri()}." in result.output
         _stub_webbrowser.assert_called_once_with(out.resolve().as_uri())
 
     @freeze_time("2026-05-12")
