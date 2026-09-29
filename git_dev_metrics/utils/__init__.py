@@ -2,6 +2,7 @@
 
 from .date_utils import (
     TimePeriod,
+    current_month,
     get_last_month,
     month_iter,
     month_key,
@@ -15,6 +16,7 @@ from .date_utils import (
 
 __all__ = [
     "TimePeriod",
+    "current_month",
     "get_last_month",
     "month_iter",
     "month_key",
