@@ -1,4 +1,5 @@
 import re
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
@@ -55,6 +56,16 @@ def month_label(year: int, month: int) -> str:
 def month_key(year: int, month: int) -> str:
     """Sortable key like \"2025-01\"."""
     return f"{year:04d}-{month:02d}"
+
+
+def current_month(clock: Callable[[], datetime] | None = None) -> tuple[int, int]:
+    """(year, month) of the current calendar month, UTC."""
+    now = (clock or _utc_now)()
+    return now.year, now.month
+
+
+def _utc_now() -> datetime:
+    return datetime.now(UTC)
 
 
 def get_last_month() -> TimePeriod:

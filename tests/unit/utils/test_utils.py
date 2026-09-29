@@ -3,7 +3,7 @@
 import pytest
 from freezegun import freeze_time
 
-from git_dev_metrics.utils import TimePeriod, get_last_month
+from git_dev_metrics.utils import TimePeriod, current_month, get_last_month
 from git_dev_metrics.utils.date_utils import month_range
 
 from ..conftest import dt
@@ -35,6 +35,15 @@ class TestMonthRange:
     def test_should_raise_for_month_thirteen(self):
         with pytest.raises(ValueError, match="Unsupported period"):
             month_range(2026, 13)
+
+
+class TestCurrentMonth:
+    @freeze_time("2026-09-29 08:00:00")
+    def test_should_return_current_calendar_month(self):
+        assert current_month() == (2026, 9)
+
+    def test_should_use_injected_clock(self):
+        assert current_month(clock=lambda: dt(year=2025, month=1, day=31)) == (2025, 1)
 
 
 class TestGetLastMonth:
