@@ -28,7 +28,9 @@ class TestClassify:
             )
         responses.post(URL, json={"message": {"content": '{"0":"maintenance"}'}})
 
-        assert runner.invoke(app, [*args, "--limit", "1"]).exit_code == 0
+        limited = runner.invoke(app, [*args, "--limit", "1"])
+        assert limited.exit_code == 0
+        assert "1 of 1" in limited.output
         insert_prs([any_pr(number=2)], "org", "first", 2026, 1, db)
         assert runner.invoke(app, args).exit_code == 0
         assert "Classified 0" in runner.invoke(app, args).output
@@ -56,7 +58,11 @@ class TestClassify:
         responses.post(URL, json={"message": {"content": json.dumps(complete)}})
         responses.post(URL, json={"message": {"content": invalid}})
 
-        assert runner.invoke(app, args).exit_code == 1
+        result = runner.invoke(app, args)
+        assert result.exit_code == 1
+        assert f"0 of {len(prs)}" in result.output
+        assert f"{BATCH_SIZE} of {len(prs)}" in result.output
+        assert f"{len(prs)} of {len(prs)}" not in result.output
         responses.replace(responses.POST, URL, json={"message": {"content": '{"0":"unclear"}'}})
         assert "Classified 1 " in runner.invoke(app, args).output
         assert "Classified 0 " in runner.invoke(app, args).output

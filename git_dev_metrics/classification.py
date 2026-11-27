@@ -3,7 +3,7 @@
 import json
 import sqlite3
 from collections import Counter
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from itertools import batched
 
 import requests
@@ -91,7 +91,8 @@ def _labels(result: object, keys: list[str]) -> list[str]:
 
 def _pending(db: sqlite3.Connection, limit: int) -> list[sqlite3.Row]:
     return db.execute(
-        """SELECT repo_org, repo_name, number, title, substr(body, 1, 1000) AS excerpt
+        """SELECT repo_org, repo_name, number, title, substr(body, 1, 1000) AS excerpt,
+                  count(*) OVER () AS pending_count
            FROM prs AS p WHERE merged_at IS NOT NULL AND NOT EXISTS (
                SELECT 1 FROM pr_classifications AS c
                WHERE (c.repo_org, c.repo_name, c.number) = (p.repo_org, p.repo_name, p.number)
@@ -103,12 +104,19 @@ def _pending(db: sqlite3.Connection, limit: int) -> list[sqlite3.Row]:
 
 
 def _pending_batches(
-    db: sqlite3.Connection, remaining: int | None
-) -> Iterator[tuple[sqlite3.Row, ...]]:
-    while rows := _pending(db, 256 if remaining is None else min(remaining, 256)):
-        yield from batched(rows, BATCH_SIZE, strict=False)
-        if remaining is not None:
-            remaining -= len(rows)
+    db: sqlite3.Connection, limit: int | None
+) -> Iterator[tuple[tuple[sqlite3.Row, ...], int]]:
+    rows = _pending(db, min(limit, 256) if limit is not None else 256)
+    if not rows:
+        return
+    pending = rows[0]["pending_count"]
+    total = min(pending, limit) if limit is not None else pending
+    remaining = total
+    while rows:
+        for batch in batched(rows, BATCH_SIZE, strict=False):
+            yield batch, total
+        remaining -= len(rows)
+        rows = _pending(db, min(remaining, 256)) if remaining else []
 
 
 def _require_local_model(session: requests.Session, model: str) -> None:
@@ -128,12 +136,16 @@ def _require_local_model(session: requests.Session, model: str) -> None:
         raise ValueError("Select a locally installed Ollama model.")
 
 
-def classify_pending(db: sqlite3.Connection, model: str, limit: int | None) -> Counter[str]:
+def classify_pending(
+    db: sqlite3.Connection, model: str, limit: int | None, progress: Callable[[int, int], None]
+) -> Counter[str]:
     counts: Counter[str] = Counter()
+    done = 0
     with requests.Session() as session:
         session.trust_env = False
-        for batch in _pending_batches(db, limit):
-            if not counts:
+        for batch, total in _pending_batches(db, limit):
+            if not done:
+                progress(0, total)
                 _require_local_model(session, model)
             labels = _classify_batch(session, batch, model)
             with db:
@@ -145,4 +157,6 @@ def classify_pending(db: sqlite3.Connection, model: str, limit: int | None) -> C
                         (row["repo_org"], row["repo_name"], row["number"], label, model),
                     ).rowcount
                     counts[label] += inserted
+            done += len(batch)
+            progress(done, total)
     return counts
