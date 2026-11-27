@@ -8,6 +8,7 @@ from typer.testing import CliRunner
 from git_dev_metrics.cache import insert_prs, open_connection
 from git_dev_metrics.classification import BATCH_SIZE
 from git_dev_metrics.cli import app
+from git_dev_metrics.cli.commands.classify import _timed_progress
 
 from ..conftest import any_pr
 
@@ -92,3 +93,19 @@ class TestClassify:
             "SELECT number, category FROM pr_classifications ORDER BY number"
         )
         assert [tuple(row) for row in rows] == [(8, "bug_fix"), (9, "feature")]
+
+    def test_should_estimate_time_from_saved_prs(self, capsys: pytest.CaptureFixture[str]) -> None:
+        now = 100.0
+        with _timed_progress(clock=lambda: now) as progress:
+            progress(0, 10)
+            now += 6
+            progress(4, 10)
+            now += 7
+            progress(10, 10)
+
+        lines = capsys.readouterr().err.splitlines()
+        assert lines == [
+            "Classifying PRs: 0 of 10 | elapsed 0:00:00 | time left estimating",
+            "Classifying PRs: 4 of 10 | elapsed 0:00:06 | time left 0:00:09",
+            "Classifying PRs: 10 of 10 | elapsed 0:00:13 | time left 0:00:00",
+        ]
