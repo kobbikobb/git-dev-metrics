@@ -3,7 +3,7 @@ from pathlib import Path
 import pytest
 from typer.testing import CliRunner
 
-from git_dev_metrics.cache import insert_prs, seal_month, update_hidden_logins
+from git_dev_metrics.cache import insert_prs, seal_month, set_nickname, update_hidden_logins
 from git_dev_metrics.cli import app
 from git_dev_metrics.metrics._stale_pr import StalePr
 from git_dev_metrics.metrics.lang_calculator import build_lang_dataset
@@ -91,6 +91,8 @@ class TestReportVisibility:
         insert_prs(prs, "org", "repo", 2026, 6, db_path=db)
         seal_month("org", "repo", 2026, 6, db_path=db)
         update_hidden_logins({"dev-a": True}, db_path=db)
+        set_nickname("dev-a", "Hidden alias", db_path=db)
+        set_nickname("dev-b", "Visible alias", db_path=db)
         mocker.patch(
             "git_dev_metrics.cli.commands.team_velocity.last_n_months",
             return_value=((2026, 6), (2026, 6)),
@@ -101,7 +103,9 @@ class TestReportVisibility:
         assert result.exit_code == 0, result.output
         html = out.read_text()
         assert "Dev-A" not in html
-        assert "Dev-B" in html
+        assert "Hidden alias" not in html
+        assert "Dev-B" not in html
+        assert 'const DEV_DATA = [{"data": [1], "label": "Visible alias"}]' in html
         assert "const ACTIVE_DEVS = [2]" in html
         assert "const PR_COUNTS = [2]" in html
 

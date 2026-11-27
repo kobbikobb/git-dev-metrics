@@ -14,15 +14,20 @@ class FileTeamVelocityPrinter:
         dataset: TeamVelocityDataset,
         period_range: str,
         *,
+        nicknames: dict[str, str] | None = None,
         hidden_logins: Set[str] = frozenset(),
     ) -> None:
         month_labels = [m.month_label for m in dataset.months]
 
         dev_data: list[dict[str, str | list[int]]] = []
         if dataset.dev_month_counts:
+            names = {login.lower(): name for login, name in (nicknames or {}).items()}
             logins = sorted(dataset.dev_month_counts[0].keys())
             dev_data = [
-                {"label": login, "data": [m.get(login, 0) for m in dataset.dev_month_counts]}
+                {
+                    "label": names.get(login.lower(), login),
+                    "data": [m.get(login, 0) for m in dataset.dev_month_counts],
+                }
                 for login in logins
                 if login.lower() not in hidden_logins
             ]
