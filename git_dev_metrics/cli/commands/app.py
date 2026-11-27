@@ -1,5 +1,6 @@
 import typer
 
+from .classify import classify
 from .clear import clear
 from .dashboard import dashboard
 from .hide import hide
@@ -24,6 +25,7 @@ def main(ctx: typer.Context) -> None:
         typer.echo(ctx.get_help())
 
 
+app.command()(classify)
 app.command()(clear)
 app.command()(hide)
 app.command()(dashboard)

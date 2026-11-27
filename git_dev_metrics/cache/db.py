@@ -30,6 +30,15 @@ CREATE TABLE IF NOT EXISTS prs (
     PRIMARY KEY (repo_org, repo_name, year, month, number)
 );
 
+CREATE TABLE IF NOT EXISTS pr_classifications (
+    repo_org TEXT NOT NULL COLLATE NOCASE,
+    repo_name TEXT NOT NULL COLLATE NOCASE,
+    number INTEGER NOT NULL,
+    category TEXT NOT NULL CHECK (category IN ('feature', 'bug_fix', 'maintenance', 'unclear')),
+    model TEXT NOT NULL,
+    PRIMARY KEY (repo_org, repo_name, number)
+);
+
 CREATE TABLE IF NOT EXISTS reviews (
     pr_number INTEGER NOT NULL,
     repo_org TEXT NOT NULL,
