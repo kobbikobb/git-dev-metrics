@@ -37,6 +37,36 @@ class TestReportVisibility:
         assert 'const TEAM = {"Python": 1}' in html
         assert "const DEVS = []" in html
 
+    @pytest.mark.parametrize("report", ["skill", "lang"])
+    def test_should_count_same_number_in_different_repos(
+        self, tmp_path: Path, report: str, mocker, _stub_webbrowser
+    ) -> None:
+        db = tmp_path / "cache.db"
+        out = tmp_path / "report.html"
+        for repo in ("repo-a", "repo-b"):
+            seal_month("org", repo, 2026, 6, db_path=db)
+        seal_month("org", "repo-a", 2026, 7, db_path=db)
+        update_hidden_logins({"dev-a": True}, db_path=db)
+        mocker.patch("git_dev_metrics.cli.runners._report_prs.load_token", return_value="test")
+
+        def fetch(token: str, org: str, repo: str, year: int, month: int) -> list[dict]:
+            login = {"repo-a": "Dev-A", "repo-b": "Dev-B"}[repo]
+            return [{"number": 1, "user": {"login": login}, "files": [{"path": "main.py"}]}]
+
+        mocker.patch(
+            f"git_dev_metrics.cli.runners.{report}_runner.fetch_{report}_report_prs",
+            side_effect=fetch,
+        )
+        args = ["--from", "2026-06", "--to", "2026-07", "--db", str(db), "--output", str(out)]
+
+        result = CliRunner().invoke(app, [f"{report}-report", *args])
+
+        assert result.exit_code == 0, result.output
+        html = out.read_text()
+        assert 'const TEAM = {"Python": 2}' in html
+        assert 'const DEVS = ["Dev-B"]' in html
+        assert "Dev-A" not in html
+
     def test_should_hide_named_trend_series(self, tmp_path: Path) -> None:
         months = [(2026, 6)]
         activity = {months[0]: [any_pr(user={"login": "Dev-A"}), any_pr(user={"login": "Dev-B"})]}
