@@ -13,7 +13,14 @@ class MonthMix(TypedDict):
 
 
 def monthly_work_mix(start: str, end: str, db: Path | None) -> dict[str, dict[str, MonthMix]]:
-    rows = open_connection(db).execute(
+    conn = open_connection(db)
+    repos: dict[str, dict[str, MonthMix]] = {
+        name: {}
+        for (name,) in conn.execute(
+            "SELECT DISTINCT lower(repo_org || '/' || repo_name) FROM synced_months"
+        )
+    }
+    rows = conn.execute(
         """WITH coverage AS (
                SELECT lower(repo_org) AS org, lower(repo_name) AS repo,
                       printf('%04d-%02d', year, month) AS month, min(partial) AS partial
@@ -32,7 +39,6 @@ def monthly_work_mix(start: str, end: str, db: Path | None) -> dict[str, dict[st
            GROUP BY s.org, s.repo, s.month, category ORDER BY repository, s.month""",
         (start, end, start, end),
     )
-    repos: dict[str, dict[str, MonthMix]] = {}
     for repo, month, partial, category, count in rows:
         data = repos.setdefault(repo, {}).setdefault(
             month, MonthMix(partial=bool(partial), counts={})

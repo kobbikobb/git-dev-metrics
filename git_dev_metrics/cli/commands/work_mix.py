@@ -1,3 +1,4 @@
+from hashlib import sha256
 from pathlib import Path
 
 import typer
@@ -29,7 +30,7 @@ def work_mix(
     output: Path | None = typer.Option(None, help="Output HTML path."),
     db: Path | None = DB_OPTION,
 ) -> None:
-    """Chart monthly merged PR counts and shares by work category across repositories."""
+    """Chart monthly merged PR counts by work category across repositories."""
     months = _months(from_, to)
     repos = monthly_work_mix(months[0], months[-1], db)
     if repo:
@@ -37,12 +38,14 @@ def work_mix(
         if missing := selected.difference(repos):
             raise typer.BadParameter(f"No synced months for {', '.join(sorted(missing))}.")
         repos = {name: data for name, data in repos.items() if name in selected}
-    if not repos:
+    if not any(repos.values()):
         raise typer.BadParameter("No synced repositories in this period. Run pull first.")
-    path = output or Path(f"metrics_results/work_mix_{months[0]}_{months[-1]}.html")
+    scope = ", ".join(sorted(repos)) if repo else f"{len(repos)} synced repositories"
+    suffix = "_" + sha256(scope.encode()).hexdigest()[:12] if repo else ""
+    path = output or Path(f"metrics_results/work_mix_{months[0]}_{months[-1]}{suffix}.html")
     path.parent.mkdir(parents=True, exist_ok=True)
     html = render_template(
-        "work_mix.html", months=months, mix=combined_work_mix(repos, months), repo_count=len(repos)
+        "work_mix.html", months=months, mix=combined_work_mix(repos, months), scope=scope
     )
     path.write_text(html, encoding="utf-8")
     typer.echo(f"Monthly PR work mix written to {path}.")

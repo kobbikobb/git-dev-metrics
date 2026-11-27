@@ -48,7 +48,7 @@ uv run app logout
 | Command | Description |
 |---------|-------------|
 | `pull` | Pull a sealed month of PRs for one repository into the cache |
-| `work-mix` | Chart monthly counts and shares by work category across all selected repositories (last 12 months by default) |
+| `work-mix` | Chart monthly merged PR counts by work category across all selected repositories (last 12 months by default) |
 | `classify` | Assign a work category to each pending merged PR using local Ollama |
 | `hide` | Hide or show cached developers in individual results. Their activity still counts toward team metrics. |
 | `dashboard` | Render the in-depth HTML dashboard and open it in the browser |
