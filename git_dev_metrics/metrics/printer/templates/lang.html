@@ -62,7 +62,7 @@
         {% for dev in devs %}
         <tr><td>{{ dev }}</td>{% for lang in langs %}<td>{{ dev_langs.get(dev, {}).get(lang, 0) }}</td>{% endfor %}</tr>
         {% endfor %}
-        <tr class="total-row"><td>Total</td>{% for lang in langs %}<td>{{ team_langs.get(lang, 0) }}</td>{% endfor %}</tr>
+        <tr class="total-row"><td>Team total</td>{% for lang in langs %}<td>{{ team_langs.get(lang, 0) }}</td>{% endfor %}</tr>
       </tbody>
     </table>
   </div>

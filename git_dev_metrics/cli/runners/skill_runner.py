@@ -3,12 +3,12 @@ from pathlib import Path
 
 import typer
 
-from ...cache import get_hidden_logins, list_synced_months
-from ...github.auth_cache import load_token
+from ...cache import get_hidden_logins
 from ...github.queries import fetch_skill_report_prs
 from ...metrics.printer.skill import FileSkillPrinter
 from ...metrics.skill_calculator import build_skill_dataset
 from .._browser import open_in_browser
+from ._report_prs import load_report_prs
 
 YearMonth = tuple[int, int]
 
@@ -23,29 +23,7 @@ def _default_output(months: list[YearMonth]) -> Path:
 def perform_skill_report(
     months: list[YearMonth], output: Path | None, db_path: Path | None
 ) -> None:
-    token = load_token()
-    if not token:
-        typer.secho("No GitHub token found. Run login first.", fg=typer.colors.RED, err=True)
-        raise typer.Exit(code=1)
-
-    synced = list_synced_months(db_path=db_path)
-    wanted = set(months)
-    all_prs: list[dict] = []
-    seen_ids: set[int] = set()
-
-    for org, repo, year, month in synced:
-        if (year, month) not in wanted:
-            continue
-        for pr in fetch_skill_report_prs(token, org, repo, year, month):
-            n = pr["number"]
-            if n not in seen_ids:
-                seen_ids.add(n)
-                all_prs.append(pr)
-
-    if not all_prs:
-        typer.secho("No PRs found for selected months.", fg=typer.colors.RED, err=True)
-        raise typer.Exit(code=1)
-
+    all_prs = load_report_prs(months, db_path, fetch_skill_report_prs)
     dataset = build_skill_dataset(all_prs)
     first, last = months[0], months[-1]
     period_range = (
