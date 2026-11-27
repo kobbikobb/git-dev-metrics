@@ -101,6 +101,9 @@ class TestReportVisibility:
         assert "Dev-D" not in html
         assert '"label": "Dev-C"' in html
         if report == "team-velocity":
+            assert html.index("<td>Visible alias</td><td>2</td>") < html.index(
+                "<td>Visible alias</td><td>1</td>"
+            )
             assert "const ACTIVE_DEVS = [4]" in html
             assert "const PR_COUNTS = [5]" in html
 
