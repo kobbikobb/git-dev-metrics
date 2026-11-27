@@ -1,4 +1,5 @@
 import json
+from pathlib import Path
 
 import pytest
 import responses
@@ -17,7 +18,7 @@ runner = CliRunner()
 
 class TestClassify:
     @responses.activate
-    def test_should_classify_merged_prs_once_across_repos_and_repulls(self, tmp_path):
+    def test_should_classify_merged_prs_once_across_repos_and_repulls(self, tmp_path: Path) -> None:
         responses.post(SHOW, json={"model_info": {"general.architecture": "test"}})
         db = tmp_path / "cache.db"
         args = ["classify", "--db", str(db), "--model", "local"]
@@ -43,7 +44,9 @@ class TestClassify:
 
     @pytest.mark.parametrize("invalid", ["{}", '{"0":"invalid"}', "truncated"])
     @responses.activate
-    def test_should_resume_after_rejecting_an_invalid_batch(self, tmp_path, invalid):
+    def test_should_resume_after_rejecting_an_invalid_batch(
+        self, tmp_path: Path, invalid: str
+    ) -> None:
         responses.post(SHOW, json={"model_info": {"general.architecture": "test"}})
         db = tmp_path / "cache.db"
         args = ["classify", "--db", str(db)]
@@ -59,7 +62,7 @@ class TestClassify:
         assert "Classified 0 " in runner.invoke(app, args).output
 
     @responses.activate
-    def test_should_refuse_remote_model_before_sending_pr_text(self, tmp_path):
+    def test_should_refuse_remote_model_before_sending_pr_text(self, tmp_path: Path) -> None:
         db = tmp_path / "cache.db"
         insert_prs([any_pr()], "org", "repo", 2026, 1, db)
         responses.post(SHOW, json={"model_info": {"name": "test"}, "remote_model": "cloud"})
@@ -71,7 +74,7 @@ class TestClassify:
         assert responses.calls[0].request.url == SHOW
 
     @responses.activate
-    def test_should_match_categories_by_response_key(self, tmp_path):
+    def test_should_match_categories_by_response_key(self, tmp_path: Path) -> None:
         db = tmp_path / "cache.db"
         insert_prs([any_pr(number=8), any_pr(number=9)], "org", "repo", 2026, 1, db)
         responses.post(SHOW, json={"model_info": {"general.architecture": "test"}})
