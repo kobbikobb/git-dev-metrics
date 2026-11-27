@@ -14,6 +14,7 @@ from .summary import summary
 from .targets import targets
 from .team_velocity import team_velocity
 from .trend import trend
+from .work_mix import work_mix
 
 app = typer.Typer(help="Git development metrics CLI.")
 
@@ -39,3 +40,4 @@ app.command()(summary)
 app.command()(targets)
 app.command(name="team-velocity")(team_velocity)
 app.command()(trend)
+app.command()(work_mix)
