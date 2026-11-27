@@ -3,7 +3,7 @@ from pathlib import Path
 import typer
 
 from ...metrics.printer._html_templates import render_template
-from ...metrics.work_mix import monthly_work_mix
+from ...metrics.work_mix import combined_work_mix, monthly_work_mix
 from ...utils.date_utils import last_n_months, month_iter, month_key
 from .._browser import open_in_browser
 from .._month_arg import parse_month_arg
@@ -29,7 +29,7 @@ def work_mix(
     output: Path | None = typer.Option(None, help="Output HTML path."),
     db: Path | None = DB_OPTION,
 ) -> None:
-    """Chart monthly merged PR counts and shares by work category for each repository."""
+    """Chart monthly merged PR counts and shares by work category across repositories."""
     months = _months(from_, to)
     repos = monthly_work_mix(months[0], months[-1], db)
     if repo:
@@ -41,6 +41,9 @@ def work_mix(
         raise typer.BadParameter("No synced repositories in this period. Run pull first.")
     path = output or Path(f"metrics_results/work_mix_{months[0]}_{months[-1]}.html")
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(render_template("work_mix.html", months=months, repos=repos), encoding="utf-8")
+    html = render_template(
+        "work_mix.html", months=months, mix=combined_work_mix(repos, months), repo_count=len(repos)
+    )
+    path.write_text(html, encoding="utf-8")
     typer.echo(f"Monthly PR work mix written to {path}.")
     open_in_browser(path)

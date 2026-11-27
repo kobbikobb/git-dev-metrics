@@ -1,5 +1,6 @@
 """Monthly work-category counts for synced repositories."""
 
+from collections import Counter
 from pathlib import Path
 from typing import TypedDict
 
@@ -39,3 +40,20 @@ def monthly_work_mix(start: str, end: str, db: Path | None) -> dict[str, dict[st
         if count:
             data["counts"][category] = count
     return repos
+
+
+def combined_work_mix(
+    repos: dict[str, dict[str, MonthMix]], months: list[str]
+) -> dict[str, MonthMix]:
+    combined = {}
+    for month in months:
+        rows = [data[month] for data in repos.values() if month in data]
+        if rows:
+            counts: Counter[str] = Counter()
+            for row in rows:
+                counts.update(row["counts"])
+            combined[month] = MonthMix(
+                partial=len(rows) < len(repos) or any(row["partial"] for row in rows),
+                counts=dict(counts),
+            )
+    return combined
