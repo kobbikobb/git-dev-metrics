@@ -140,7 +140,7 @@ def classify_pending(
     db: sqlite3.Connection, model: str, limit: int | None, progress: Callable[[int, int], None]
 ) -> Counter[str]:
     counts: Counter[str] = Counter()
-    done = 0
+    done = total = 0
     with requests.Session() as session:
         session.trust_env = False
         for batch, total in _pending_batches(db, limit):
@@ -159,4 +159,6 @@ def classify_pending(
                     counts[label] += inserted
             done += len(batch)
             progress(done, total)
+    if done < total:
+        progress(total, total)
     return counts
