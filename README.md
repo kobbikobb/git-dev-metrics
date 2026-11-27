@@ -45,6 +45,7 @@ uv run app logout
 | Command | Description |
 |---------|-------------|
 | `pull` | Pull a sealed month of PRs for one repository into the cache |
+| `classify` | Assign a work category to each pending merged PR using local Ollama |
 | `hide` | Hide or show cached developers in individual results. Their activity still counts toward team metrics. |
 | `dashboard` | Render the in-depth HTML dashboard and open it in the browser |
 | `summary` | Print the dashboard summary to the console |
@@ -52,6 +53,22 @@ uv run app logout
 | `stale` | Find stale PRs across synced repos |
 | `clear` | Delete the entire local cache database |
 | `logout` | Clear the stored GitHub token |
+
+## Classify merged PRs
+
+With Ollama running locally and a model installed, use the same database as `app pull`:
+
+```sh
+ollama pull qwen3.5:4b
+uv run app classify --limit 20
+uv run app classify
+```
+
+The command sends the PR title and a description excerpt to Ollama on
+`127.0.0.1:11434`. It records `feature`, `bug_fix`, `maintenance`, or `unclear`
+and the model tag in the cache table `pr_classifications`. Each completed batch is saved.
+Run the command again to resume. Use `--model TAG` to select another installed model
+for pending PRs, or `--db PATH` to select a cache.
 
 ## Linting & Formatting
 
