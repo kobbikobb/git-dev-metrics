@@ -1,7 +1,8 @@
 from pathlib import Path
 
-from ..cache import get_hidden_logins, has_partial_for_range, load_all_repos_for_range
+from ..cache import has_partial_for_range, load_all_repos_for_range
 from ..utils.date_utils import month_iter, parse_year_month, range_period
+from .report_data import ReportData
 from .snapshot import MetricsSnapshot
 
 
@@ -17,9 +18,7 @@ def load_snapshot_for_months(
         return None
     period = range_period(months[0], months[-1])
     partial = has_partial_for_range(months, db_path=db_path)
-    return MetricsSnapshot.from_repo_prs(
-        repo_prs, period, has_partial=partial, hidden_logins=get_hidden_logins(db_path=db_path)
-    )
+    return ReportData(db_path).snapshot(repo_prs, period, has_partial=partial)
 
 
 def load_snapshot_for_range(from_: str, to: str, db_path: Path | None) -> MetricsSnapshot | None:

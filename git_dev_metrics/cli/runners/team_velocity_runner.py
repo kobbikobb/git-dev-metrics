@@ -3,9 +3,8 @@ from pathlib import Path
 
 import typer
 
-from ...cache import get_hidden_logins, get_nicknames, load_all_repos_by_month
 from ...metrics.printer.team_velocity import FileTeamVelocityPrinter
-from ...metrics.team_velocity_calculator import build_team_velocity_dataset
+from ...metrics.report_data import ReportData
 from ...utils.date_utils import month_iter
 from .._browser import open_in_browser
 
@@ -30,8 +29,8 @@ def perform_team_velocity(
         raise typer.Exit(code=1)
 
     months = month_iter(from_ym, to_ym)
-    prs_per_month = load_all_repos_by_month(months, db_path=db_path)
-    if not any(prs_per_month.values()):
+    dataset = ReportData(db_path).velocity(months)
+    if dataset is None:
         typer.secho(
             "No synced data for selected range. Run pull first.",
             fg=typer.colors.RED,
@@ -39,18 +38,12 @@ def perform_team_velocity(
         )
         raise typer.Exit(code=1)
 
-    dataset = build_team_velocity_dataset(months, prs_per_month)
     first, last = months[0], months[-1]
     period_range = (
         f"{datetime(first[0], first[1], 1).strftime('%b %Y')}"
         f" – {datetime(last[0], last[1], 1).strftime('%b %Y')}"
     )
     out_path = output or _default_output(from_ym, to_ym)
-    FileTeamVelocityPrinter(out_path).render(
-        dataset,
-        period_range,
-        hidden_logins=get_hidden_logins(db_path=db_path),
-        nicknames=get_nicknames(db_path=db_path),
-    )
+    FileTeamVelocityPrinter(out_path).render(dataset, period_range)
     typer.echo(f"Team velocity written to {out_path}.")
     open_in_browser(out_path)

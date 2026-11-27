@@ -44,15 +44,15 @@ class TestBuildTrendDatasetFiltersLeavers:
         }
 
         # Act
-        dataset = build_trend_dataset(months, prs_per_month)
+        dataset = build_trend_dataset(months, prs_per_month, str)
 
         # Assert
-        assert dataset.devs == ["alice", "bob"]
-        assert dataset.months == ["2026-02", "2026-03", "2026-04"]
-        assert dataset.rows["alice"][0].pr_count == 2
-        assert dataset.rows["alice"][2].pr_count == 3
-        assert dataset.rows["bob"][0].pr_count == 1
-        assert dataset.rows["bob"][2].pr_count == 2
+        assert [dev["label"] for dev in dataset["devs"]] == ["alice", "bob"]
+        assert dataset["months"] == ["2026-02", "2026-03", "2026-04"]
+        assert dataset["devs"][0]["data"][0]["pr_count"] == 2
+        assert dataset["devs"][0]["data"][2]["pr_count"] == 3
+        assert dataset["devs"][1]["data"][0]["pr_count"] == 1
+        assert dataset["devs"][1]["data"][2]["pr_count"] == 2
 
 
 class TestBuildTrendDatasetEmpty:
@@ -62,9 +62,8 @@ class TestBuildTrendDatasetEmpty:
         prs_per_month: dict[tuple[int, int], list] = {}
 
         # Act
-        dataset = build_trend_dataset(months, prs_per_month)
+        dataset = build_trend_dataset(months, prs_per_month, str)
 
         # Assert
-        assert dataset.months == []
-        assert dataset.devs == []
-        assert dataset.rows == {}
+        assert dataset["months"] == []
+        assert dataset["devs"] == []

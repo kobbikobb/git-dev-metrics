@@ -1,16 +1,15 @@
 import re
-from collections.abc import Sequence
-from dataclasses import dataclass
+from collections.abc import Callable, Sequence
 from datetime import datetime
 from typing import TypedDict
 
 from ..constants import is_bot_login
 from ..models import PullRequest
 from ..utils.date_utils import month_key, month_label
+from ._rows import DeveloperSeries, developer_series
 
 
-@dataclass(frozen=True)
-class DevMonthRow:
+class DevMonthRow(TypedDict):
     month_label: str
     month_key: str
     pr_count: int
@@ -18,19 +17,9 @@ class DevMonthRow:
     ai_pct: float
 
 
-class DevMonthDict(TypedDict):
-    month_label: str
-    month_key: str
-    pr_count: int
-    cycle_hours: float
-    ai_pct: float
-
-
-@dataclass(frozen=True)
-class TrendDataset:
+class TrendDataset(TypedDict):
     months: list[str]
-    devs: list[str]
-    rows: dict[str, list[DevMonthRow]]
+    devs: list[DeveloperSeries[list[DevMonthRow]]]
 
 
 def _active_devs(prs: list[PullRequest]) -> set[str]:
@@ -127,10 +116,11 @@ def _row(dev: str, year: int, month: int, prs: list[PullRequest]) -> DevMonthRow
 def build_trend_dataset(
     months: list[tuple[int, int]],
     prs_per_month: dict[tuple[int, int], list[PullRequest]],
+    display_name: Callable[[str], str | None],
 ) -> TrendDataset:
     """Per-(dev, month) PR counts, cycle time and AI percentage, filtered to latest-month devs."""
     if not months:
-        return TrendDataset(months=[], devs=[], rows={})
+        return TrendDataset(months=[], devs=[])
 
     latest = months[-1]
     active = _active_devs(prs_per_month.get(latest, []))
@@ -142,4 +132,6 @@ def build_trend_dataset(
         ]
         for dev in devs
     }
-    return TrendDataset(months=[month_key(y, m) for y, m in months], devs=devs, rows=rows)
+    return TrendDataset(
+        months=[month_key(y, m) for y, m in months], devs=developer_series(rows, display_name)
+    )

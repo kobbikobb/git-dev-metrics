@@ -13,7 +13,6 @@ class ConsolePrinter:
         self,
         snapshot: MetricsSnapshot,
         date_range: str,
-        nicknames: dict[str, str] | None = None,
         targets: dict[str, float] | None = None,
     ) -> None:
         from rich.console import Console
@@ -23,7 +22,7 @@ class ConsolePrinter:
         console.print()
         console.print()
 
-        self._dev_printer.print_combined_metrics(snapshot, date_range, nicknames=nicknames)
+        self._dev_printer.print_combined_metrics(snapshot, date_range)
 
         if targets:
             status = team_target_status(snapshot.team, targets)

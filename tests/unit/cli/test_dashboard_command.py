@@ -1,3 +1,5 @@
+import json
+
 from typer.testing import CliRunner
 
 from git_dev_metrics.cache import insert_prs, seal_month, set_nickname, update_hidden_logins
@@ -193,7 +195,8 @@ class TestDashboardFlagMode:
     def test_should_render_nickname_in_html(self, tmp_path, _stub_webbrowser):
         db_path = tmp_path / "cache.db"
         _seed_two_repos_apr(db_path)
-        set_nickname("alice", "Alpha", db_path=db_path)
+        alias = 'Team <A> & "B"\\'
+        set_nickname("ALICE", alias, db_path=db_path)
         set_nickname("bob", "Beta", db_path=db_path)
         out = tmp_path / "r.html"
 
@@ -214,8 +217,8 @@ class TestDashboardFlagMode:
 
         assert result.exit_code == 0, result.output
         html = out.read_text()
-        assert "Alpha" in html
-        assert "Beta" in html
+        rows = json.loads(html.split("const devs = ", 1)[1].split(";\n", 1)[0])
+        assert {row["name"] for row in rows} == {alias, "Beta"}
 
 
 class TestDashboardWizardDispatch:

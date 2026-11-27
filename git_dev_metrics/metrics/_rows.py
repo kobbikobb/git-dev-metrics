@@ -3,8 +3,25 @@
 Leaf module — no dependencies within the metrics package.
 """
 
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Literal
+from typing import Literal, TypedDict
+
+
+class DeveloperSeries[T](TypedDict):
+    label: str
+    data: T
+
+
+def developer_series[T](
+    values: dict[str, T], display_name: Callable[[str], str | None]
+) -> list[DeveloperSeries[T]]:
+    return [
+        DeveloperSeries(label=name, data=data)
+        for login, data in sorted(values.items())
+        if (name := display_name(login)) is not None
+    ]
+
 
 Band = Literal["good", "ok", "bad"]
 

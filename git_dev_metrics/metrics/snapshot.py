@@ -4,8 +4,8 @@ Built once via `MetricsSnapshot.from_repo_prs`. Printers consume snapshots;
 they do not recompute health, bands, sort orders, or aggregations.
 """
 
-from collections.abc import Callable, Set
-from dataclasses import dataclass
+from collections.abc import Callable
+from dataclasses import dataclass, replace
 
 from ..models import PullRequest
 from ..utils import TimePeriod, period_days
@@ -139,7 +139,6 @@ class MetricsSnapshot:
     devs: tuple[Row, ...]
     repos: tuple[Row, ...]
     summary: Summary
-    reviewer_counts: dict[str, int]
     has_partial: bool = False
 
     @classmethod
@@ -149,7 +148,7 @@ class MetricsSnapshot:
         period: TimePeriod,
         *,
         has_partial: bool = False,
-        hidden_logins: Set[str] = frozenset(),
+        display_name: Callable[[str], str | None] = str,
     ) -> MetricsSnapshot:
         days = period_days(period)
         all_prs: list[PullRequest] = [pr for prs in repo_prs.values() for pr in prs]
@@ -163,20 +162,16 @@ class MetricsSnapshot:
 
         team = compute_team_row(all_prs, days, dev_raw_data, devs, reviewer_counts)
 
-        devs = tuple(row for row in devs if row.name.lower() not in hidden_logins)
-        reviewer_counts = {
-            login: count
-            for login, count in reviewer_counts.items()
-            if login.lower() not in hidden_logins
-        }
+        devs = tuple(
+            replace(row, name=name) for row in devs if (name := display_name(row.name)) is not None
+        )
 
         return cls(
             period=period,
             team=team,
             devs=devs,
             repos=repos,
-            summary=build_summary(devs, reviewer_counts, team),
-            reviewer_counts=reviewer_counts,
+            summary=build_summary(devs, reviewer_counts, team, display_name),
             has_partial=has_partial,
         )
 
@@ -185,17 +180,19 @@ def build_summary(
     devs: tuple[Row, ...],
     reviewer_counts: dict[str, int],
     team: Row,
+    display_name: Callable[[str], str | None] = str,
 ) -> Summary:
     ai_per_dev = tuple(sorted(int(r.ai_percentage) for r in devs))
     total_reviews = team.reviews_given
     pr_count = team.pr_count
 
-    filtered_reviewers = {r: int(c) for r, c in reviewer_counts.items() if c}
-    top_reviewer = ""
-    max_review_share = 0
-    if total_reviews > 0 and filtered_reviewers:
-        top_reviewer = max(sorted(filtered_reviewers), key=lambda d: filtered_reviewers[d])
-        max_review_share = round(filtered_reviewers[top_reviewer] / total_reviews * 100)
+    reviewers = (
+        (name, reviewer_counts[login])
+        for login in sorted(reviewer_counts)
+        if reviewer_counts[login] and (name := display_name(login)) is not None
+    )
+    top_reviewer, top_count = max(reviewers, key=lambda reviewer: reviewer[1], default=("", 0))
+    max_review_share = round(top_count / total_reviews * 100) if total_reviews else 0
 
     return Summary(
         ai_per_dev=ai_per_dev,

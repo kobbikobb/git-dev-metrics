@@ -60,7 +60,7 @@
       <thead><tr><th>Developer</th>{% for skill in skills %}<th>{{ skill }}</th>{% endfor %}</tr></thead>
       <tbody>
         {% for dev in devs %}
-        <tr><td>{{ dev }}</td>{% for skill in skills %}<td>{{ dev_skills.get(dev, {}).get(skill, 0) }}</td>{% endfor %}</tr>
+        <tr><td>{{ dev.label }}</td>{% for skill in skills %}<td>{{ dev.data.get(skill, 0) }}</td>{% endfor %}</tr>
         {% endfor %}
         <tr class="total-row"><td>Team total</td>{% for skill in skills %}<td>{{ team_skills.get(skill, 0) }}</td>{% endfor %}</tr>
       </tbody>
@@ -72,7 +72,6 @@ const palette = ['#6366f1','#22c55e','#eab308','#ef4444','#06b6d4','#f97316','#3
 const TEAM = {{ team_skills | tojson }};
 const DEVS = {{ devs | tojson }};
 const SKILLS = {{ skills | tojson }};
-const DEV_SKILLS = {{ dev_skills | tojson }};
 
 new Chart(document.getElementById('teamPie'), {
   type: 'doughnut',
@@ -92,11 +91,11 @@ new Chart(document.getElementById('teamPie'), {
 new Chart(document.getElementById('devBar'), {
   type: 'bar',
   data: {
-    labels: DEVS,
+    labels: DEVS.map(dev => dev.label),
     datasets: SKILLS.map((skill, i) => ({
       label: skill,
       backgroundColor: palette[i % palette.length],
-      data: DEVS.map(dev => (DEV_SKILLS[dev] && DEV_SKILLS[dev][skill]) || 0),
+      data: DEVS.map(dev => dev.data[skill] || 0),
     })),
   },
   options: {

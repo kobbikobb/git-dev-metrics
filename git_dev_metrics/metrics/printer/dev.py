@@ -23,10 +23,10 @@ class ConsoleDevPrinter:
         self,
         snapshot: MetricsSnapshot,
         date_range: str | None = None,
-        nicknames: dict[str, str] | None = None,
     ) -> None:
         from rich.console import Console
         from rich.table import Table
+        from rich.text import Text
 
         console = Console()
         title = (
@@ -40,9 +40,8 @@ class ConsoleDevPrinter:
 
         for row in snapshot.devs:
             color = band_color(row.band)
-            display_name = nicknames.get(row.name, row.name) if nicknames else row.name
             table.add_row(
-                display_name,
+                Text(row.name),
                 f"[{color}]{row.health}[/{color}]",
                 f"{row.pickup_time:.2f}",
                 f"{row.review_time:.2f}",

@@ -78,7 +78,7 @@
           <td><a href="{{ pr.url }}" target="_blank">#{{ pr.number }}</a></td>
           <td>{{ pr.title }}</td>
           <td>{{ pr.repo }}</td>
-          <td>{{ "—" if pr.author and pr.author|lower in hidden_logins else pr.author }}</td>
+          <td>{{ pr.author or "—" }}</td>
           <td class="{% if pr.age_days >= 30 %}age-crit{% elif pr.age_days >= 14 %}age-warn{% endif %}">{{ "%.1f"|format(pr.age_days) }}d</td>
           <td>
             {% if pr.build_state == "FAILURE" %}<span class="badge badge-fail">failing</span>
