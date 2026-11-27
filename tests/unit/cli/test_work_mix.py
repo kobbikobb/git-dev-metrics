@@ -12,7 +12,7 @@ from ..conftest import any_pr
 
 
 class TestWorkMix:
-    @pytest.mark.parametrize(("filters", "pending"), [([], 3), (["--repo", "Org/One"], 1)])
+    @pytest.mark.parametrize(("filters", "pending"), [([], 2), (["--repo", "Org/One"], 0)])
     def test_should_render_counts_by_merge_month_and_preserve_coverage(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, filters: list[str], pending: int
     ) -> None:
@@ -25,7 +25,11 @@ class TestWorkMix:
             insert_prs(prs, "ORG", repo, 2026, 2, db)
         seal_month("org", "one", 2026, 4, db)
         with open_connection(db) as conn:
-            conn.execute("INSERT INTO pr_classifications VALUES ('ORG','one',1,'unclear','local')")
+            conn.executemany(
+                "INSERT INTO pr_classifications (repo_org, repo_name, number, category, model) "
+                "VALUES ('ORG','one',?,?,'local')",
+                [(1, "unclear"), (2, "bug_fix")],
+            )
         output = tmp_path / "report.html"
         monkeypatch.setattr("webbrowser.open", lambda *_: True)
         args = ["--from", "2026-01", "--to", "2026-04", *filters]
@@ -40,7 +44,14 @@ class TestWorkMix:
         assert "Share of merged PRs" not in html
         data = json.loads(html.split("const mix = ")[1].split(";\n")[0])
         assert data == {
-            "2026-01": {"partial": True, "counts": {"unclear": 1, "unclassified": pending}},
+            "2026-01": {
+                "partial": True,
+                "counts": {
+                    "unclear": 1,
+                    "maintenance": 1,
+                    **({"unclassified": pending} if pending else {}),
+                },
+            },
             "2026-03": {"partial": False, "counts": {}},
             "2026-04": {"partial": not filters, "counts": {}},
         }

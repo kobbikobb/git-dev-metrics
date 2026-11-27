@@ -28,7 +28,7 @@ class TestClassify:
             insert_prs(
                 [any_pr(number=2), any_pr(number=3, merged_at=None)], "org", repo, 2026, 1, db
             )
-        responses.post(URL, json={"message": {"content": '{"0":"maintenance"}'}})
+        responses.post(URL, json={"message": {"content": '{"0":"tooling"}'}})
 
         limited = runner.invoke(app, [*args, "--limit", "1"])
         assert limited.exit_code == 0
@@ -39,14 +39,37 @@ class TestClassify:
 
         assert len(responses.calls) == 4
         rows = open_connection(db).execute(
-            "SELECT repo_name, number, category, model FROM pr_classifications ORDER BY repo_name"
+            "SELECT repo_name, number, category, model, subcategory FROM pr_classifications "
+            "ORDER BY repo_name"
         )
         assert [tuple(row) for row in rows] == [
-            ("first", 2, "maintenance", "local"),
-            ("second", 2, "maintenance", "local"),
+            ("first", 2, "maintenance", "local", "tooling"),
+            ("second", 2, "maintenance", "local", "tooling"),
         ]
 
-    @pytest.mark.parametrize("invalid", ["{}", '{"0":"invalid"}', "truncated"])
+    @responses.activate
+    def test_should_replace_legacy_labels_only_after_valid_prediction(self, tmp_path: Path) -> None:
+        db = tmp_path / "cache.db"
+        with sqlite3.connect(db) as old:
+            old.execute("""CREATE TABLE pr_classifications (
+                repo_org TEXT COLLATE NOCASE, repo_name TEXT COLLATE NOCASE, number INTEGER,
+                category TEXT, model TEXT, PRIMARY KEY (repo_org, repo_name, number))""")
+            old.execute("INSERT INTO pr_classifications VALUES ('ORG','REPO',1,'unclear','old')")
+        insert_prs([any_pr(number=1)], "org", "repo", 2026, 1, db)
+        args = ["classify", "--db", str(db), "--model", "local"]
+        responses.post(SHOW, json={"model_info": {"name": "test"}})
+        responses.post(URL, json={"message": {"content": "{}"}})
+        conn = open_connection(db)
+        query = "SELECT category, model, subcategory FROM pr_classifications"
+
+        assert runner.invoke(app, args).exit_code == 1
+        assert tuple(conn.execute(query).fetchone()) == ("unclear", "old", None)
+        responses.replace(responses.POST, URL, json={"message": {"content": '{"0":"ci"}'}})
+        assert "Classified 1" in runner.invoke(app, args).output
+        assert "Classified 0" in runner.invoke(app, args).output
+        assert tuple(conn.execute(query).fetchone()) == ("maintenance", "local", "ci")
+
+    @pytest.mark.parametrize("invalid", ["{}", '{"0":"feature"}', '{"0":"invalid"}', "truncated"])
     @responses.activate
     def test_should_resume_after_rejecting_an_invalid_batch(
         self, tmp_path: Path, invalid: str
@@ -56,7 +79,7 @@ class TestClassify:
         args = ["classify", "--db", str(db)]
         prs = [any_pr(number=n) for n in range(BATCH_SIZE + 1)]
         insert_prs(prs, "org", "repo", 2026, 1, db)
-        complete = {str(i): "feature" for i in range(BATCH_SIZE)}
+        complete = {str(i): "new_capability" for i in range(BATCH_SIZE)}
         responses.post(URL, json={"message": {"content": json.dumps(complete)}})
         responses.post(URL, json={"message": {"content": invalid}})
 
@@ -86,21 +109,24 @@ class TestClassify:
         db = tmp_path / "cache.db"
         insert_prs([any_pr(number=8), any_pr(number=9)], "org", "repo", 2026, 1, db)
         responses.post(SHOW, json={"model_info": {"general.architecture": "test"}})
-        responses.post(URL, json={"message": {"content": '{"1":"feature","0":"bug_fix"}'}})
+        responses.post(URL, json={"message": {"content": '{"1":"enhancement","0":"bug_fix"}'}})
 
         assert runner.invoke(app, ["classify", "--db", str(db)]).exit_code == 0
 
         rows = open_connection(db).execute(
-            "SELECT number, category FROM pr_classifications ORDER BY number"
+            "SELECT number, category, subcategory FROM pr_classifications ORDER BY number"
         )
-        assert [tuple(row) for row in rows] == [(8, "bug_fix"), (9, "feature")]
+        assert [tuple(row) for row in rows] == [
+            (8, "maintenance", "bug_fix"),
+            (9, "feature", "enhancement"),
+        ]
 
     @responses.activate
     def test_should_finish_progress_when_another_run_drains_the_queue(self, tmp_path: Path) -> None:
         db = tmp_path / "cache.db"
         insert_prs([any_pr(number=n) for n in range(257)], "org", "repo", 2026, 1, db)
         responses.post(SHOW, json={"model_info": {"general.architecture": "test"}})
-        labels = json.dumps({str(i): "feature" for i in range(BATCH_SIZE)})
+        labels = json.dumps({str(i): "new_capability" for i in range(BATCH_SIZE)})
         responses.post(URL, json={"message": {"content": labels}})
         updates: list[tuple[int, int]] = []
 
@@ -109,13 +135,14 @@ class TestClassify:
             if done == BATCH_SIZE:
                 with sqlite3.connect(db) as other:
                     other.execute(
-                        "INSERT INTO pr_classifications VALUES ('org', 'repo', 256, 'unclear', 'm')"
+                        "INSERT INTO pr_classifications "
+                        "VALUES ('org', 'repo', 256, 'unclear', 'm', 'unclear')"
                     )
 
         counts = classify_pending(open_connection(db), "local", None, progress)
 
         assert updates[-1] == (257, 257)
-        assert counts == {"feature": 256}
+        assert counts == {"new_capability": 256}
 
     def test_should_estimate_time_from_saved_prs(self, capsys: pytest.CaptureFixture[str]) -> None:
         now = 100.0
