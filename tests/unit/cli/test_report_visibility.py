@@ -86,7 +86,8 @@ class TestReportVisibility:
         db = tmp_path / "cache.db"
         out = tmp_path / "velocity.html"
         prs = [
-            any_pr(number=i, user={"login": name}) for i, name in enumerate(("Dev-A", "Dev-B"), 1)
+            any_pr(number=i, user={"login": name})
+            for i, name in enumerate(("Dev-A", "Dev-B", "Dev-C"), 1)
         ]
         insert_prs(prs, "org", "repo", 2026, 6, db_path=db)
         seal_month("org", "repo", 2026, 6, db_path=db)
@@ -105,9 +106,10 @@ class TestReportVisibility:
         assert "Dev-A" not in html
         assert "Hidden alias" not in html
         assert "Dev-B" not in html
-        assert 'const DEV_DATA = [{"data": [1], "label": "Visible alias"}]' in html
-        assert "const ACTIVE_DEVS = [2]" in html
-        assert "const PR_COUNTS = [2]" in html
+        assert '"label": "Visible alias"' in html
+        assert '"label": "Dev-C"' in html
+        assert "const ACTIVE_DEVS = [3]" in html
+        assert "const PR_COUNTS = [3]" in html
 
     def test_should_show_stale_pr_without_hidden_author(self, tmp_path: Path) -> None:
         pr = StalePr(42, "Pending review", "Dev-A", "org/repo", 240, 10, False, False, "")
