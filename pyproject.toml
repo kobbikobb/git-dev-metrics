@@ -46,6 +46,9 @@ venv = ".venv"
 typeCheckingMode = "standard"
 
 
+[tool.setuptools.package-data]
+"git_dev_metrics.metrics.printer" = ["templates/*.html"]
+
 [tool.setuptools.packages.find]
 include = ["git_dev_metrics", "git_dev_metrics.*"]
 

@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Monthly PR work mix</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<style>
+:root { color-scheme: dark; font-family: system-ui, sans-serif; background: #0f1117; color: #e1e4ed; }
+body { max-width: 1200px; margin: auto; padding: 1.5rem; }
+h1 { margin-bottom: .2rem; } h2 { font-size: 1.2rem; } h3 { font-size: 1rem; }
+p, small { color: #b2b7c7; }
+section { background: #1a1d27; border: 1px solid #2a2d3a; border-radius: 8px; padding: 1rem; margin: 1rem 0; }
+.grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 1rem; }
+.plot { position: relative; height: 280px; }
+@media(max-width: 700px) { .grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<h1>Monthly PR work mix</h1>
+<p>{{ months[0] }} through {{ months[-1] }} · Model-estimated categories</p>
+<small>Shares use all merged PRs. An asterisk marks a partial month. Gaps indicate missing syncs or, for shares, months with no merges.</small>
+{% for name in repos %}
+<section data-repo="{{ name }}">
+  <h2>{{ name }}</h2>
+  <div class="grid">
+  {% for metric in ['Merged PRs', 'Share of merged PRs'] %}
+    <div><h3>{{ metric }}</h3><div class="plot"><canvas aria-label="{{ name }} monthly {{ metric }}" role="img"></canvas></div></div>
+  {% endfor %}
+  </div>
+</section>
+{% endfor %}
+<script>
+const months = {{ months | tojson }};
+const repos = {{ repos | tojson }};
+const categories = [
+  ['feature', 'Feature', '#79adff'], ['bug_fix', 'Bug fix', '#ff9a77'],
+  ['maintenance', 'Maintenance', '#65d3b4'], ['unclear', 'Unclear', '#c2a4f6'],
+  ['unclassified', 'Unclassified', '#b4b7c3']
+];
+Chart.defaults.color = '#b2b7c7';
+for (const section of document.querySelectorAll('section[data-repo]')) {
+  const series = months.map(month => repos[section.dataset.repo][month]);
+  const totals = series.map(row => row && Object.values(row.counts).reduce((a, b) => a + b, 0));
+  const labels = months.map((month, i) => month + (series[i]?.partial ? ' *' : ''));
+  section.querySelectorAll('canvas').forEach((canvas, index) => {
+    const share = index === 1;
+    const datasets = categories.filter(([key]) =>
+      !['unclear', 'unclassified'].includes(key) || series.some(row => row?.counts[key]))
+      .map(([key, label, color]) => ({
+        label, borderColor: color, backgroundColor: color, borderWidth: 2,
+        data: series.map((row, i) => {
+          if (!row || (share && !totals[i])) return null;
+          const count = row.counts[key] || 0;
+          return share ? Math.round(1000 * count / totals[i]) / 10 : count;
+        })
+      }));
+    new Chart(canvas, {type: 'line', data: {labels, datasets}, options: {
+      responsive: true, maintainAspectRatio: false, interaction: {mode: 'index', intersect: false},
+      scales: {y: {beginAtZero: true, max: share ? 100 : undefined,
+        ticks: share ? {callback: n => n + '%'} : {precision: 0}}}
+    }});
+  });
+}
+</script>
+</body>
+</html>
