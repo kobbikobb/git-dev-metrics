@@ -1,3 +1,4 @@
+from collections.abc import Set
 from pathlib import Path
 
 from ..team_velocity_calculator import TeamVelocityDataset
@@ -8,7 +9,13 @@ class FileTeamVelocityPrinter:
     def __init__(self, output_path: Path) -> None:
         self._output_path = output_path
 
-    def render(self, dataset: TeamVelocityDataset, period_range: str) -> None:
+    def render(
+        self,
+        dataset: TeamVelocityDataset,
+        period_range: str,
+        *,
+        hidden_logins: Set[str] = frozenset(),
+    ) -> None:
         month_labels = [m.month_label for m in dataset.months]
 
         dev_data: list[dict[str, str | list[int]]] = []
@@ -17,6 +24,7 @@ class FileTeamVelocityPrinter:
             dev_data = [
                 {"label": login, "data": [m.get(login, 0) for m in dataset.dev_month_counts]}
                 for login in logins
+                if login.lower() not in hidden_logins
             ]
 
         html = render_template(

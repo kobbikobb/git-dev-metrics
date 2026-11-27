@@ -29,6 +29,7 @@ from .query import (
     load_prs,
     load_prs_for_range,
 )
+from .visibility import get_hidden_logins, update_hidden_logins
 
 __all__ = [
     "close_connection",
@@ -37,6 +38,7 @@ __all__ = [
     "delete_nickname",
     "delete_target",
     "get_all_dev_logins",
+    "get_hidden_logins",
     "get_nicknames",
     "get_targets",
     "has_partial_for_range",
@@ -56,4 +58,5 @@ __all__ = [
     "seal_month",
     "set_nickname",
     "set_target",
+    "update_hidden_logins",
 ]

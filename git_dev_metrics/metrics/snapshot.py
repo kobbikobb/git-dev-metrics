@@ -4,7 +4,7 @@ Built once via `MetricsSnapshot.from_repo_prs`. Printers consume snapshots;
 they do not recompute health, bands, sort orders, or aggregations.
 """
 
-from collections.abc import Callable
+from collections.abc import Callable, Set
 from dataclasses import dataclass
 
 from ..models import PullRequest
@@ -149,6 +149,7 @@ class MetricsSnapshot:
         period: TimePeriod,
         *,
         has_partial: bool = False,
+        hidden_logins: Set[str] = frozenset(),
     ) -> MetricsSnapshot:
         days = period_days(period)
         all_prs: list[PullRequest] = [pr for prs in repo_prs.values() for pr in prs]
@@ -161,6 +162,13 @@ class MetricsSnapshot:
         repos = rank_rows(repo_raw_data, calculate_health_score)
 
         team = compute_team_row(all_prs, days, dev_raw_data, devs, reviewer_counts)
+
+        devs = tuple(row for row in devs if row.name.lower() not in hidden_logins)
+        reviewer_counts = {
+            login: count
+            for login, count in reviewer_counts.items()
+            if login.lower() not in hidden_logins
+        }
 
         return cls(
             period=period,

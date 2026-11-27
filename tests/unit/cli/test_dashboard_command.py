@@ -1,6 +1,6 @@
 from typer.testing import CliRunner
 
-from git_dev_metrics.cache import insert_prs, seal_month, set_nickname
+from git_dev_metrics.cache import insert_prs, seal_month, set_nickname, update_hidden_logins
 from git_dev_metrics.cli import app
 
 from ..conftest import any_pr, approved_review, dt
@@ -94,6 +94,38 @@ class TestDashboardFlagMode:
         assert "alice" in html
         assert "bob" in html
         _stub_webbrowser.assert_called_once_with(out.resolve().as_uri())
+
+    def test_should_omit_named_highlights_when_all_reviewers_are_hidden(
+        self, tmp_path, _stub_webbrowser
+    ):
+        db_path = tmp_path / "cache.db"
+        pr = any_pr(user={"login": "dev-a"}, reviews=[approved_review(login="dev-b")])
+        insert_prs([pr], "org", "repo", 2026, 4, db_path=db_path)
+        seal_month("org", "repo", 2026, 4, db_path=db_path)
+        update_hidden_logins({"dev-a": True, "dev-b": True}, db_path=db_path)
+        out = tmp_path / "dashboard.html"
+
+        result = runner.invoke(
+            app,
+            [
+                "dashboard",
+                "--from",
+                "2026-04",
+                "--to",
+                "2026-04",
+                "--db",
+                str(db_path),
+                "--output",
+                str(out),
+            ],
+        )
+
+        assert result.exit_code == 0, result.output
+        html = out.read_text()
+        assert "Top Reviewer" not in html
+        assert "dev-a" not in html
+        assert "dev-b" not in html
+        assert "Total team reviews" in html
 
     def test_should_write_default_path_with_range_slug(
         self, tmp_path, monkeypatch, _stub_webbrowser

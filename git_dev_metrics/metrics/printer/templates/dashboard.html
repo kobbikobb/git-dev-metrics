@@ -461,7 +461,7 @@
   <div class="summary-card">
     <div class="label">AI Adoption</div>
     <div class="value">{{ summary.ai_adoption }}%</div>
-    <div class="sub">Mean of dev rates</div>
+    <div class="sub">Team mean{% if summary.ai_per_dev %} · dots show visible developers{% endif %}</div>
     <div class="ai-strip">
       {% for pct in summary.ai_per_dev %}
       <span
@@ -476,16 +476,18 @@
     <div class="value">{{ summary.review_ratio }}x</div>
     <div class="sub">Reviews per PR</div>
   </div>
+  {% if summary.top_reviewer %}
   <div class="summary-card">
     <div class="label">Top Reviewer</div>
-    <div class="value">{{ summary.top_reviewer or "—" }}</div>
-    <div class="sub">Busiest reviewer</div>
+    <div class="value">{{ summary.top_reviewer }}</div>
+    <div class="sub">Busiest visible reviewer</div>
   </div>
   <div class="summary-card">
-    <div class="label">Max Review Share</div>
+    <div class="label">Top Reviewer’s Share</div>
     <div class="value">{{ summary.max_review_share }}%</div>
     <div class="sub">Reviews by top reviewer</div>
   </div>
+  {% endif %}
   {% if target_status and target_status.total > 0 %}
   <div class="summary-card">
     <div class="label">Targets</div>

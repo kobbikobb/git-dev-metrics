@@ -7,6 +7,7 @@ Vocabulary used across the codebase. Use these terms exactly. If a new concept n
 - **PR** — a GitHub pull request, hydrated with reviews. Shape: `models.PullRequest` TypedDict (number, state, author, timestamps, additions/deletions, commits, reviews).
 - **Repo** — `org/name` pair on GitHub. Always referenced as `"org/repo"` in strings.
 - **Dev** — a GitHub login authoring or reviewing PRs. Bots filtered via `constants.is_bot_login`.
+- **Hidden dev** — a dev omitted from individual report results whose activity still counts toward team metrics.
 - **Period** — closed time window `[since, until)` for one analysis run. Type: `utils.TimePeriod`.
 - **Month** — `(year, month)` tuple. The cache seals data at month granularity.
 - **Sealed month** — a `(org, repo, year, month)` that has been pulled into the cache and marked complete. Once sealed, contents are immutable.

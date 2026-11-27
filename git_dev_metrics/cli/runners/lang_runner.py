@@ -3,7 +3,7 @@ from pathlib import Path
 
 import typer
 
-from ...cache import list_synced_months
+from ...cache import get_hidden_logins, list_synced_months
 from ...github.auth_cache import load_token
 from ...github.queries import fetch_lang_report_prs
 from ...metrics.lang_calculator import build_lang_dataset
@@ -51,6 +51,8 @@ def perform_lang_report(months: list[YearMonth], output: Path | None, db_path: P
         f" – {datetime(last[0], last[1], 1).strftime('%b %Y')}"
     )
     out_path = output or _default_output(months)
-    FileLangPrinter(out_path).render(dataset, period_range)
+    FileLangPrinter(out_path).render(
+        dataset, period_range, hidden_logins=get_hidden_logins(db_path=db_path)
+    )
     typer.echo(f"Language report written to {out_path}.")
     open_in_browser(out_path)
