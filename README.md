@@ -31,7 +31,7 @@ uv run app summary --from 2026-04 --to 2026-04
 uv run app trend --from 2026-01 --to 2026-04
 
 # Chart monthly work mix after classifying cached PRs
-uv run app work-mix --from 2026-01 --to 2026-06 --repo myorg/myrepo
+uv run app work-mix --from 2026-01 --to 2026-06
 
 # Find stale PRs across repos
 uv run app stale
@@ -48,7 +48,7 @@ uv run app logout
 | Command | Description |
 |---------|-------------|
 | `pull` | Pull a sealed month of PRs for one repository into the cache |
-| `work-mix` | Chart monthly counts and shares by work category for each repository (last 12 months by default) |
+| `work-mix` | Chart monthly counts and shares by work category across all selected repositories (last 12 months by default) |
 | `classify` | Assign a work category to each pending merged PR using local Ollama |
 | `hide` | Hide or show cached developers in individual results. Their activity still counts toward team metrics. |
 | `dashboard` | Render the in-depth HTML dashboard and open it in the browser |
