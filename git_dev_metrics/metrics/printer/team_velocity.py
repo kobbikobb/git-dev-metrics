@@ -16,7 +16,7 @@ class FileTeamVelocityPrinter:
             pr_counts=[m.pr_count for m in dataset.months],
             active_devs=[m.active_devs for m in dataset.months],
             prs_per_dev=[m.prs_per_dev for m in dataset.months],
-            dev_data=sorted(dataset.devs, key=lambda dev: sum(dev["data"]), reverse=True),
+            dev_data=sorted(dataset.devs, key=lambda dev: sum(dev["data"]["merged"]), reverse=True),
         )
         self._output_path.parent.mkdir(parents=True, exist_ok=True)
         self._output_path.write_text(html)
