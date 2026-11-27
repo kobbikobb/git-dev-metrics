@@ -8,24 +8,19 @@
 <style>
 :root { color-scheme: dark; font-family: system-ui, sans-serif; background: #0f1117; color: #e1e4ed; }
 body { max-width: 1200px; margin: auto; padding: 1.5rem; }
-h1 { margin-bottom: .2rem; } h2 { font-size: 1.2rem; } h3 { font-size: 1rem; }
+h1 { margin-bottom: .2rem; } h2 { font-size: 1rem; }
 p, small { color: #b2b7c7; }
 section { background: #1a1d27; border: 1px solid #2a2d3a; border-radius: 8px; padding: 1rem; margin: 1rem 0; }
-.grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 1rem; }
-.plot { position: relative; height: 280px; }
-@media(max-width: 700px) { .grid { grid-template-columns: 1fr; } }
+.plot { position: relative; height: 360px; }
 </style>
 </head>
 <body>
 <h1>Monthly PR work mix</h1>
-<p>{{ months[0] }} through {{ months[-1] }} · {{ repo_count }} {{ "repository" if repo_count == 1 else "repositories" }} · Model-estimated categories</p>
-<small>Shares use all merged PRs. An asterisk marks incomplete sync coverage across the selected repositories. Gaps indicate missing syncs or, for shares, months with no merges.</small>
+<p>{{ months[0] }} through {{ months[-1] }} · {{ scope }} · Model-estimated categories</p>
+<small>An asterisk marks incomplete sync coverage. A gap means no selected repository was synced for that month.</small>
 <section>
-  <div class="grid">
-  {% for metric in ['Merged PRs', 'Share of merged PRs'] %}
-    <div><h3>{{ metric }}</h3><div class="plot"><canvas aria-label="Combined monthly {{ metric }}" role="img"></canvas></div></div>
-  {% endfor %}
-  </div>
+  <h2>Merged PRs</h2>
+  <div class="plot"><canvas id="counts" aria-label="Monthly merged PR counts by category" role="img"></canvas></div>
 </section>
 <script>
 const months = {{ months | tojson }};
@@ -37,26 +32,17 @@ const categories = [
 ];
 Chart.defaults.color = '#b2b7c7';
 const series = months.map(month => mix[month]);
-const totals = series.map(row => row && Object.values(row.counts).reduce((a, b) => a + b, 0));
 const labels = months.map((month, i) => month + (series[i]?.partial ? ' *' : ''));
-document.querySelectorAll('canvas').forEach((canvas, index) => {
-  const share = index === 1;
-  const datasets = categories.filter(([key]) =>
-    !['unclear', 'unclassified'].includes(key) || series.some(row => row?.counts[key]))
-    .map(([key, label, color]) => ({
-      label, borderColor: color, backgroundColor: color, borderWidth: 2,
-      data: series.map((row, i) => {
-        if (!row || (share && !totals[i])) return null;
-        const count = row.counts[key] || 0;
-        return share ? Math.round(1000 * count / totals[i]) / 10 : count;
-      })
-    }));
-  new Chart(canvas, {type: 'line', data: {labels, datasets}, options: {
-    responsive: true, maintainAspectRatio: false, interaction: {mode: 'index', intersect: false},
-    scales: {y: {beginAtZero: true, max: share ? 100 : undefined,
-      ticks: share ? {callback: n => n + '%'} : {precision: 0}}}
-  }});
-});
+const datasets = categories.filter(([key]) =>
+  !['unclear', 'unclassified'].includes(key) || series.some(row => row?.counts[key]))
+  .map(([key, label, color]) => ({
+    label, borderColor: color, backgroundColor: color, borderWidth: 2,
+    data: series.map(row => row ? (row.counts[key] || 0) : null)
+  }));
+new Chart(document.getElementById('counts'), {type: 'line', data: {labels, datasets}, options: {
+  responsive: true, maintainAspectRatio: false, interaction: {mode: 'index', intersect: false},
+  scales: {y: {beginAtZero: true, ticks: {precision: 0}}}
+}});
 </script>
 </body>
 </html>

@@ -36,6 +36,8 @@ class TestWorkMix:
 
         assert result.exit_code == 0, result.output
         html = output.read_text()
+        assert html.count("<canvas ") == 1
+        assert "Share of merged PRs" not in html
         data = json.loads(html.split("const mix = ")[1].split(";\n")[0])
         assert data == {
             "2026-01": {"partial": True, "counts": {"unclear": 1, "unclassified": pending}},
@@ -48,3 +50,24 @@ class TestWorkMix:
 
         assert result.exit_code != 0
         assert "Run pull first" in result.output
+
+    def test_should_keep_repository_scope_stable_across_date_ranges(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        db = tmp_path / "cache.db"
+        seal_month("org", "one", 2026, 1, db)
+        seal_month("org", "two", 2026, 2, db)
+        monkeypatch.chdir(tmp_path)
+        monkeypatch.setattr("webbrowser.open", lambda *_: True)
+        args = ["work-mix", "--from", "2026-01", "--to", "2026-01", "--db", str(db)]
+
+        for filters in ([], ["--repo", "org/one"]):
+            assert CliRunner().invoke(app, [*args, *filters]).exit_code == 0
+
+        reports = sorted(Path("metrics_results").glob("*.html"))
+        assert len(reports) == 2
+        for path in reports:
+            html = path.read_text()
+            data = json.loads(html.split("const mix = ")[1].split(";\n")[0])
+            assert data["2026-01"]["partial"] == ("2 synced repositories" in html)
+        assert "org/one" in reports[1].read_text()
