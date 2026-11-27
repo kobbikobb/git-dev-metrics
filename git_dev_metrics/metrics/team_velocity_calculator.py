@@ -58,7 +58,9 @@ def _dev_month_counts(
         if not month_prs:
             continue
         merged = Counter(pr["user"]["login"] for pr in month_prs)
-        reviewed = calculate_reviews_given(month_prs)
+        reviewed = calculate_reviews_given(
+            [pr for pr in month_prs if not is_bot_login(pr["user"]["login"])]
+        )
         for dev, counts in result.items():
             counts["merged"].append(merged[dev])
             counts["reviewed"].append(reviewed.get(dev, 0))

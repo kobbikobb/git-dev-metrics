@@ -77,7 +77,9 @@ class TestReportVisibility:
         reviews = [approved_review(login=name) for name in ("Dev-B", "Dev-B", "Dev-E")]
         prs = [
             any_pr(number=i, user={"login": name}, reviews=reviews)
-            for i, name in enumerate(("Dev-A", "Dev-B", "Dev-C", "Dev-D", "Dev-D"), 1)
+            for i, name in enumerate(
+                ("Dev-A", "Dev-B", "Dev-C", "Dev-D", "Dev-D", "automation[bot]"), 1
+            )
         ]
         insert_prs(prs, "org", "repo", 2026, 6, db_path=db)
         seal_month("org", "repo", 2026, 6, db_path=db)
@@ -109,7 +111,7 @@ class TestReportVisibility:
             assert '"data": {"merged": [2], "reviewed": [0]}, "label": "Visible alias"' in html
             assert "Dev-E" not in html
             assert "const ACTIVE_DEVS = [4]" in html
-            assert "const PR_COUNTS = [5]" in html
+            assert "const PR_COUNTS = [6]" in html
 
     def test_should_show_stale_pr_without_hidden_author(self, tmp_path: Path) -> None:
         pr = StalePr(42, "Pending review", "Dev-A", "org/repo", 240, 10, False, False, "")
