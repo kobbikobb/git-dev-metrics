@@ -1,4 +1,5 @@
 import json
+import sqlite3
 from pathlib import Path
 
 import pytest
@@ -6,7 +7,7 @@ import responses
 from typer.testing import CliRunner
 
 from git_dev_metrics.cache import insert_prs, open_connection
-from git_dev_metrics.classification import BATCH_SIZE
+from git_dev_metrics.classification import BATCH_SIZE, classify_pending
 from git_dev_metrics.cli import app
 from git_dev_metrics.cli.commands.classify import _timed_progress
 
@@ -93,6 +94,28 @@ class TestClassify:
             "SELECT number, category FROM pr_classifications ORDER BY number"
         )
         assert [tuple(row) for row in rows] == [(8, "bug_fix"), (9, "feature")]
+
+    @responses.activate
+    def test_should_finish_progress_when_another_run_drains_the_queue(self, tmp_path: Path) -> None:
+        db = tmp_path / "cache.db"
+        insert_prs([any_pr(number=n) for n in range(257)], "org", "repo", 2026, 1, db)
+        responses.post(SHOW, json={"model_info": {"general.architecture": "test"}})
+        labels = json.dumps({str(i): "feature" for i in range(BATCH_SIZE)})
+        responses.post(URL, json={"message": {"content": labels}})
+        updates: list[tuple[int, int]] = []
+
+        def progress(done: int, total: int) -> None:
+            updates.append((done, total))
+            if done == BATCH_SIZE:
+                with sqlite3.connect(db) as other:
+                    other.execute(
+                        "INSERT INTO pr_classifications VALUES ('org', 'repo', 256, 'unclear', 'm')"
+                    )
+
+        counts = classify_pending(open_connection(db), "local", None, progress)
+
+        assert updates[-1] == (257, 257)
+        assert counts == {"feature": 256}
 
     def test_should_estimate_time_from_saved_prs(self, capsys: pytest.CaptureFixture[str]) -> None:
         now = 100.0
