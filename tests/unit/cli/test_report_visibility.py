@@ -11,7 +11,7 @@ from git_dev_metrics.metrics.printer.skill import FileSkillPrinter
 from git_dev_metrics.metrics.printer.stale import FileStaleHtmlPrinter
 from git_dev_metrics.metrics.report_data import ReportData
 
-from ..conftest import any_pr
+from ..conftest import any_pr, approved_review
 
 
 class TestReportVisibility:
@@ -74,8 +74,9 @@ class TestReportVisibility:
     ) -> None:
         db = tmp_path / "cache.db"
         out = tmp_path / "velocity.html"
+        reviews = [approved_review(login=name) for name in ("Dev-B", "Dev-B", "Dev-E")]
         prs = [
-            any_pr(number=i, user={"login": name})
+            any_pr(number=i, user={"login": name}, reviews=reviews)
             for i, name in enumerate(("Dev-A", "Dev-B", "Dev-C", "Dev-D", "Dev-D"), 1)
         ]
         insert_prs(prs, "org", "repo", 2026, 6, db_path=db)
@@ -104,6 +105,9 @@ class TestReportVisibility:
             assert html.index("<td>Visible alias</td><td>2</td>") < html.index(
                 "<td>Visible alias</td><td>1</td>"
             )
+            assert '"data": {"merged": [1], "reviewed": [4]}, "label": "Visible alias"' in html
+            assert '"data": {"merged": [2], "reviewed": [0]}, "label": "Visible alias"' in html
+            assert "Dev-E" not in html
             assert "const ACTIVE_DEVS = [4]" in html
             assert "const PR_COUNTS = [5]" in html
 

@@ -1,10 +1,13 @@
+from collections import Counter
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
+from typing import TypedDict
 
 from ..constants import is_bot_login
 from ..models import PullRequest
 from ..utils.date_utils import month_key, month_label
 from ._rows import DeveloperSeries, developer_series
+from .calculator import calculate_reviews_given
 
 
 @dataclass(frozen=True)
@@ -16,10 +19,15 @@ class TeamVelocityMonth:
     prs_per_dev: float
 
 
+class _ContributorCounts(TypedDict):
+    merged: list[int]
+    reviewed: list[int]
+
+
 @dataclass(frozen=True)
 class TeamVelocityDataset:
     months: list[TeamVelocityMonth]
-    devs: list[DeveloperSeries[list[int]]]
+    devs: list[DeveloperSeries[_ContributorCounts]]
 
 
 def _count_active_devs(prs: Sequence[PullRequest]) -> int:
@@ -40,20 +48,20 @@ def _latest_active_devs(
 
 def _dev_month_counts(
     months: list[tuple[int, int]], prs_per_month: dict[tuple[int, int], list[PullRequest]]
-) -> dict[str, list[int]]:
-    all_devs = sorted(_latest_active_devs(months, prs_per_month))
-    result: dict[str, list[int]] = {dev: [] for dev in all_devs}
-    for y, m in months:
-        month_prs = prs_per_month.get((y, m), [])
+) -> dict[str, _ContributorCounts]:
+    result = {
+        dev: _ContributorCounts(merged=[], reviewed=[])
+        for dev in _latest_active_devs(months, prs_per_month)
+    }
+    for month in months:
+        month_prs = prs_per_month.get(month, [])
         if not month_prs:
             continue
-        counts: dict[str, int] = {dev: 0 for dev in all_devs}
-        for pr in month_prs:
-            login = pr["user"]["login"]
-            if login in counts:
-                counts[login] += 1
-        for dev, count in counts.items():
-            result[dev].append(count)
+        merged = Counter(pr["user"]["login"] for pr in month_prs)
+        reviewed = calculate_reviews_given(month_prs)
+        for dev, counts in result.items():
+            counts["merged"].append(merged[dev])
+            counts["reviewed"].append(reviewed.get(dev, 0))
     return result
 
 

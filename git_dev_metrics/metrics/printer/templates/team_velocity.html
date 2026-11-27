@@ -58,7 +58,7 @@
       <thead><tr><th>Contributor</th><th>Merged PRs</th></tr></thead>
       <tbody>
         {% for dev in dev_data %}
-        <tr><td>{{ dev.label }}</td><td>{{ dev.data | sum }}</td></tr>
+        <tr><td>{{ dev.label }}</td><td>{{ dev.data.merged | sum }}</td></tr>
         {% endfor %}
       </tbody>
     </table>
@@ -72,6 +72,11 @@
     <h2>PRs per developer (stacked)</h2>
     <p>The stack totals visible developers who merged PRs in the latest month with merges.</p>
     <div class="chart-wrap"><canvas id="perdev-stacked"></canvas></div>
+  </div>
+  <div class="card">
+    <h2>Teammates’ PRs reviewed</h2>
+    <p>Each PR counts once per reviewer, in the month the PR merged.</p>
+    <div class="chart-wrap"><canvas id="perdev-reviewed"></canvas></div>
   </div>
 </div>
 <script>
@@ -164,12 +169,12 @@ new Chart(document.getElementById('velocity'), {
 });
 
 const DEV_DATA = {{ dev_data | tojson }};
-function perDevDatasets(stacked) {
+function perDevDatasets(metric, stacked) {
   const datasets = DEV_DATA.map((developer, i) => {
     const hue = (i * 137) % 360;
     return {
       label: developer.label,
-      data: developer.data,
+      data: developer.data[metric],
       borderColor: 'hsl(' + hue + ', 70%, 55%)',
       backgroundColor: 'hsla(' + hue + ', 70%, 55%, 0.3)',
       fill: stacked ? 'stack' : 'origin',
@@ -181,9 +186,9 @@ function perDevDatasets(stacked) {
   return stacked ? datasets.reverse() : datasets;
 }
 
-const perDevConfig = (stacked) => ({
+const perDevConfig = (metric, stacked = false) => ({
   type: 'line',
-  data: { labels: MONTHS, datasets: perDevDatasets(stacked) },
+  data: { labels: MONTHS, datasets: perDevDatasets(metric, stacked) },
   options: {
     responsive: true,
     maintainAspectRatio: false,
@@ -195,7 +200,7 @@ const perDevConfig = (stacked) => ({
         beginAtZero: true,
         ticks: { color: '#8b8fa3' },
         grid: { color: '#2a2d3a' },
-        title: { display: true, text: 'Merged PRs', color: '#8b8fa3' },
+        title: { display: true, text: metric === 'reviewed' ? 'PRs reviewed' : 'Merged PRs', color: '#8b8fa3' },
       },
     },
     plugins: {
@@ -210,8 +215,9 @@ const perDevConfig = (stacked) => ({
     },
   },
 });
-new Chart(document.getElementById('perdev'), perDevConfig(false));
-new Chart(document.getElementById('perdev-stacked'), perDevConfig(true));
+new Chart(document.getElementById('perdev'), perDevConfig('merged'));
+new Chart(document.getElementById('perdev-stacked'), perDevConfig('merged', true));
+new Chart(document.getElementById('perdev-reviewed'), perDevConfig('reviewed'));
 </script>
 </body>
 </html>
