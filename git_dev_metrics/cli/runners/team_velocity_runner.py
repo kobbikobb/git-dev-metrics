@@ -3,7 +3,7 @@ from pathlib import Path
 
 import typer
 
-from ...cache import load_all_repos_by_month
+from ...cache import get_hidden_logins, load_all_repos_by_month
 from ...metrics.printer.team_velocity import FileTeamVelocityPrinter
 from ...metrics.team_velocity_calculator import build_team_velocity_dataset
 from ...utils.date_utils import month_iter
@@ -46,6 +46,8 @@ def perform_team_velocity(
         f" – {datetime(last[0], last[1], 1).strftime('%b %Y')}"
     )
     out_path = output or _default_output(from_ym, to_ym)
-    FileTeamVelocityPrinter(out_path).render(dataset, period_range)
+    FileTeamVelocityPrinter(out_path).render(
+        dataset, period_range, hidden_logins=get_hidden_logins(db_path=db_path)
+    )
     typer.echo(f"Team velocity written to {out_path}.")
     open_in_browser(out_path)

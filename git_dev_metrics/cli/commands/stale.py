@@ -3,7 +3,7 @@ from pathlib import Path
 
 import typer
 
-from ...cache import get_targets, list_synced_months
+from ...cache import get_hidden_logins, get_targets, list_synced_months
 from ...github import (
     GitHubError,
     GitHubNotFoundError,
@@ -124,6 +124,8 @@ def stale(
     all_stale.sort(key=lambda x: x.age_hours, reverse=True)
 
     out = (output or _default_output()).with_suffix(".html")
-    FileStaleHtmlPrinter(out).render(all_stale, targets=targets)
+    FileStaleHtmlPrinter(out).render(
+        all_stale, targets=targets, hidden_logins=get_hidden_logins(db_path=db)
+    )
     typer.echo(f"Stale written to {out.resolve().as_uri()}.")
     open_in_browser(out)

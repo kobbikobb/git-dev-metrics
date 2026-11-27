@@ -64,8 +64,6 @@ def _summary_for_template(
     top_reviewer = summary.top_reviewer
     if nicknames and top_reviewer:
         top_reviewer = nicknames.get(top_reviewer, top_reviewer)
-    elif not top_reviewer:
-        top_reviewer = "\u2014"
     return _SummaryData(
         team_health=team.health,
         total_prs=team.pr_count,

@@ -54,6 +54,10 @@ CREATE TABLE IF NOT EXISTS synced_months (
     PRIMARY KEY (year, month, repo_org, repo_name)
 );
 
+CREATE TABLE IF NOT EXISTS hidden_logins (
+    login TEXT PRIMARY KEY COLLATE NOCASE
+);
+
 CREATE TABLE IF NOT EXISTS nicknames (
     login TEXT PRIMARY KEY,
     nickname TEXT NOT NULL

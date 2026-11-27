@@ -1,3 +1,4 @@
+from collections.abc import Set
 from pathlib import Path
 
 from .._stale_pr import StalePr, summarize_stale_prs
@@ -39,11 +40,17 @@ class FileStaleHtmlPrinter:
     def __init__(self, output_path: Path) -> None:
         self._output_path = output_path
 
-    def render(self, stale_prs: list[StalePr], targets: dict[str, float] | None = None) -> None:
+    def render(
+        self,
+        stale_prs: list[StalePr],
+        targets: dict[str, float] | None = None,
+        *,
+        hidden_logins: Set[str] = frozenset(),
+    ) -> None:
         total, avg_age = summarize_stale_prs(stale_prs)
         ctx = {"total": total, "avg_age": avg_age, "prs": stale_prs, "targets": None}
         if targets:
             ctx["targets"] = _target_status(targets, total, avg_age, stale_prs)
-        html = render_template("stale.html", **ctx)
+        html = render_template("stale.html", hidden_logins=hidden_logins, **ctx)
         self._output_path.parent.mkdir(parents=True, exist_ok=True)
         self._output_path.write_text(html)

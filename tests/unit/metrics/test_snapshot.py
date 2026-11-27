@@ -101,6 +101,26 @@ class TestFromRepoPrs:
 
         assert snap.team.pr_count == 2
 
+    def test_should_hide_individual_results_after_computing_aggregates(self):
+        repo_prs = {
+            "org/repo": [
+                any_pr(user={"login": "Dev-A"}, reviews=[approved_review(login="dev-b")]),
+                any_pr(user={"login": "dev-b"}, reviews=[approved_review(login="Dev-A")]),
+                any_pr(user={"login": "dev-b"}, reviews=[approved_review(login="Dev-A")]),
+            ]
+        }
+
+        full = MetricsSnapshot.from_repo_prs(repo_prs, _period())
+        hidden = MetricsSnapshot.from_repo_prs(repo_prs, _period(), hidden_logins={"dev-a"})
+
+        assert hidden.team == full.team
+        assert hidden.repos == full.repos
+        assert hidden.devs == tuple(row for row in full.devs if row.name == "dev-b")
+        assert hidden.summary.ai_per_dev == (int(hidden.devs[0].ai_percentage),)
+        assert hidden.summary.review_ratio == full.summary.review_ratio
+        assert hidden.summary.top_reviewer == "dev-b"
+        assert hidden.summary.max_review_share == 33
+
     def test_should_carry_reviewer_counts(self):
         prs = [
             any_pr(

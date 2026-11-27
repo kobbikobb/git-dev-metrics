@@ -21,6 +21,9 @@ uv run app dashboard --from 2026-04 --to 2026-04
 # Render the HTML dashboard (wizard mode — pick from cached months)
 uv run app dashboard
 
+# Choose which developers appear in individual report results
+uv run app hide
+
 # Print dashboard summary to console
 uv run app summary --from 2026-04 --to 2026-04
 
@@ -42,6 +45,7 @@ uv run app logout
 | Command | Description |
 |---------|-------------|
 | `pull` | Pull a sealed month of PRs for one repository into the cache |
+| `hide` | Hide or show cached developers in individual results. Their activity still counts toward team metrics. |
 | `dashboard` | Render the in-depth HTML dashboard and open it in the browser |
 | `summary` | Print the dashboard summary to the console |
 | `trend` | Render a multi-month trend HTML aggregated across all cached repos |

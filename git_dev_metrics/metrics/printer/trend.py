@@ -1,3 +1,4 @@
+from collections.abc import Set
 from dataclasses import asdict
 from pathlib import Path
 from typing import TypedDict
@@ -12,11 +13,12 @@ class _TrendData(TypedDict):
     rows: dict[str, list[DevMonthDict]]
 
 
-def _to_dict(dataset: TrendDataset) -> _TrendData:
+def _to_dict(dataset: TrendDataset, hidden_logins: Set[str]) -> _TrendData:
+    devs = [dev for dev in dataset.devs if dev.lower() not in hidden_logins]
     return _TrendData(
         months=dataset.months,
-        devs=dataset.devs,
-        rows={dev: [DevMonthDict(**asdict(r)) for r in rows] for dev, rows in dataset.rows.items()},
+        devs=devs,
+        rows={dev: [DevMonthDict(**asdict(r)) for r in dataset.rows[dev]] for dev in devs},
     )
 
 
@@ -26,9 +28,11 @@ class FileTrendPrinter:
     def __init__(self, output_path: Path) -> None:
         self._output_path = output_path
 
-    def render(self, dataset: TrendDataset) -> None:
+    def render(self, dataset: TrendDataset, *, hidden_logins: Set[str] = frozenset()) -> None:
         period_range = f"{dataset.months[0]} to {dataset.months[-1]}" if dataset.months else ""
-        html = render_template("trend.html", period_range=period_range, dataset=_to_dict(dataset))
+        html = render_template(
+            "trend.html", period_range=period_range, dataset=_to_dict(dataset, hidden_logins)
+        )
         self._output_path.parent.mkdir(parents=True, exist_ok=True)
         self._output_path.write_text(html)
 
