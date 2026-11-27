@@ -36,6 +36,9 @@
   }
   .card h2 { font-size: 1rem; margin-bottom: 0.75rem; }
   .card p { color: var(--muted); font-size: 0.875rem; margin-bottom: 0.75rem; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { padding: 0.4rem 0; text-align: left; border-bottom: 1px solid var(--border); }
+  th:last-child, td:last-child { text-align: right; }
   .chart-wrap { position: relative; height: 400px; }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
@@ -47,6 +50,19 @@
 </div>
 <div class="grid">
   <div class="card"><h2>PR throughput, active devs, and PRs per developer</h2><div class="chart-wrap"><canvas id="velocity"></canvas></div></div>
+  {% if dev_data %}
+  <div class="card">
+    <h2>Contributor totals</h2>
+    <table aria-label="Contributor totals">
+      <thead><tr><th>Contributor</th><th>Merged PRs</th></tr></thead>
+      <tbody>
+        {% for dev in dev_data %}
+        <tr><td>{{ dev.label }}</td><td>{{ dev.data | sum }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
   <div class="card">
     <h2>PRs per developer (overlapping)</h2>
     <div class="chart-wrap"><canvas id="perdev"></canvas></div>
@@ -148,7 +164,7 @@ new Chart(document.getElementById('velocity'), {
 
 const DEV_DATA = {{ dev_data | tojson }};
 function perDevDatasets(stacked) {
-  return DEV_DATA.map((developer, i) => {
+  const datasets = DEV_DATA.map((developer, i) => {
     const hue = (i * 137) % 360;
     return {
       label: developer.label,
@@ -161,6 +177,7 @@ function perDevDatasets(stacked) {
       pointHoverRadius: 5,
     };
   });
+  return stacked ? datasets.reverse() : datasets;
 }
 
 const perDevConfig = (stacked) => ({
@@ -181,7 +198,7 @@ const perDevConfig = (stacked) => ({
       },
     },
     plugins: {
-      legend: { labels: { color: '#e1e4ed', usePointStyle: true, padding: 20 } },
+      legend: { reverse: stacked, labels: { color: '#e1e4ed', usePointStyle: true, padding: 20 } },
       tooltip: {
         callbacks: {
           footer: (items) => stacked
