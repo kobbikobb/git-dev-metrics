@@ -69,8 +69,16 @@ uv run app classify
 ```
 
 The command sends the PR title and a description excerpt to Ollama on
-`127.0.0.1:11434`. It records `feature`, `bug_fix`, `maintenance`, or `unclear`
-and the model tag in the cache table `pr_classifications`. Each completed batch is saved.
+`127.0.0.1:11434`. It saves the model tag, work category, and one subtype per PR in
+`pr_classifications`.
+
+| Work category | Subtypes |
+|---|---|
+| Maintenance | Bug fix, dependency, security update, refactoring, CI, tooling |
+| Feature work | New capability, enhancement |
+| Unclear | Insufficient evidence or work outside the listed subtypes |
+
+Running `classify` also refreshes labels from older caches. Each completed batch is saved.
 Run the command again to resume. Use `--model TAG` to select another installed model
 for pending PRs, or `--db PATH` to select a cache.
 

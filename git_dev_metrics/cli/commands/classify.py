@@ -50,7 +50,7 @@ def classify(
     limit: int | None = typer.Option(None, min=1, help="Maximum pending merged PRs to process."),
     db: Path | None = DB_OPTION,
 ) -> None:
-    """Classify previously unclassified merged PRs in the local cache."""
+    """Label merged PRs with missing or legacy classifications in the local cache."""
     try:
         with _timed_progress() as progress:
             counts = classify_pending(open_connection(db), model, limit, progress)

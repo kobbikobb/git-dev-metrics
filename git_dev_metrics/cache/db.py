@@ -36,6 +36,7 @@ CREATE TABLE IF NOT EXISTS pr_classifications (
     number INTEGER NOT NULL,
     category TEXT NOT NULL CHECK (category IN ('feature', 'bug_fix', 'maintenance', 'unclear')),
     model TEXT NOT NULL,
+    subcategory TEXT,
     PRIMARY KEY (repo_org, repo_name, number)
 );
 
@@ -109,6 +110,16 @@ def _migrate_schema(conn: sqlite3.Connection) -> None:
         conn.execute("DROP TABLE synced_months_old")
 
 
+def _migrate_classifications(conn: sqlite3.Connection) -> None:
+    column = "SELECT 1 FROM pragma_table_info('pr_classifications') WHERE name = 'subcategory'"
+    if conn.execute(column).fetchone():
+        return
+    with conn:
+        conn.execute("BEGIN IMMEDIATE")
+        if not conn.execute(column).fetchone():
+            conn.execute("ALTER TABLE pr_classifications ADD COLUMN subcategory TEXT")
+
+
 def open_connection(db_path: Path | None = None) -> sqlite3.Connection:
     path = db_path or default_db_path()
     if path in _connections:
@@ -119,6 +130,7 @@ def open_connection(db_path: Path | None = None) -> sqlite3.Connection:
     conn.execute("PRAGMA foreign_keys = ON;")
     _migrate_schema(conn)
     conn.executescript(_SCHEMA)
+    _migrate_classifications(conn)
     _connections[path] = conn
     return conn
 
