@@ -3,7 +3,7 @@ from pathlib import Path
 
 import typer
 
-from ...cache import get_hidden_logins, get_targets, list_synced_months
+from ...cache import get_targets, list_synced_months
 from ...github import (
     GitHubError,
     GitHubNotFoundError,
@@ -15,6 +15,7 @@ from ...github import (
 )
 from ...metrics._stale_pr import StalePr, get_stale_prs
 from ...metrics.printer.stale import FileStaleHtmlPrinter
+from ...metrics.report_data import ReportData
 from ...models import OpenPullRequest, SecurityInfo
 from .._browser import open_in_browser
 from .._options import DB_OPTION
@@ -100,17 +101,12 @@ def _repo_stale(
     return get_stale_prs(opens, f"{org}/{repo}", threshold_hours=threshold_hours, security=security)
 
 
-def stale(
-    output: Path | None = typer.Option(None, "--output", help="Output HTML path"),
-    db: Path | None = DB_OPTION,
-) -> None:
-    """Find stale open PRs across all cached repos."""
+def _load_stale_report(db: Path | None, targets: dict[str, float]) -> list[StalePr]:
     repos = sorted({(org, repo) for org, repo, *_ in list_synced_months(db_path=db)})
     if not repos:
         typer.secho("No repos in cache — run pull first.", fg=typer.colors.RED, err=True)
         raise typer.Exit(code=1)
 
-    targets = get_targets(db_path=db)
     threshold_days = targets.get("stale_threshold_days", 7)
     threshold_hours = threshold_days * 24
 
@@ -122,10 +118,17 @@ def stale(
         if repo_stale:
             all_stale.extend(repo_stale)
     all_stale.sort(key=lambda x: x.age_hours, reverse=True)
+    return ReportData(db).stale(all_stale)
 
+
+def stale(
+    output: Path | None = typer.Option(None, "--output", help="Output HTML path"),
+    db: Path | None = DB_OPTION,
+) -> None:
+    """Find stale open PRs across all cached repos."""
+    targets = get_targets(db_path=db)
+    prs = _load_stale_report(db, targets)
     out = (output or _default_output()).with_suffix(".html")
-    FileStaleHtmlPrinter(out).render(
-        all_stale, targets=targets, hidden_logins=get_hidden_logins(db_path=db)
-    )
+    FileStaleHtmlPrinter(out).render(prs, targets=targets)
     typer.echo(f"Stale written to {out.resolve().as_uri()}.")
     open_in_browser(out)

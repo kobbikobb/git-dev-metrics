@@ -58,14 +58,14 @@ function datasetsFor(field) {
   return DATA.months.map((monthKey, i) => ({
     label: monthKey,
     backgroundColor: palette[i % palette.length],
-    data: DATA.devs.map(dev => DATA.rows[dev][i][field]),
+    data: DATA.devs.map(dev => dev.data[i][field]),
   }));
 }
 
 function render(canvasId, field, axisLabel) {
   new Chart(document.getElementById(canvasId), {
     type: 'bar',
-    data: { labels: DATA.devs, datasets: datasetsFor(field) },
+    data: { labels: DATA.devs.map(dev => dev.label), datasets: datasetsFor(field) },
     options: {
       indexAxis: 'y',
       responsive: true,

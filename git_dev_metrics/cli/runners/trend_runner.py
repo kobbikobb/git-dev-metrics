@@ -2,9 +2,8 @@ from pathlib import Path
 
 import typer
 
-from ...cache import get_hidden_logins, load_all_repos_by_month
 from ...metrics.printer.trend import FileTrendPrinter
-from ...metrics.trend_calculator import build_trend_dataset
+from ...metrics.report_data import ReportData
 from ...utils.date_utils import month_iter
 from .._browser import open_in_browser
 
@@ -30,8 +29,8 @@ def perform_trend(
         raise typer.Exit(code=1)
 
     months = month_iter(from_ym, to_ym)
-    prs_per_month = load_all_repos_by_month(months, db_path=db_path)
-    if not any(prs_per_month.values()):
+    dataset = ReportData(db_path).trend(months)
+    if dataset is None:
         typer.secho(
             "No synced data for selected range. Run pull first.",
             fg=typer.colors.RED,
@@ -39,8 +38,7 @@ def perform_trend(
         )
         raise typer.Exit(code=1)
 
-    dataset = build_trend_dataset(months, prs_per_month)
     out_path = output or _default_output(from_ym, to_ym)
-    FileTrendPrinter(out_path).render(dataset, hidden_logins=get_hidden_logins(db_path=db_path))
+    FileTrendPrinter(out_path).render(dataset)
     typer.echo(f"Trend written to {out_path}.")
     open_in_browser(out_path)

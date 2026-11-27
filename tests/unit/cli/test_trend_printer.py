@@ -2,7 +2,7 @@ import json
 import re
 
 from git_dev_metrics.metrics.printer.trend import FileTrendPrinter
-from git_dev_metrics.metrics.trend_calculator import DevMonthRow, TrendDataset
+from git_dev_metrics.metrics.trend_calculator import TrendDataset
 
 
 def _data_block(html: str) -> dict:
@@ -15,18 +15,22 @@ class TestFileTrendPrinter:
     def test_should_render_canvases_and_embed_dataset(self, tmp_path):
         # Arrange
         dataset = TrendDataset(
-            months=["2026-02", "2026-03"],
-            devs=["alice", "bob"],
-            rows={
-                "alice": [
-                    DevMonthRow("Feb 2026", "2026-02", 2, 12.5, 50.0),
-                    DevMonthRow("Mar 2026", "2026-03", 3, 10.0, 60.0),
-                ],
-                "bob": [
-                    DevMonthRow("Feb 2026", "2026-02", 1, 8.0, 0.0),
-                    DevMonthRow("Mar 2026", "2026-03", 2, 9.0, 100.0),
-                ],
-            },
+            months=["2026-02"],
+            devs=[
+                {
+                    "label": "Same label",
+                    "data": [
+                        {
+                            "month_label": "Feb 2026",
+                            "month_key": "2026-02",
+                            "pr_count": count,
+                            "cycle_hours": 12.5,
+                            "ai_pct": 50.0,
+                        }
+                    ],
+                }
+                for count in (1, 2)
+            ],
         )
         output = tmp_path / "t.html"
 
@@ -39,5 +43,6 @@ class TestFileTrendPrinter:
         assert 'id="cycle"' in content
         assert 'id="ai"' in content
         data = _data_block(content)
-        assert data["devs"] == ["alice", "bob"]
-        assert data["months"] == ["2026-02", "2026-03"]
+        assert [dev["label"] for dev in data["devs"]] == ["Same label", "Same label"]
+        assert [dev["data"][0]["pr_count"] for dev in data["devs"]] == [1, 2]
+        assert data["months"] == ["2026-02"]

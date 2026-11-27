@@ -1,6 +1,8 @@
 """Unit tests for MetricsSnapshot."""
 
+from git_dev_metrics.cache import set_nickname, update_hidden_logins
 from git_dev_metrics.metrics import MetricsSnapshot
+from git_dev_metrics.metrics.report_data import ReportData
 from git_dev_metrics.metrics.snapshot import Row, build_summary
 from git_dev_metrics.utils import TimePeriod
 
@@ -101,7 +103,7 @@ class TestFromRepoPrs:
 
         assert snap.team.pr_count == 2
 
-    def test_should_hide_individual_results_after_computing_aggregates(self):
+    def test_should_hide_individual_results_after_computing_aggregates(self, tmp_path):
         repo_prs = {
             "org/repo": [
                 any_pr(user={"login": "Dev-A"}, reviews=[approved_review(login="dev-b")]),
@@ -111,7 +113,9 @@ class TestFromRepoPrs:
         }
 
         full = MetricsSnapshot.from_repo_prs(repo_prs, _period())
-        hidden = MetricsSnapshot.from_repo_prs(repo_prs, _period(), hidden_logins={"dev-a"})
+        db = tmp_path / "cache.db"
+        update_hidden_logins({"dev-a": True}, db_path=db)
+        hidden = ReportData(db).snapshot(repo_prs, _period())
 
         assert hidden.team == full.team
         assert hidden.repos == full.repos
@@ -121,17 +125,23 @@ class TestFromRepoPrs:
         assert hidden.summary.top_reviewer == "dev-b"
         assert hidden.summary.max_review_share == 33
 
-    def test_should_carry_reviewer_counts(self):
+    def test_should_keep_developers_with_the_same_nickname_distinct(self, tmp_path):
+        db = tmp_path / "cache.db"
         prs = [
-            any_pr(
-                user={"login": "alice"},
-                reviews=[approved_review(login="bob")],
-            )
+            any_pr(user={"login": "Dev-A"}, reviews=[approved_review(login="Dev-B")]),
+            any_pr(user={"login": "Dev-B"}, reviews=[approved_review(login="Dev-A")]),
         ]
+        for login in ("dev-a", "dev-b"):
+            set_nickname(login, "Shared alias", db_path=db)
 
-        snap = MetricsSnapshot.from_repo_prs({"org/r": prs}, _period())
+        snapshot = ReportData(db).snapshot({"org/repo": prs}, _period())
 
-        assert snap.reviewer_counts.get("bob") == 1
+        assert [(row.name, row.pr_count) for row in snapshot.devs] == [
+            ("Shared alias", 1),
+            ("Shared alias", 1),
+        ]
+        assert snapshot.summary.top_reviewer == "Shared alias"
+        assert snapshot.summary.max_review_share == 50
 
 
 class TestBand:

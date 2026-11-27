@@ -60,7 +60,7 @@
       <thead><tr><th>Developer</th>{% for lang in langs %}<th>{{ lang }}</th>{% endfor %}</tr></thead>
       <tbody>
         {% for dev in devs %}
-        <tr><td>{{ dev }}</td>{% for lang in langs %}<td>{{ dev_langs.get(dev, {}).get(lang, 0) }}</td>{% endfor %}</tr>
+        <tr><td>{{ dev.label }}</td>{% for lang in langs %}<td>{{ dev.data.get(lang, 0) }}</td>{% endfor %}</tr>
         {% endfor %}
         <tr class="total-row"><td>Team total</td>{% for lang in langs %}<td>{{ team_langs.get(lang, 0) }}</td>{% endfor %}</tr>
       </tbody>
@@ -72,7 +72,6 @@ const palette = ['#6366f1','#22c55e','#eab308','#ef4444','#06b6d4','#f97316','#3
 const TEAM = {{ team_langs | tojson }};
 const DEVS = {{ devs | tojson }};
 const LANGS = {{ langs | tojson }};
-const DEV_LANGS = {{ dev_langs | tojson }};
 
 new Chart(document.getElementById('teamPie'), {
   type: 'doughnut',
@@ -92,11 +91,11 @@ new Chart(document.getElementById('teamPie'), {
 new Chart(document.getElementById('devBar'), {
   type: 'bar',
   data: {
-    labels: DEVS,
+    labels: DEVS.map(dev => dev.label),
     datasets: LANGS.map((lang, i) => ({
       label: lang,
       backgroundColor: palette[i % palette.length],
-      data: DEVS.map(dev => (DEV_LANGS[dev] && DEV_LANGS[dev][lang]) || 0),
+      data: DEVS.map(dev => dev.data[lang] || 0),
     })),
   },
   options: {

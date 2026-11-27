@@ -91,8 +91,8 @@ class TestTrendFiltersLeavers:
         assert out.exists()
         content = out.read_text()
         data = _data_block(content)
-        assert sorted(data["devs"]) == ["alice", "bob"]
-        assert "charlie" not in data["devs"]
+        assert [dev["label"] for dev in data["devs"]] == ["alice", "bob"]
+        assert "charlie" not in content
 
 
 class TestTrendCanvases:
@@ -174,9 +174,9 @@ class TestTrendAggregatesAllRepos:
         # Assert
         assert result.exit_code == 0, result.output
         data = _data_block(out.read_text())
-        assert sorted(data["devs"]) == ["alice", "bob"]
-        alice_apr = next(r for r in data["rows"]["alice"] if r["month_key"] == "2026-04")
-        bob_apr = next(r for r in data["rows"]["bob"] if r["month_key"] == "2026-04")
+        assert [dev["label"] for dev in data["devs"]] == ["alice", "bob"]
+        alice_apr = next(r for r in data["devs"][0]["data"] if r["month_key"] == "2026-04")
+        bob_apr = next(r for r in data["devs"][1]["data"] if r["month_key"] == "2026-04")
         assert alice_apr["pr_count"] == 3
         assert bob_apr["pr_count"] == 1
 

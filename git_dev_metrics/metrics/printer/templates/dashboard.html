@@ -545,11 +545,11 @@
 </div>
 
 <script>
-const devs = [
-{%- for dev in devs %}
-  { name:"{{ dev.name }}", health:{{ dev.health }}, pickup:{{ "%.2f"|format(dev.pickup) }}, review:{{ "%.2f"|format(dev.review) }}, cycle:{{ "%.2f"|format(dev.cycle) }}, size:{{ dev.size }}, prs:{{ dev.prs }}, prsWeek:{{ "%.1f"|format(dev.prs_week) }}, reviews:{{ dev.reviews }}, ai:{{ dev.ai }} }{% if not loop.last %},
-{% endif %}{% endfor %}
-];
+const devs = {{ devs | tojson }};
+
+function escapeText(value) {
+  return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+}
 
 function timeBar(v, max, color) {
   if (v > 100) return `<div class="time-cell"><span class="time-value" style="color:var(--red)">${v.toFixed(1)}</span></div>`;
@@ -568,7 +568,7 @@ const columns = [
   { key:"cycle", label:"Cycle (h)", fmt: (v,d) => timeBar(v, 25, "#06b6d4") },
   { key:"size", label:"PR Size", fmt: v => v.toLocaleString() },
   { key:"prs", label:"Total PRs", fmt: v => v },
-  { key:"prsWeek", label:"PRs/Week", fmt: v => v.toFixed(1) },
+  { key:"prs_week", label:"PRs/Week", fmt: v => v.toFixed(1) },
   { key:"reviews", label:"Reviews", fmt: v => v },
   { key:"ai", label:"AI %", fmt: v => {
     const cls = v >= 60 ? "ai-high" : v > 0 ? "ai-med" : "ai-low";
@@ -596,7 +596,7 @@ function renderTable() {
     "<tr>" + columns.map(c => {
       if (c.key === "name") {
         const initials = d.name.slice(0,2).toUpperCase();
-        return `<td><div class="dev-name"><span class="avatar">${initials}</span>${d.name}</div></td>`;
+        return `<td><div class="dev-name"><span class="avatar">${escapeText(initials)}</span>${escapeText(d.name)}</div></td>`;
       }
       return `<td>${c.fmt(d[c.key], d)}</td>`;
     }).join("") + "</tr>"
@@ -620,7 +620,7 @@ function barChart(containerId, data, color, maxOverride) {
   container.innerHTML = data.map(d => {
     const pct = max > 0 ? (d.value / max * 100) : 0;
     return `<div class="bar-row">
-      <span class="bar-label">${d.label}</span>
+      <span class="bar-label">${escapeText(d.label)}</span>
       <div class="bar-track"><div class="bar-fill" style="width:${Math.min(pct,100)}%;background:${color}"></div></div>
       <span class="bar-val">${d.display || d.value}</span>
     </div>`;
@@ -681,7 +681,7 @@ function pieChart(canvasId, legendId, data) {
   legend.innerHTML = data.map((d, i) =>
     `<div class="pie-legend-item">
       <span class="pie-legend-swatch" style="background:${PIE_COLORS[i % PIE_COLORS.length]}"></span>
-      ${d.label} (${d.value})
+      ${escapeText(d.label)} (${d.value})
     </div>`
   ).join("");
 }

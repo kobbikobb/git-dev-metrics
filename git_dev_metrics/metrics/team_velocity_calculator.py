@@ -1,9 +1,10 @@
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 
 from ..constants import is_bot_login
 from ..models import PullRequest
 from ..utils.date_utils import month_key, month_label
+from ._rows import DeveloperSeries, developer_series
 
 
 @dataclass(frozen=True)
@@ -18,7 +19,7 @@ class TeamVelocityMonth:
 @dataclass(frozen=True)
 class TeamVelocityDataset:
     months: list[TeamVelocityMonth]
-    dev_month_counts: list[dict[str, int]]
+    devs: list[DeveloperSeries[list[int]]]
 
 
 def _count_active_devs(prs: Sequence[PullRequest]) -> int:
@@ -39,9 +40,9 @@ def _latest_active_devs(
 
 def _dev_month_counts(
     months: list[tuple[int, int]], prs_per_month: dict[tuple[int, int], list[PullRequest]]
-) -> list[dict[str, int]]:
+) -> dict[str, list[int]]:
     all_devs = sorted(_latest_active_devs(months, prs_per_month))
-    result: list[dict[str, int]] = []
+    result: dict[str, list[int]] = {dev: [] for dev in all_devs}
     for y, m in months:
         month_prs = prs_per_month.get((y, m), [])
         if not month_prs:
@@ -51,13 +52,15 @@ def _dev_month_counts(
             login = pr["user"]["login"]
             if login in counts:
                 counts[login] += 1
-        result.append(counts)
+        for dev, count in counts.items():
+            result[dev].append(count)
     return result
 
 
 def build_team_velocity_dataset(
     months: list[tuple[int, int]],
     prs_per_month: dict[tuple[int, int], list[PullRequest]],
+    display_name: Callable[[str], str | None],
 ) -> TeamVelocityDataset:
     """Per-month total PR count, active developer count, and PRs per dev."""
     rows: list[TeamVelocityMonth] = []
@@ -77,7 +80,7 @@ def build_team_velocity_dataset(
             )
         )
     dev_counts = _dev_month_counts(months, prs_per_month)
-    return TeamVelocityDataset(months=rows, dev_month_counts=dev_counts)
+    return TeamVelocityDataset(months=rows, devs=developer_series(dev_counts, display_name))
 
 
 __all__ = [

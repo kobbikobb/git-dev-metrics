@@ -6,13 +6,10 @@ from typer.testing import CliRunner
 from git_dev_metrics.cache import insert_prs, seal_month, set_nickname, update_hidden_logins
 from git_dev_metrics.cli import app
 from git_dev_metrics.metrics._stale_pr import StalePr
-from git_dev_metrics.metrics.lang_calculator import build_lang_dataset
 from git_dev_metrics.metrics.printer.lang import FileLangPrinter
 from git_dev_metrics.metrics.printer.skill import FileSkillPrinter
 from git_dev_metrics.metrics.printer.stale import FileStaleHtmlPrinter
-from git_dev_metrics.metrics.printer.trend import FileTrendPrinter
-from git_dev_metrics.metrics.skill_calculator import build_skill_dataset
-from git_dev_metrics.metrics.trend_calculator import build_trend_dataset
+from git_dev_metrics.metrics.report_data import ReportData
 
 from ..conftest import any_pr
 
@@ -25,12 +22,13 @@ class TestReportVisibility:
         prs = [{"user": {"login": "Dev-A"}, "files": [{"path": "main.py"}]}]
         output = tmp_path / "report.html"
 
+        db = tmp_path / "cache.db"
+        update_hidden_logins({"dev-a": True}, db_path=db)
+        data = ReportData(db)
         if report == "lang":
-            FileLangPrinter(output).render(build_lang_dataset(prs), "June", hidden_logins={"dev-a"})
+            FileLangPrinter(output).render(data.languages(prs), "June")
         else:
-            FileSkillPrinter(output).render(
-                build_skill_dataset(prs), "June", hidden_logins={"dev-a"}
-            )
+            FileSkillPrinter(output).render(data.skills(prs), "June")
 
         html = output.read_text()
         assert "Dev-A" not in html
@@ -49,12 +47,14 @@ class TestReportVisibility:
         update_hidden_logins({"dev-a": True}, db_path=db)
         mocker.patch("git_dev_metrics.cli.runners._report_prs.load_token", return_value="test")
 
+        set_nickname("dev-b", "Alias B", db_path=db)
+
         def fetch(token: str, org: str, repo: str, year: int, month: int) -> list[dict]:
             login = {"repo-a": "Dev-A", "repo-b": "Dev-B"}[repo]
             return [{"number": 1, "user": {"login": login}, "files": [{"path": "main.py"}]}]
 
         mocker.patch(
-            f"git_dev_metrics.cli.runners.{report}_runner.fetch_{report}_report_prs",
+            f"git_dev_metrics.cli.runners._report_prs.fetch_{report}_report_prs",
             side_effect=fetch,
         )
         args = ["--from", "2026-06", "--to", "2026-07", "--db", str(db), "--output", str(out)]
@@ -64,58 +64,53 @@ class TestReportVisibility:
         assert result.exit_code == 0, result.output
         html = out.read_text()
         assert 'const TEAM = {"Python": 2}' in html
-        assert 'const DEVS = ["Dev-B"]' in html
+        assert '"label": "Alias B"' in html
+        assert "Dev-B" not in html
         assert "Dev-A" not in html
 
-    def test_should_hide_named_trend_series(self, tmp_path: Path) -> None:
-        months = [(2026, 6)]
-        activity = {months[0]: [any_pr(user={"login": "Dev-A"}), any_pr(user={"login": "Dev-B"})]}
-        trend = tmp_path / "trend.html"
-
-        FileTrendPrinter(trend).render(
-            build_trend_dataset(months, activity), hidden_logins={"dev-a"}
-        )
-
-        html = trend.read_text()
-        assert "Dev-A" not in html
-        assert "Dev-B" in html
-
-    def test_should_keep_team_velocity_for_developers_hidden_in_selected_db(
-        self, tmp_path: Path, mocker, _stub_webbrowser
+    @pytest.mark.parametrize("report", ["trend", "team-velocity"])
+    def test_should_keep_visible_series_separate_with_shared_nicknames(
+        self, tmp_path: Path, report: str, mocker, _stub_webbrowser
     ) -> None:
         db = tmp_path / "cache.db"
         out = tmp_path / "velocity.html"
         prs = [
             any_pr(number=i, user={"login": name})
-            for i, name in enumerate(("Dev-A", "Dev-B", "Dev-C"), 1)
+            for i, name in enumerate(("Dev-A", "Dev-B", "Dev-C", "Dev-D", "Dev-D"), 1)
         ]
         insert_prs(prs, "org", "repo", 2026, 6, db_path=db)
         seal_month("org", "repo", 2026, 6, db_path=db)
         update_hidden_logins({"dev-a": True}, db_path=db)
         set_nickname("dev-a", "Hidden alias", db_path=db)
         set_nickname("dev-b", "Visible alias", db_path=db)
+        set_nickname("DEV-D", "Visible alias", db_path=db)
         mocker.patch(
             "git_dev_metrics.cli.commands.team_velocity.last_n_months",
             return_value=((2026, 6), (2026, 6)),
         )
 
-        result = CliRunner().invoke(app, ["team-velocity", "--db", str(db), "--output", str(out)])
+        args = ["--from", "2026-06", "--to", "2026-06"] if report == "trend" else []
+        result = CliRunner().invoke(app, [report, *args, "--db", str(db), "--output", str(out)])
 
         assert result.exit_code == 0, result.output
         html = out.read_text()
         assert "Dev-A" not in html
         assert "Hidden alias" not in html
         assert "Dev-B" not in html
-        assert '"label": "Visible alias"' in html
+        assert html.count('"label": "Visible alias"') == 2
+        assert "Dev-D" not in html
         assert '"label": "Dev-C"' in html
-        assert "const ACTIVE_DEVS = [3]" in html
-        assert "const PR_COUNTS = [3]" in html
+        if report == "team-velocity":
+            assert "const ACTIVE_DEVS = [4]" in html
+            assert "const PR_COUNTS = [5]" in html
 
     def test_should_show_stale_pr_without_hidden_author(self, tmp_path: Path) -> None:
         pr = StalePr(42, "Pending review", "Dev-A", "org/repo", 240, 10, False, False, "")
         output = tmp_path / "report.html"
 
-        FileStaleHtmlPrinter(output).render([pr], hidden_logins={"dev-a"})
+        db = tmp_path / "cache.db"
+        update_hidden_logins({"dev-a": True}, db_path=db)
+        FileStaleHtmlPrinter(output).render(ReportData(db).stale([pr]))
 
         html = output.read_text()
         assert "Dev-A" not in html

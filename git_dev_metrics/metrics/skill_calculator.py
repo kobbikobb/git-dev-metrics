@@ -1,7 +1,9 @@
 from collections import defaultdict
-from dataclasses import dataclass, field
+from collections.abc import Callable
+from dataclasses import dataclass
 
 from ..constants import is_bot_login
+from ._rows import DeveloperSeries, developer_series
 
 SKILL_MAP: dict[str, str] = {
     ".py": "Python",
@@ -59,41 +61,20 @@ def _classify(path: str) -> str:
     return SKILL_MAP.get(f".{ext}", "Other")
 
 
-@dataclass
+@dataclass(frozen=True)
 class SkillDataset:
-    dev_skills: dict[str, dict[str, int]] = field(
-        default_factory=lambda: defaultdict(lambda: defaultdict(int))
-    )
-    devs: list[str] = field(default_factory=list)
-    skills: list[str] = field(default_factory=list)
-
-    @property
-    def team_skills(self) -> dict[str, int]:
-        out: dict[str, int] = defaultdict(int)
-        for dev_data in self.dev_skills.values():
-            for skill, count in dev_data.items():
-                out[skill] += count
-        return dict(out)
-
-    def _finalize(self) -> None:
-        self.devs = sorted(self.dev_skills)
-        all_skills: set[str] = set()
-        for data in self.dev_skills.values():
-            all_skills.update(data)
-        self.skills = sorted(all_skills)
+    devs: list[DeveloperSeries[dict[str, int]]]
+    team_skills: dict[str, int]
 
 
-def build_skill_dataset(prs: list[dict]) -> SkillDataset:
-    ds = SkillDataset()
+def build_skill_dataset(prs: list[dict], display_name: Callable[[str], str | None]) -> SkillDataset:
+    by_dev: dict[str, dict[str, int]] = defaultdict(lambda: defaultdict(int))
+    team: dict[str, int] = defaultdict(int)
     for pr in prs:
         login = pr.get("user", {}).get("login", "")
         if is_bot_login(login):
             continue
-        seen: set[str] = set()
-        for f in pr.get("files", []):
-            skill = _classify(f.get("path", ""))
-            if skill not in seen:
-                seen.add(skill)
-                ds.dev_skills[login][skill] += 1
-    ds._finalize()
-    return ds
+        for skill in {_classify(f.get("path", "")) for f in pr.get("files", [])}:
+            by_dev[login][skill] += 1
+            team[skill] += 1
+    return SkillDataset(devs=developer_series(by_dev, display_name), team_skills=dict(team))

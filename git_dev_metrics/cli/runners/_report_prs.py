@@ -5,9 +5,13 @@ import typer
 
 from ...cache import list_synced_months
 from ...github.auth_cache import load_token
+from ...github.queries import fetch_lang_report_prs, fetch_skill_report_prs
+from ...metrics.lang_calculator import LangDataset
+from ...metrics.report_data import ReportData
+from ...metrics.skill_calculator import SkillDataset
 
 
-def load_report_prs(
+def _load_report_prs(
     months: list[tuple[int, int]],
     db_path: Path | None,
     fetch: Callable[[str, str, str, int, int], list[dict]],
@@ -28,3 +32,13 @@ def load_report_prs(
         typer.secho("No PRs found for selected months.", fg=typer.colors.RED, err=True)
         raise typer.Exit(code=1)
     return list(prs.values())
+
+
+def load_lang_report(months: list[tuple[int, int]], db_path: Path | None) -> LangDataset:
+    prs = _load_report_prs(months, db_path, fetch_lang_report_prs)
+    return ReportData(db_path).languages(prs)
+
+
+def load_skill_report(months: list[tuple[int, int]], db_path: Path | None) -> SkillDataset:
+    prs = _load_report_prs(months, db_path, fetch_skill_report_prs)
+    return ReportData(db_path).skills(prs)
