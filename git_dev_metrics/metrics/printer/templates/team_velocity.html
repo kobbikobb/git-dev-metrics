@@ -46,7 +46,8 @@
 </div>
 <div class="grid">
   <div class="card"><h2>PR throughput, active devs, and PRs per developer</h2><div class="chart-wrap"><canvas id="velocity"></canvas></div></div>
-  <div class="card"><h2>PRs per developer (stacked)</h2><div class="chart-wrap"><canvas id="perdev"></canvas></div></div>
+  <div class="card"><h2>PRs per developer (overlapping)</h2><div class="chart-wrap"><canvas id="perdev"></canvas></div></div>
+  <div class="card"><h2>PRs per developer (stacked)</h2><div class="chart-wrap"><canvas id="perdev-stacked"></canvas></div></div>
 </div>
 <script>
 const MONTHS = {{ month_labels | tojson }};
@@ -138,7 +139,7 @@ new Chart(document.getElementById('velocity'), {
 });
 
 const DEV_DATA = {{ dev_data | tojson }};
-new Chart(document.getElementById('perdev'), {
+const perDevConfig = (stacked) => ({
   type: 'line',
   data: {
     labels: MONTHS,
@@ -149,8 +150,8 @@ new Chart(document.getElementById('perdev'), {
         data: s.data,
         borderColor: 'hsl(' + hue + ', 70%, 55%)',
         backgroundColor: 'hsla(' + hue + ', 70%, 55%, 0.3)',
-        fill: true,
-        tension: 0.2,
+        fill: stacked && i > 0 ? '-1' : 'origin',
+        tension: stacked ? 0 : 0.2,
         pointRadius: 3,
         pointHoverRadius: 5,
       };
@@ -163,6 +164,7 @@ new Chart(document.getElementById('perdev'), {
     scales: {
       x: { ticks: { color: '#8b8fa3' }, grid: { color: '#2a2d3a' } },
       y: {
+        stacked,
         beginAtZero: true,
         ticks: { color: '#8b8fa3' },
         grid: { color: '#2a2d3a' },
@@ -181,6 +183,8 @@ new Chart(document.getElementById('perdev'), {
     },
   },
 });
+new Chart(document.getElementById('perdev'), perDevConfig(false));
+new Chart(document.getElementById('perdev-stacked'), perDevConfig(true));
 </script>
 </body>
 </html>
