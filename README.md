@@ -82,6 +82,12 @@ Running `classify` also refreshes labels from older caches. Each completed batch
 Run the command again to resume. Use `--model TAG` to select another installed model
 for pending PRs, or `--db PATH` to select a cache.
 
+To relabel every merged PR currently in the cache, run `uv run app classify --force`.
+Existing labels stay available until each replacement batch succeeds. Repeat the command
+after an interruption to resume. With `--force --limit 20`, each invocation processes up to
+20 PRs from the same refresh. Once it finishes, the next `--force` starts a new pass.
+Plain `classify` still processes only missing or legacy labels.
+
 ## Linting & Formatting
 
 ```bash

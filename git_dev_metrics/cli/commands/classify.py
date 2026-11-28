@@ -48,12 +48,13 @@ def _timed_progress(
 def classify(
     model: str = typer.Option(DEFAULT_MODEL, help="Installed local Ollama model tag."),
     limit: int | None = typer.Option(None, min=1, help="Maximum pending merged PRs to process."),
+    force: bool = typer.Option(False, "--force", help="Start or resume relabeling all merged PRs."),
     db: Path | None = DB_OPTION,
 ) -> None:
     """Label merged PRs with missing or legacy classifications in the local cache."""
     try:
         with _timed_progress() as progress:
-            counts = classify_pending(open_connection(db), model, limit, progress)
+            counts = classify_pending(open_connection(db), model, limit, progress, force=force)
     except (requests.RequestException, ValueError, KeyError, TypeError) as exc:
         typer.echo(f"Classification failed: {exc}. Completed batches are saved.", err=True)
         raise typer.Exit(1) from None
