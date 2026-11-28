@@ -5,6 +5,7 @@ import sqlite3
 from collections import Counter
 from collections.abc import Callable, Iterator
 from itertools import batched
+from uuid import uuid4
 
 import requests
 
@@ -22,7 +23,16 @@ CATEGORY_BY_SUBCATEGORY = {
 DEFAULT_MODEL = "qwen3.5:4b"
 BATCH_SIZE = 4
 PROMPT = """Read each merged PR's title and description. Select one subtype for the
-primary purpose of the change. Judge the effect, even when the title says "add" or "fix".
+primary purpose of the change. Identify who benefits and what changed before choosing:
+1. If an existing product workflow failed, restoring it is bug_fix, even if the fix
+   adds code, controls or a new mechanism. Overlapping labels or a crashing filter are bugs.
+2. Internal commands for operators, one-off scripts, test helpers and diagnostics are
+   tooling. Changes to build, test or deployment pipelines are ci. Neither is a product feature.
+3. Use a feature subtype only when the text shows a new or expanded product behavior:
+   a distinct new user workflow is new_capability; extending an existing workflow is
+   enhancement. A new button in an existing report usually enhances that report.
+4. For other maintenance, use the primary purpose below. If no intent is evident from
+   the supplied text, choose unclear. A ticket ID or an unexplained config change is insufficient.
 - bug_fix: restore expected product behavior, e.g. a report was dropping records.
 - dependency: routine package, runtime or SDK upgrade or compatibility migration.
 - security_update: address an identified vulnerability or harden security. Includes
@@ -93,25 +103,53 @@ def _labels(result: object, keys: list[str]) -> list[str]:
     return [result[key] for key in keys]
 
 
-def _pending(db: sqlite3.Connection, limit: int) -> list[sqlite3.Row]:
+def _start_refresh(db: sqlite3.Connection) -> str:
+    with db:
+        db.execute("BEGIN IMMEDIATE")
+        db.execute(
+            """DELETE FROM pr_classification_refresh
+               WHERE (repo_org, repo_name, number) NOT IN (
+                   SELECT repo_org, repo_name, number FROM prs WHERE merged_at IS NOT NULL
+               )"""
+        )
+        active = db.execute("SELECT refresh_id FROM pr_classification_refresh LIMIT 1").fetchone()
+        if active:
+            return active["refresh_id"]
+        refresh_id = uuid4().hex
+        db.execute(
+            """INSERT OR IGNORE INTO pr_classification_refresh
+                   (repo_org, repo_name, number, refresh_id)
+               SELECT repo_org, repo_name, number, ? FROM prs WHERE merged_at IS NOT NULL""",
+            (refresh_id,),
+        )
+        return refresh_id
+
+
+def _pending(db: sqlite3.Connection, limit: int, refresh_id: str | None) -> list[sqlite3.Row]:
     return db.execute(
         """SELECT repo_org, repo_name, number, title, substr(body, 1, 1000) AS excerpt,
                   count(*) OVER () AS pending_count
-           FROM prs AS p WHERE merged_at IS NOT NULL AND NOT EXISTS (
-               SELECT 1 FROM pr_classifications AS c
-               WHERE (c.repo_org, c.repo_name, c.number) = (p.repo_org, p.repo_name, p.number)
-                 AND c.subcategory IS NOT NULL
-           )
+           FROM prs AS p WHERE merged_at IS NOT NULL AND CASE WHEN :refresh IS NULL THEN
+               NOT EXISTS (
+                   SELECT 1 FROM pr_classifications AS c
+                   WHERE (c.repo_org, c.repo_name, c.number) = (p.repo_org, p.repo_name, p.number)
+                     AND c.subcategory IS NOT NULL
+               )
+           ELSE EXISTS (
+               SELECT 1 FROM pr_classification_refresh AS q
+               WHERE (q.repo_org, q.repo_name, q.number) = (p.repo_org, p.repo_name, p.number)
+                 AND q.refresh_id = :refresh
+           ) END
            GROUP BY repo_org COLLATE NOCASE, repo_name COLLATE NOCASE, number
-           ORDER BY repo_org, repo_name, number LIMIT ?""",
-        (limit,),
+           ORDER BY repo_org, repo_name, number LIMIT :limit""",
+        {"refresh": refresh_id, "limit": limit},
     ).fetchall()
 
 
 def _pending_batches(
-    db: sqlite3.Connection, limit: int | None
+    db: sqlite3.Connection, limit: int | None, refresh_id: str | None
 ) -> Iterator[tuple[tuple[sqlite3.Row, ...], int]]:
-    rows = _pending(db, min(limit, 256) if limit is not None else 256)
+    rows = _pending(db, min(limit, 256) if limit is not None else 256, refresh_id)
     if not rows:
         return
     pending = rows[0]["pending_count"]
@@ -121,7 +159,7 @@ def _pending_batches(
         for batch in batched(rows, BATCH_SIZE, strict=False):
             yield batch, total
         remaining -= len(rows)
-        rows = _pending(db, min(remaining, 256)) if remaining else []
+        rows = _pending(db, min(remaining, 256), refresh_id) if remaining else []
 
 
 def _require_local_model(session: requests.Session, model: str) -> None:
@@ -147,9 +185,19 @@ def _save_batch(
     labels: list[str],
     model: str,
     counts: Counter[str],
+    refresh_id: str | None,
 ) -> None:
     with db:
         for row, label in zip(batch, labels, strict=True):
+            key = (row["repo_org"], row["repo_name"], row["number"])
+            if refresh_id is not None:
+                claimed = db.execute(
+                    """DELETE FROM pr_classification_refresh
+                       WHERE (repo_org, repo_name, number, refresh_id) = (?, ?, ?, ?)""",
+                    (*key, refresh_id),
+                ).rowcount
+                if not claimed:
+                    continue
             inserted = db.execute(
                 """INSERT INTO pr_classifications
                    (repo_org, repo_name, number, category, model, subcategory)
@@ -157,32 +205,31 @@ def _save_batch(
                    ON CONFLICT (repo_org, repo_name, number) DO UPDATE SET
                        category=excluded.category, model=excluded.model,
                        subcategory=excluded.subcategory
-                   WHERE pr_classifications.subcategory IS NULL""",
-                (
-                    row["repo_org"],
-                    row["repo_name"],
-                    row["number"],
-                    CATEGORY_BY_SUBCATEGORY[label],
-                    model,
-                    label,
-                ),
+                   WHERE pr_classifications.subcategory IS NULL OR ? IS NOT NULL""",
+                (*key, CATEGORY_BY_SUBCATEGORY[label], model, label, refresh_id),
             ).rowcount
             counts[label] += inserted
 
 
 def classify_pending(
-    db: sqlite3.Connection, model: str, limit: int | None, progress: Callable[[int, int], None]
+    db: sqlite3.Connection,
+    model: str,
+    limit: int | None,
+    progress: Callable[[int, int], None],
+    *,
+    force: bool = False,
 ) -> Counter[str]:
     counts: Counter[str] = Counter()
+    refresh_id = _start_refresh(db) if force else None
     done = total = 0
     with requests.Session() as session:
         session.trust_env = False
-        for batch, total in _pending_batches(db, limit):
+        for batch, total in _pending_batches(db, limit, refresh_id):
             if not done:
                 progress(0, total)
                 _require_local_model(session, model)
             labels = _classify_batch(session, batch, model)
-            _save_batch(db, batch, labels, model, counts)
+            _save_batch(db, batch, labels, model, counts, refresh_id)
             done += len(batch)
             progress(done, total)
     if done < total:

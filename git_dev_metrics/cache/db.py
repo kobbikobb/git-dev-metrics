@@ -40,6 +40,14 @@ CREATE TABLE IF NOT EXISTS pr_classifications (
     PRIMARY KEY (repo_org, repo_name, number)
 );
 
+CREATE TABLE IF NOT EXISTS pr_classification_refresh (
+    repo_org TEXT NOT NULL COLLATE NOCASE,
+    repo_name TEXT NOT NULL COLLATE NOCASE,
+    number INTEGER NOT NULL,
+    refresh_id TEXT NOT NULL,
+    PRIMARY KEY (repo_org, repo_name, number)
+);
+
 CREATE TABLE IF NOT EXISTS reviews (
     pr_number INTEGER NOT NULL,
     repo_org TEXT NOT NULL,
