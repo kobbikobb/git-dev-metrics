@@ -18,31 +18,48 @@ section { background: #1a1d27; border: 1px solid #2a2d3a; border-radius: 8px; pa
 <h1>Monthly PR work mix</h1>
 <p>{{ months[0] }} through {{ months[-1] }} · {{ scope }} · Model-estimated categories</p>
 <small>An asterisk marks incomplete sync coverage. A gap means no selected repository was synced for that month.</small>
+{% for id, title, description in [
+  ('counts', 'Merged PRs', 'Monthly merged PR counts by category'),
+  ('maintenance', 'Maintenance breakdown', 'Monthly maintenance PR counts by subtype'),
+  ('feature', 'Feature work breakdown', 'Monthly feature PR counts by subtype')
+] %}
 <section>
-  <h2>Merged PRs</h2>
-  <div class="plot"><canvas id="counts" aria-label="Monthly merged PR counts by category" role="img"></canvas></div>
+  <h2>{{ title }}</h2>
+  <div class="plot"><canvas id="{{ id }}" aria-label="{{ description }}" role="img"></canvas></div>
 </section>
+{% endfor %}
 <script>
 const months = {{ months | tojson }};
 const mix = {{ mix | tojson }};
-const categories = [
-  ['feature', 'Feature work', '#79adff'],
-  ['maintenance', 'Maintenance', '#65d3b4'], ['unclear', 'Unclear', '#c2a4f6'],
-  ['unclassified', 'Unclassified', '#b4b7c3']
-];
 Chart.defaults.color = '#b2b7c7';
 const series = months.map(month => mix[month]);
 const labels = months.map((month, i) => month + (series[i]?.partial ? ' *' : ''));
-const datasets = categories.filter(([key]) =>
-  !['unclear', 'unclassified'].includes(key) || series.some(row => row?.counts[key]))
-  .map(([key, label, color]) => ({
-    label, borderColor: color, backgroundColor: color, borderWidth: 2,
-    data: series.map(row => row ? (row.counts[key] || 0) : null)
-  }));
-new Chart(document.getElementById('counts'), {type: 'line', data: {labels, datasets}, options: {
-  responsive: true, maintainAspectRatio: false, interaction: {mode: 'index', intersect: false},
-  scales: {y: {beginAtZero: true, ticks: {precision: 0}}}
-}});
+function plot(id, field, categories) {
+  const datasets = categories.filter(([key, , , optional]) =>
+    !optional || series.some(row => row?.[field][key]))
+    .map(([key, label, color]) => ({
+      label, borderColor: color, backgroundColor: color, borderWidth: 2,
+      data: series.map(row => row ? (row[field][key] || 0) : null)
+    }));
+  new Chart(document.getElementById(id), {type: 'line', data: {labels, datasets}, options: {
+    responsive: true, maintainAspectRatio: false, interaction: {mode: 'index', intersect: false},
+    scales: {y: {beginAtZero: true, ticks: {precision: 0}}}
+  }});
+}
+plot('counts', 'counts', [
+  ['feature', 'Feature work', '#79adff'], ['maintenance', 'Maintenance', '#65d3b4'],
+  ['unclear', 'Unclear', '#c2a4f6', true], ['unclassified', 'Unclassified', '#b4b7c3', true]
+]);
+plot('maintenance', 'subcategories', [
+  ['bug_fix', 'Bug fixes', '#ff9a91'], ['dependency', 'Dependencies', '#79adff'],
+  ['security_update', 'Security updates', '#ffc875'], ['refactoring', 'Refactoring', '#65d3b4'],
+  ['ci', 'CI', '#c2a4f6'], ['tooling', 'Tooling', '#edf18e'],
+  ['maintenance_unspecified', 'Unspecified', '#b4b7c3', true]
+]);
+plot('feature', 'subcategories', [
+  ['new_capability', 'New capabilities', '#79adff'], ['enhancement', 'Enhancements', '#ffc875'],
+  ['feature_unspecified', 'Unspecified', '#b4b7c3', true]
+]);
 </script>
 </body>
 </html>
